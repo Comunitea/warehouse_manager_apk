@@ -1,0 +1,30 @@
+<ion-card [ngClass]="{'success': pick.state == 'done',
+ 'danger': pick.state == 'cancel', 
+ 'primary': pick.state == 'assigned', 
+ 'secondary': pick.state == 'confirmed', 
+ 'tertiary': pick.state == 'waiting', 
+ 'medium': pick.state == 'draft'}" (click)="open_link(pick.id)">
+
+  <ion-row>
+    <ion-col col-2>
+        <div>{{pick.name}}</div>
+    </ion-col>
+    
+    <ion-col col-3>
+        <div>{{pick.location_id[1]}}</div>
+    </ion-col>
+
+    <ion-col col-3>
+      <div>{{pick.location_dest_id[1]}}</div>
+    </ion-col>
+    
+    <ion-col col-2  class="ion-align-self-center ion-text-center">
+      <div>{{pick.scheduled_date}}h</div>
+    </ion-col>
+
+    <ion-col col-2  class="ion-align-self-center ion-text-center">
+        <div>{{pick.state}}</div>
+    </ion-col>
+  </ion-row>
+
+</ion-card>

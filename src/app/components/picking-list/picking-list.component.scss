@@ -1,0 +1,20 @@
+ion-card {
+    &.success {
+        background-color: var(--ion-color-success);
+    }
+    &.danger {
+        background-color: var(--ion-color-danger);
+    }
+    &.primary {
+        background-color: var(--ion-color-primary);
+    }
+    &.secondary {
+        background-color: var(--ion-color-secondary);
+    }
+    &.tertiary {
+        background-color: var(--ion-color-tertiary);
+    }
+    &.medium {
+        background-color: var(--ion-color-medium);
+    }
+}

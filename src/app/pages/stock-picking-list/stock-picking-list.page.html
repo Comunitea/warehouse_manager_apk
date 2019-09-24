@@ -1,0 +1,9 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Listado de operaciones</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <app-picking-list *ngFor="let pick of pickings" [pick]="pick"></app-picking-list>
+</ion-content>

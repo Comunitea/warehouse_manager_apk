@@ -1,0 +1,98 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+
+    <ion-title>Iniciar Sesión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="login-logo">
+    <img src="assets/imgs/logo.png" alt="Company logo">
+  </div>
+
+  <form #loginForm="ngForm" novalidate>
+    <ion-list>
+      <ion-item>
+        <ion-label position="stacked" color="primary">Usuario</ion-label>
+        <ion-input [(ngModel)]="CONEXION.username" name="username" type="text" #username="ngModel" spellcheck="false" autocapitalize="off"
+          required>
+        </ion-input>
+      </ion-item>
+
+      <ion-text color="danger">
+        <p [hidden]="username.valid || submitted == false" class="ion-padding-start">
+          Usuario es un campo obligatorio.
+        </p>
+      </ion-text>
+
+      <ion-item>
+        <ion-label position="stacked" color="primary">Contraseña</ion-label>
+        <ion-input [(ngModel)]="CONEXION.password" name="password" type="password" #password="ngModel" required>
+        </ion-input>
+      </ion-item>
+
+      <ion-text color="danger">
+        <p [hidden]="password.valid || submitted == false" class="ion-padding-start">
+          Contraseña es un campo obligatorio.
+        </p>
+      </ion-text>
+      
+
+      <ion-item>
+          <ion-label color="dark">Servidor</ion-label>
+          <ion-toggle [(ngModel)]="login_server" [ngModelOptions] = {standalone:true} ></ion-toggle>
+      </ion-item>
+    
+    </ion-list>
+
+    <ion-list *ngIf="!cargar && login_server">
+
+      <ion-item>
+        <ion-label position="stacked" color="primary">URL</ion-label>
+        <ion-input [(ngModel)]="CONEXION.url" #url="ngModel" name="url" placeholder="Ingresa url" required>
+        </ion-input>
+      </ion-item>
+
+      <ion-text color="danger">
+        <p [hidden]="url.valid || submitted == false" class="ion-padding-start">
+          URL es un campo obligatorio.
+        </p>
+      </ion-text>
+
+      <ion-item>
+        <ion-label position="stacked" color="primary">Port</ion-label>
+        <ion-input [(ngModel)]="CONEXION.port" #port="ngModel" name="port" placeholder="Ingresa puerto" required>
+        </ion-input>
+      </ion-item>
+
+      <ion-text color="danger">
+        <p [hidden]="port.valid || submitted == false" class="ion-padding-start">
+          Puerto es un campo obligatorio.
+        </p>
+      </ion-text>
+
+      <ion-item>
+          <ion-label position="stacked" color="primary">Base de datos</ion-label>
+          <ion-input [(ngModel)]="CONEXION.db" #db="ngModel" name="db" placeholder="Ingresa base de datos" required>
+          </ion-input>
+        </ion-item>
+  
+        <ion-text color="danger">
+          <p [hidden]="db.valid || submitted == false" class="ion-padding-start">
+            Base de datos es un campo obligatorio.
+          </p>
+        </ion-text>
+
+    </ion-list>
+
+    <ion-row>
+      <ion-col>
+        <ion-button (click)="onLogin(loginForm)" type="submit" expand="block">Login</ion-button>
+      </ion-col>
+    </ion-row>
+  </form>
+
+</ion-content>
