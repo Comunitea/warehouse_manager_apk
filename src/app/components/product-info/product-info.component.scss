@@ -1,0 +1,11 @@
+div {
+    &.danger {
+        color: var(--ion-color-danger);
+    }
+    &.product_img {
+        ion-img {
+            max-width: 100px;
+            max-height: 100px;
+        }
+    }
+}

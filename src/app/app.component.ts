@@ -26,6 +26,11 @@ export class AppComponent {
       icon: 'list-box'
     },
     {
+      title: 'Productos',
+      url: '/product-list',
+      icon: 'shirt'
+    },    
+    {
       title: 'Salir',
       url: '/logout',
       icon: 'log-out'

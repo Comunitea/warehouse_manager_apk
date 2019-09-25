@@ -1,20 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Storage } from '@ionic/storage';
 import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 /* import { AudioService } from '../../services/audio.service'; */
 import { StockService } from '../../services/stock.service';
 
 @Component({
-  selector: 'app-stock-picking',
-  templateUrl: './stock-picking.page.html',
-  styleUrls: ['./stock-picking.page.scss'],
+  selector: 'app-product',
+  templateUrl: './product.page.html',
+  styleUrls: ['./product.page.scss'],
 })
-export class StockPickingPage implements OnInit {
+export class ProductPage implements OnInit {
 
-  picking: number;
-  picking_data: {};
-  move_lines: {};
+  product_data: {};
+  placeholder: string;
 
   constructor(
     private odoo: OdooService,
@@ -22,7 +22,8 @@ export class StockPickingPage implements OnInit {
     public alertCtrl: AlertController,
     private route: ActivatedRoute,
     /* private audio: AudioService, */
-    private stock: StockService
+    private stock: StockService,
+    private storage: Storage,
   ) { }
 
   ngOnInit() {
@@ -30,8 +31,14 @@ export class StockPickingPage implements OnInit {
       if (data==false) {
         this.router.navigateByUrl('/login');
       } else {
-        var picking = this.route.snapshot.paramMap.get('id');
-        this.get_picking_info(picking);
+        this.storage.get('CONEXION').then((con) => {
+          this.placeholder = con.url + "/web/static/src/img/placeholder.png"
+        })
+        .catch((error)=>{
+          this.presentAlert('Error al comprobar tu sesión:', error);
+        });
+        var product = this.route.snapshot.paramMap.get('id');
+        this.get_product_info(product);
       }
     })
     .catch((error)=>{
@@ -49,17 +56,16 @@ export class StockPickingPage implements OnInit {
     await alert.present();
   }
 
-  get_picking_info(picking) {
-    this.stock.get_picking_info(picking).then((data)=>{
-      this.picking_data = data[0];
-      if(this.picking_data['move_lines']) {
-        this.stock.get_move_lines_list(this.picking_data['move_lines']).then((lines_data)=>{
-          this.move_lines = lines_data;
-        })
-        .catch((error)=>{
-          this.presentAlert('Error al recuperar los movimientos:', error);
-        });
-      }      
+  get_product_info(product) {
+    console.log(product);
+    this.stock.get_product_info(product).then((data)=>{
+      if (data[0]['image_medium']==false){
+        data[0]['base64'] = false;
+        data[0]['image_medium'] = this.placeholder;
+      } else {
+        data[0]['base64'] = true;
+      }
+      this.product_data = data[0];  
     })
     .catch((error)=>{
       this.presentAlert('Error al recuperar el picking:', error);

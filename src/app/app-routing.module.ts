@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
-import { PickingInfoComponent } from './components/picking-info/picking-info.component';
 
 const routes: Routes = [
   {
@@ -21,6 +20,12 @@ const routes: Routes = [
   { path: 'stock-picking-list',
     loadChildren: () => import('./pages/stock-picking-list/stock-picking-list.module').then(m => m.StockPickingListPageModule)
   },
+  { path: 'product/:id',
+    loadChildren: () => import('./pages/product/product.module').then(m => m.ProductPageModule)
+  },
+  { path: 'product-list',
+    loadChildren: () => import('./pages/product-list/product-list.module').then(m => m.ProductListPageModule)
+   },
   
 ];
 

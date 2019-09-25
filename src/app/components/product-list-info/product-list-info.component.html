@@ -1,0 +1,21 @@
+<ion-row *ngIf="product">
+  <ion-col col-7>
+      <div class="product_link" (click)="open_link(product.id)">{{product.name}}</div>
+  </ion-col>
+  
+  <ion-col col-2>
+      <div>{{product.default_code}}</div>
+  </ion-col>
+
+  <ion-col col-1>
+    <div [ngClass]="{'danger': product.qty_available &lt;= 0}" >{{product.qty_available}}</div>
+  </ion-col>
+  
+  <ion-col col-1>
+    <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">{{product.virtual_available}}</div>
+  </ion-col>
+
+  <ion-col col-1>
+      <div>{{product.list_price}}€</div>
+  </ion-col>
+</ion-row>

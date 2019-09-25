@@ -1,6 +1,6 @@
 <ion-row [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">
   <ion-col col-9>
-      <div (click)="open_link(line.product_id[0])">{{line.product_id[1]}}</div>
+      <div class="product_link" (click)="open_link(line.product_id[0])">{{line.product_id[1]}}</div>
   </ion-col>
   
   <ion-col col-1>

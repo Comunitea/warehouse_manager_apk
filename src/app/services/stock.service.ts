@@ -19,6 +19,11 @@ export class StockService {
     'stock.move': {
       'tree': ['id', 'product_id', 'product_uom_qty', 'reserved_availability', 'quantity_done'],
       'form': ['id', 'product_id', 'product_uom_qty', 'reserved_availability', 'quantity_done']
+    },
+
+    'product.product': {
+      'tree': ['id', 'name', 'default_code', 'list_price', 'qty_available', 'virtual_available'],
+      'form': ['id', 'name', 'default_code', 'list_price', 'standard_price', 'qty_available', 'virtual_available', 'categ_id', 'barcode', 'description_short', 'image_medium']
     }
 
   }                            
@@ -85,5 +90,43 @@ export class StockService {
     })
     return promise
   }
+
+  // Products
+
+  get_product_list() {
+    let self = this;
+    let domain = [];
+
+    let model = 'product.product';
+    let fields = this.STOCK_FIELDS[model]['tree']
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
+        for (let sm_id in data){data[sm_id]['model'] = model}
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
+
+  get_product_info(product_id) {
+    let self = this;
+    let domain = [['id', '=', product_id]];
+
+    let model = 'product.product';
+    let fields = this.STOCK_FIELDS[model]['form']
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
+        for (let sm_id in data){data[sm_id]['model'] = model}
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }  
 
 }
