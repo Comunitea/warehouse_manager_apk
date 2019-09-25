@@ -34,7 +34,7 @@ export class StockPickingListPage implements OnInit {
       }
     })
     .catch((error)=>{
-      this.presentAlert('Error al hacer login:', error);
+      this.presentAlert('Error al comprobar tu sesión:', error);
     });
   }
 

@@ -1,9 +1,36 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>stock_picking</ion-title>
+    <ion-title>Detalles de la operación</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-
+  <app-picking-info [pick]="picking_data"></app-picking-info>
+  <div *ngIf="move_lines">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Movimientos de la operación</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-row>
+          <ion-col col-9>
+              <div><strong>Nombre</strong></div>
+          </ion-col>
+          
+          <ion-col col-1>
+              <div><strong>Pedida</strong></div>
+          </ion-col>
+      
+          <ion-col col-1>
+            <div><strong>Reservada</strong></div>
+          </ion-col>
+          
+          <ion-col col-1>
+            <div><strong>Hecha</strong></div>
+          </ion-col>
+        </ion-row>
+        <app-move-line-list *ngFor="let line of move_lines" [line]="line"></app-move-line-list>
+      </ion-card-content>
+    </ion-card>
+  </div>
 </ion-content>

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { PickingInfoComponent } from './components/picking-info/picking-info.component';
 
 const routes: Routes = [
   {
@@ -14,7 +15,7 @@ const routes: Routes = [
   { path: 'logout',
     loadChildren: () => import('./pages/logout/logout.module').then(m => m.LogoutPageModule)
   },
-  { path: 'stock-picking',
+  { path: 'stock-picking/:id',
     loadChildren: () => import('./pages/stock-picking/stock-picking.module').then(m => m.StockPickingPageModule)
   },
   { path: 'stock-picking-list',

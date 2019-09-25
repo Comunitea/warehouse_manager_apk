@@ -8,6 +8,10 @@
 
 ### Instalación
 - Git clone.
+- npm install
+- ionic serve
+
+### Añadir plataformas
 - ionic cordova platformn add (android/ios/browser)
 - Instalar las dependencias que diga que falten con npm install
 

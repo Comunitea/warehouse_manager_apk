@@ -1,0 +1,22 @@
+<ion-card *ngIf="pick">
+
+  <ion-card-header>
+    <ion-card-title>{{pick.name}}</ion-card-title>
+    <ion-card-subtitle>{{pick.picking_type_id[1]}}</ion-card-subtitle>
+  </ion-card-header>
+
+  <ion-card-content>
+    <div><strong>Previsto: </strong>{{pick.scheduled_date}}</div>
+    <div><strong>Origen: </strong>{{pick.location_id[1]}}</div>
+    <div><strong>Destino: </strong>{{pick.location_dest_id[1]}}</div>
+    <div [ngSwitch]="pick.priority">
+      <strong>Prioridad: </strong>
+      <ion-text *ngSwitchCase="0">No Urgente</ion-text>
+      <ion-text *ngSwitchCase="1">Normal</ion-text>
+      <ion-text *ngSwitchCase="2">Urgente</ion-text>
+      <ion-text *ngSwitchCase="3">Muy Urgente</ion-text>
+    </div>
+    <div *ngIf="pick.note"><strong>Nota: </strong>{{pick.note}}</div>
+  </ion-card-content>
+
+</ion-card>
