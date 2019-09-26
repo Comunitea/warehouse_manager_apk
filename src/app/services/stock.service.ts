@@ -34,10 +34,16 @@ export class StockService {
 
   // Pickings
 
-  get_picking_list(picking_state, partner_id) {
+  get_picking_list(picking_state, search) {
     let self = this;
     let domain = [];
-    //['partner_id', '=', partner_id],['state', '=', picking_state] 
+    if (picking_state != 'all') {
+      domain = [['state', '=', picking_state]];
+    }
+    
+    if(search) {
+      domain.push(['name', 'ilike', search]);
+    }
 
     let model = 'stock.picking';
     let fields = this.STOCK_FIELDS[model]['tree']

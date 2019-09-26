@@ -8,6 +8,7 @@ import { Component, OnInit, Input } from '@angular/core';
 export class PickingInfoComponent implements OnInit {
 
   @Input() pick: {}
+  ngSwitch: any
 
   constructor() { }
 

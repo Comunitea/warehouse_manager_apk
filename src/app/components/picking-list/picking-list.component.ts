@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 export class PickingListComponent implements OnInit {
 
   @Input() pick: {}
+  ngSwitch: any
 
   constructor(public router: Router) { }
 

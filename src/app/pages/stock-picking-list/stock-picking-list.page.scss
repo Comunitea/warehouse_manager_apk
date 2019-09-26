@@ -1,0 +1,11 @@
+ion-icon.icon {
+    font-size: 45px;
+    color: var(--ion-color-secondary);
+    cursor: pointer;
+}
+
+ion-col.selected {
+    ion-icon.icon {
+        color: var(--ion-color-primary);
+    }
+}
