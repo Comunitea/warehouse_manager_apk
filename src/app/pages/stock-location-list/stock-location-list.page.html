@@ -1,0 +1,39 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Listado de ubicaciones</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card>
+    <ion-row *ngIf="location_types">
+      <ion-col col-2 class="ion-align-self-center ion-text-center" [ngClass]="{'selected': current_selected_type == option.value}" *ngFor="let option of location_types" (click)="get_location_list(option.value, search)">
+        <ion-icon class="icon" [name]="option.icon"></ion-icon><br/>
+        {{option.name}}
+      </ion-col>
+    </ion-row>
+  </ion-card>
+  <ion-card>
+    <ion-card-content>
+      <ion-row>
+        <ion-col col-4>
+            <div><strong>Nombre</strong></div>
+        </ion-col>
+        
+        <ion-col col-4>
+            <div><strong>Tipo de ubicación</strong></div>
+        </ion-col>
+    
+        <ion-col col-4>
+          <div><strong>Compañía</strong></div>
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-toolbar>
+          <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
+        </ion-toolbar>
+      </ion-row>
+      <app-location-list *ngFor="let location of locations" [location]="location"></app-location-list>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

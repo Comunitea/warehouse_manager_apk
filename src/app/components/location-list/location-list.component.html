@@ -1,0 +1,20 @@
+<ion-row (click)="open_link(location.id)">
+  <ion-col col-4>
+    <div>{{location.display_name}}</div>
+  </ion-col>
+  
+  <ion-col col-4>
+    <div>{{location.company_id[1]}}</div>
+  </ion-col>
+
+  <ion-col col-4 [ngSwitch]="location.usage" class="ion-align-self-center ion-text-center">
+    <div *ngSwitchCase="'supplier'">Ubicación de proveedor</div>
+    <div *ngSwitchCase="'view'">Ver</div>
+    <div *ngSwitchCase="'internal'">Ubicación interna</div>
+    <div *ngSwitchCase="'customer'">Ubicación de cliente</div>
+    <div *ngSwitchCase="'inventory'">Ubicación de inventario</div>
+    <div *ngSwitchCase="'procurement'">Abastecimiento</div>
+    <div *ngSwitchCase="'production'">Producción</div>
+    <div *ngSwitchCase="'transit'">Ubicación de tránsito</div>
+  </ion-col>
+</ion-row>

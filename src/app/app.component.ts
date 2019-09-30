@@ -31,6 +31,11 @@ export class AppComponent {
       icon: 'shirt'
     },    
     {
+      title: 'Ubicaciones',
+      url: '/stock-location-list',
+      icon: 'home'
+    },
+    {
       title: 'Salir',
       url: '/logout',
       icon: 'log-out'
