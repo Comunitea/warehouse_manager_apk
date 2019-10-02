@@ -39,7 +39,7 @@ export class StockService {
 
   // Pickings
 
-  get_picking_list(picking_state, search) {
+  get_picking_list(picking_state, offset=0, limit=0, search) {
     let self = this;
     let domain = [];
     if (picking_state != 'all') {
@@ -53,7 +53,7 @@ export class StockService {
     let model = 'stock.picking';
     let fields = this.STOCK_FIELDS[model]['tree']
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
+      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
         for (let sm_id in data){data[sm_id]['model'] = model}
           resolve(data)
       })
@@ -104,14 +104,18 @@ export class StockService {
 
   // Products
 
-  get_product_list() {
+  get_product_list(offset=0, limit=0, search) {
     let self = this;
     let domain = [];
+
+    if(search) {
+      domain.push('|',['name', 'ilike', search], ['default_code', 'ilike', search]);
+    }
 
     let model = 'product.product';
     let fields = this.STOCK_FIELDS[model]['tree']
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
+      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
         for (let sm_id in data){data[sm_id]['model'] = model}
           resolve(data)
       })
@@ -142,7 +146,7 @@ export class StockService {
   
   // Location
 
-  get_location_list(location_state, search) {
+  get_location_list(location_state, offset=0, limit=0, search) {
     let self = this;
     let domain = [];
     if (location_state != 'all') {
@@ -156,7 +160,7 @@ export class StockService {
     let model = 'stock.location';
     let fields = this.STOCK_FIELDS[model]['tree']
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
+      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
         for (let sm_id in data){data[sm_id]['model'] = model}
           resolve(data)
       })

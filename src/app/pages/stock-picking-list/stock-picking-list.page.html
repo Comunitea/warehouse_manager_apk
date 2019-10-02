@@ -40,7 +40,15 @@
           <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
         </ion-toolbar>
       </ion-row>
+
       <app-picking-list *ngFor="let pick of pickings" [pick]="pick"></app-picking-list>
+
+      <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
+        <ion-infinite-scroll-content
+          loadingSpinner="bubbles"
+          loadingText="Cargando más productos...">
+        </ion-infinite-scroll-content>
+      </ion-infinite-scroll>
     </ion-card-content>
   </ion-card>
 </ion-content>

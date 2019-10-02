@@ -7,8 +7,8 @@
 
   <ion-card-content>
     <div><strong>Previsto: </strong>{{pick.scheduled_date}}</div>
-    <div><strong>Origen: </strong>{{pick.location_id[1]}}</div>
-    <div><strong>Destino: </strong>{{pick.location_dest_id[1]}}</div>
+    <div><strong>Origen: </strong><span class="location" (click)="open_link(pick.location_id[0])">{{pick.location_id[1]}}</span></div>
+    <div><strong>Destino: </strong><span class="location" (click)="open_link(pick.location_dest_id[0])">{{pick.location_dest_id[1]}}</span></div>
     <div [ngSwitch]="pick.priority">
       <strong>Prioridad: </strong>
       <ion-text *ngSwitchCase="0">No Urgente</ion-text>

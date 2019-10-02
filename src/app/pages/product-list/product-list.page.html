@@ -26,6 +26,19 @@
         <div><strong>Precio de venta</strong></div>
       </ion-col>
     </ion-row>
+    <ion-row>
+      <ion-toolbar>
+        <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
+      </ion-toolbar>
+    </ion-row>
+
     <app-product-list-info *ngFor="let product of product_list" [product]="product"></app-product-list-info>
+    
+    <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
+      <ion-infinite-scroll-content
+        loadingSpinner="bubbles"
+        loadingText="Cargando más productos...">
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
   </ion-card-content>
 </ion-content>

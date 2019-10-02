@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 /* import { AudioService } from '../../services/audio.service'; */
 import { StockService } from '../../services/stock.service';
@@ -12,6 +12,11 @@ import { StockService } from '../../services/stock.service';
 })
 export class StockLocationListPage implements OnInit {
 
+  @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
+
+  offset: number;
+  limit: number;
+  limit_reached: boolean;
   locations: {};
   location_state: string;
   location_types: {};
@@ -35,52 +40,56 @@ export class StockLocationListPage implements OnInit {
       {
         'value': 'supplier',
         'name': 'Proveedor',
-        'icon': 'paper',
+        'icon': 'boat',
         'size': 1
       },
       {
         'value': 'view',
         'name': 'Ver',
-        'icon': 'sync',
+        'icon': 'desktop',
         'size': 1
       },
       {
         'value': 'internal',
         'name': 'Interna',
-        'icon': 'cart',
+        'icon': 'cube',
         'size': 1
       },
       {
         'value': 'customer',
         'name': 'Cliente',
-        'icon': 'checkmark',
+        'icon': 'cash',
         'size': 1
       },
       {
         'value': 'inventory',
         'name': 'Inventario',
-        'icon': 'done-all',
+        'icon': 'clipboard',
         'size': 1
       },
       {
         'value': 'procurement',
         'name': 'Abastecimiento',
-        'icon': 'close',
+        'icon': 'log-in',
         'size': 1
       },
       {
         'value': 'production',
         'name': 'Producción',
-        'icon': 'close',
+        'icon': 'hammer',
         'size': 1
       },
       {
         'value': 'transit',
         'name': 'Tránsito',
-        'icon': 'close',
+        'icon': 'swap',
         'size': 2
       }
     ]
+
+    this.offset = 0;
+    this.limit = 25;
+    this.limit_reached = false;
   }
 
   ngOnInit() {
@@ -107,9 +116,14 @@ export class StockLocationListPage implements OnInit {
   }
   
   get_location_list(location_state='internal', search=null){
+    this.offset = 0;
+    this.limit_reached = false;
     this.current_selected_type = location_state;
-    this.stock.get_location_list(location_state, search).then((location_list)=> {
+    this.stock.get_location_list(location_state, this.offset, this.limit, search).then((location_list)=> {
       this.locations = location_list;
+      if(Object.keys(location_list).length < 25){
+        this.limit_reached = true;
+      }
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
@@ -119,6 +133,40 @@ export class StockLocationListPage implements OnInit {
   get_search_results(ev:any){
     this.search = ev.target.value;
     this.get_location_list(this.current_selected_type, this.search);
+  }
+
+  // Infinitescroll
+
+  loadData(event) {
+    setTimeout(() => {
+      console.log('Loading more locations');
+      event.target.complete();
+      this.location_list_infinite_scroll_add();
+
+      // App logic to determine if all data is loaded
+      // and disable the infinite scroll
+      if (this.limit_reached) {
+        event.target.disabled = true;
+      }
+    }, 500);
+  }
+
+  location_list_infinite_scroll_add(){
+    this.offset += this.limit;
+    this.stock.get_location_list(this.current_selected_type, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
+      let current_length = Object.keys(this.locations).length;
+      if(Object.keys(data).length < 25){
+        this.limit_reached = true;
+      }
+      for(var k in data) this.locations[current_length+Number(k)]=data[k];
+    })
+    .catch((error) => {
+      this.presentAlert('Error al recuperador el listado de operaciones:', error);
+    });
+  }
+
+  toggleInfiniteScroll() {
+    this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
   }
 
 }

@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 /* import { AudioService } from '../../services/audio.service'; */
 import { StockService } from '../../services/stock.service';
@@ -12,6 +12,11 @@ import { StockService } from '../../services/stock.service';
 })
 export class StockPickingListPage implements OnInit {
 
+  @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
+
+  offset: number;
+  limit: number;
+  limit_reached: boolean;
   pickings: {};
   picking_state: string;
   picking_types: {};
@@ -69,6 +74,10 @@ export class StockPickingListPage implements OnInit {
         'size': 1
       }
     ]
+
+    this.offset = 0;
+    this.limit = 25;
+    this.limit_reached = false;
   }
 
   ngOnInit() {
@@ -95,9 +104,14 @@ export class StockPickingListPage implements OnInit {
   }
   
   get_picking_list(picking_state='assigned', search=null){
+    this.offset = 0;
+    this.limit_reached = false;
     this.current_selected_type = picking_state;
-    this.stock.get_picking_list(picking_state, search).then((picking_list)=> {
+    this.stock.get_picking_list(picking_state, this.offset, this.limit, search).then((picking_list:Array<{}>)=> {
       this.pickings = picking_list;
+      if(Object.keys(picking_list).length < 25){
+        this.limit_reached = true;
+      }
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
@@ -107,6 +121,40 @@ export class StockPickingListPage implements OnInit {
   get_search_results(ev:any){
     this.search = ev.target.value;
     this.get_picking_list(this.current_selected_type, this.search);
+  }
+
+  // Infinitescroll
+
+  loadData(event) {
+    setTimeout(() => {
+      console.log('Loading more locations');
+      event.target.complete();
+      this.picking_list_infinite_scroll_add();
+
+      // App logic to determine if all data is loaded
+      // and disable the infinite scroll
+      if (this.limit_reached) {
+        event.target.disabled = true;
+      }
+    }, 500);
+  }
+
+  picking_list_infinite_scroll_add(){
+    this.offset += this.limit;
+    this.stock.get_picking_list(this.current_selected_type, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
+      let current_length = Object.keys(this.pickings).length;
+      if(Object.keys(data).length < 25){
+        this.limit_reached = true;
+      }
+      for(var k in data) this.pickings[current_length+Number(k)]=data[k];
+    })
+    .catch((error) => {
+      this.presentAlert('Error al recuperador el listado de operaciones:', error);
+    });
+  }
+
+  toggleInfiniteScroll() {
+    this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
   }
 
 }
