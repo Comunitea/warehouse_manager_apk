@@ -1,0 +1,11 @@
+div {
+    &.danger {
+        color: var(--ion-color-danger);
+    }
+    &.product_link {
+        color: blue;
+        text-decoration: underline;
+        text-decoration-color: blue;
+        cursor: pointer;
+    }
+}

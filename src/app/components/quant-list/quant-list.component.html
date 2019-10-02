@@ -1,0 +1,13 @@
+<ion-row *ngIf="quant">
+  <ion-col col-4>
+    <div class="product_link" (click)="open_link(quant.product_id[0])">{{quant.product_id[1]}}</div>
+  </ion-col>
+  
+  <ion-col col-4>
+    <div>{{quant.reserved_quantity}}</div>
+  </ion-col>
+  
+  <ion-col col-4>
+    <div [ngClass]="{'danger': quant.quantity &lt;= 0}">{{quant.quantity}}</div>
+  </ion-col>
+  </ion-row>

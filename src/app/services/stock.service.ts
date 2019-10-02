@@ -23,12 +23,18 @@ export class StockService {
 
     'product.product': {
       'tree': ['id', 'name', 'default_code', 'list_price', 'qty_available', 'virtual_available'],
-      'form': ['id', 'name', 'default_code', 'list_price', 'standard_price', 'qty_available', 'virtual_available', 'categ_id', 'barcode', 'description_short', 'image_medium']
+      'form': ['id', 'name', 'default_code', 'list_price', 'standard_price', 'qty_available', 'virtual_available', 'categ_id', 'barcode', 'description_short', 'image_medium'],
+      'location-tree': ['id', 'name', 'default_code', 'list_price', 'last_purchase_price', 'qty_available', 'virtual_available', 'barcode', 'uom_id']
     },
 
     'stock.location': {
       'tree': ['id', 'display_name', 'usage', 'company_id'],
       'form': ['id', 'display_name', 'usage', 'company_id', 'picking_type_id']
+    },
+
+    'stock.quant': {
+      'tree': ['id', 'product_id', 'reserved_quantity', 'quantity'],
+      'form': ['id', 'product_id', 'reserved_quantity', 'quantity']
     }
 
   }                            
@@ -143,6 +149,28 @@ export class StockService {
     })
     return promise
   }
+
+  get_location_products(location, offset=0, limit=0, search) {
+    let self = this;
+    let domain = [['product_tmpl_id.location_id', 'child_of', Number(location)]];
+    
+    if(search) {
+      domain.push(['name', 'ilike', search]);
+    }
+
+    let model = 'product.product';
+    let fields = this.STOCK_FIELDS[model]['location-tree']
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
+        for (let sm_id in data){data[sm_id]['model'] = model}
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
   
   // Location
 
@@ -179,6 +207,30 @@ export class StockService {
     let fields = this.STOCK_FIELDS[model]['form']
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
+        for (let sm_id in data){data[sm_id]['model'] = model}
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
+
+  // Quants
+
+  get_location_quants(location, offset=0, limit=0, search) {
+    let self = this;
+    let domain = [['location_id', 'child_of', Number(location)]];
+    
+    if(search) {
+      domain.push(['product_id.name', 'ilike', search]);
+    }
+
+    let model = 'stock.quant';
+    let fields = this.STOCK_FIELDS[model]['tree']
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
         for (let sm_id in data){data[sm_id]['model'] = model}
           resolve(data)
       })

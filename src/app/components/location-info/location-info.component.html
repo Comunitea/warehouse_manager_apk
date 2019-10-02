@@ -18,6 +18,14 @@
       <ion-text *ngSwitchCase="'production'">Producción</ion-text>
       <ion-text *ngSwitchCase="'transit'">Ubicación de tránsito</ion-text>
     </div>
+    <ion-row>
+      <ion-col>
+        <ion-button (click)="open_link('stock', location.id)" expand="block">Stock actual</ion-button>
+      </ion-col>
+      <ion-col>
+        <ion-button (click)="open_link('product', location.id)" expand="block">Productos</ion-button>
+        </ion-col>
+    </ion-row>
   </ion-card-content>
 
 </ion-card>

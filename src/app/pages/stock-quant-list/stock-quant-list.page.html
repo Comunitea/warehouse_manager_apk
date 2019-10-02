@@ -1,0 +1,39 @@
+<ion-header>
+    <ion-toolbar>
+      <ion-title>Stock actual</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  
+  <ion-content>
+    <ion-card>
+      <ion-card-content>
+        <ion-row>
+          <ion-col col-4>
+              <div><strong>Producto</strong></div>
+          </ion-col>
+          
+          <ion-col col-4>
+              <div><strong>Reservado</strong></div>
+          </ion-col>
+      
+          <ion-col col-4>
+            <div><strong>A mano</strong></div>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-toolbar>
+            <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
+          </ion-toolbar>
+        </ion-row>
+  
+        <app-quant-list *ngFor="let quant of quants" [quant]="quant"></app-quant-list>
+  
+        <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
+          <ion-infinite-scroll-content
+            loadingSpinner="bubbles"
+            loadingText="Cargando más productos...">
+          </ion-infinite-scroll-content>
+        </ion-infinite-scroll>
+      </ion-card-content>
+    </ion-card>
+  </ion-content>
