@@ -15,8 +15,8 @@ export class LoginPage implements OnInit {
 
   CONEXION: ConnectionOptions = { username: '', password: '', url: 'http://localhost', port: 8069, db: '', uid: 0, context: {}, user: {}, logged_in: false};
   CONEXION_local: ConnectionOptions = { username: '', password: '', url: '', port: null, db: '', uid: 0, context: {}, user: {}, logged_in: false};
-  cargar = false;
-  submitted = false;
+  cargar: boolean;
+  submitted: boolean;
 
   constructor(
     private odoo: OdooService,

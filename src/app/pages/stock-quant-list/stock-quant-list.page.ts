@@ -68,7 +68,7 @@ export class StockQuantListPage implements OnInit {
       }
     })
     .catch((error) => {
-      this.presentAlert('Error al recuperador el listado de operaciones:', error);
+      this.presentAlert('Error al recuperador el listado de stock:', error);
     });
   }
 
@@ -103,7 +103,7 @@ export class StockQuantListPage implements OnInit {
       for(var k in data) this.quants[current_length+Number(k)]=data[k];
     })
     .catch((error) => {
-      this.presentAlert('Error al recuperador el listado de operaciones:', error);
+      this.presentAlert('Error al recuperador el listado de stock:', error);
     });
   }
 

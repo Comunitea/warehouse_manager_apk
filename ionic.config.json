@@ -1,5 +1,7 @@
 {
   "name": "odoo_warehouse_app",
-  "integrations": {},
+  "integrations": {
+    "cordova": {}
+  },
   "type": "angular"
 }

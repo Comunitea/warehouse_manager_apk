@@ -31,7 +31,7 @@ export class OdooService {
             if (con_data == null) {
                 var err = {'title': 'Error!', 'msg': 'No hay datos para establecer la conexión'}
                 reject(err);
-            } else {                
+            } else { 
                 odoo.login(con_data.username, con_data.password).then((uid) => {
                     if (uid['error']){
                         reject(uid['error_msg'])
@@ -48,7 +48,7 @@ export class OdooService {
                     }
                 })
                 .catch( (data) => {
-                  reject(data);
+                    reject(data);
                 });
             }
         });
@@ -96,14 +96,14 @@ export class OdooService {
                           odoo.call(model, method, values).then((res) => {
                               resolve(res);
                           })
-                          .catch( () => {
-                              var err = {'title': 'Error!', 'msg': 'Fallo al llamar al método ' + method + 'del modelo app.regustry'}
-                              reject(err);
+                          .catch( (error) => {
+                                var err = {'title': 'Error!', 'msg': error}
+                                reject(err);
                           });
                   })
-                  .catch( () => {
-                      var err = {'title': 'Error!', 'msg': 'No se pudo conectar con Odoo'}
-                      reject(err);
+                  .catch( (error) => {
+                        var err = {'title': 'Error!', 'msg': error}
+                        reject(err);
                   });
               }
           });
@@ -126,14 +126,14 @@ export class OdooService {
                       odoo.write(model, id, data).then((res) => {
                           resolve(res);
                       })
-                      .catch( () => {
-                          var err = {'title': 'Error!', 'msg': 'Fallo al llamar al hacer un write'}
-                          reject(err);
+                      .catch( (error) => {
+                            var err = {'title': 'Error!', 'msg': error}
+                            reject(err);
                       });
                   })
-                  .catch( () => {
-                      var err = {'title': 'Error!', 'msg': 'No se pudo conectar con Odoo'}
-                      reject(err);
+                  .catch( (error) => {
+                        var err = {'title': 'Error!', 'msg': error}
+                        reject(err);
                   });
               }
           });
@@ -160,14 +160,14 @@ export class OdooService {
                   odoo.search_read(model, domain, fields, offset, limit, order).then((res) => {
                       resolve(res);
                   })
-                  .catch( () => {
-                      var err = {'title': 'Error!', 'msg': 'Fallo al llamar al hacer search_read'}
-                      reject(err);
+                  .catch( (error) => {
+                        var err = {'title': 'Error!', 'msg': error}
+                        reject(err);
                   });
                   })
-                  .catch( () => {
-                      var err = {'title': 'Error!', 'msg': 'No se pudo conectar con Odoo'}
-                      reject(err);
+                  .catch( (error) => {
+                        var err = {'title': 'Error!', 'msg': error}
+                        reject(err);
                   });
               }
           });

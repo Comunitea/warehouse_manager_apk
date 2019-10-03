@@ -62,7 +62,6 @@ export class StockLocationProductListPage implements OnInit {
     this.offset = 0;
     this.limit_reached = false;
     this.stock.get_location_products(this.location, this.offset, this.limit, search).then((products_lists:Array<{}>)=> {
-      console.log(products_lists);
       this.products = products_lists;
       if(Object.keys(products_lists).length < 25){
         this.limit_reached = true;
@@ -104,7 +103,7 @@ export class StockLocationProductListPage implements OnInit {
       for(var k in data) this.products[current_length+Number(k)]=data[k];
     })
     .catch((error) => {
-      this.presentAlert('Error al recuperador el listado de operaciones:', error);
+      this.presentAlert('Error al recuperador el listado de productos:', error);
     });
   }
 
