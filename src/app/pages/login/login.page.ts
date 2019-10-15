@@ -99,7 +99,7 @@ export class LoginPage implements OnInit {
 
   log_in() {
     this.odoo.login(this.CONEXION.username, this.CONEXION.password).then((data)=> {
-      this.router.navigateByUrl('/stock-picking-list');
+      this.router.navigateByUrl('/stock-picking-type-list');
     }).catch((error)=>{
       this.presentAlert('Error al hacer login:', error);
     });
@@ -109,7 +109,7 @@ export class LoginPage implements OnInit {
   ngOnInit() {
     this.odoo.isLoggedIn().then((data)=>{
       if (data==true) {
-        this.router.navigateByUrl('/stock-picking-list');
+        this.router.navigateByUrl('/stock-picking-type-list');
       }
     })
     .catch((error)=>{

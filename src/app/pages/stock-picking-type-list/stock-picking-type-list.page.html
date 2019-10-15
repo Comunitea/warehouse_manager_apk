@@ -1,0 +1,36 @@
+<ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-menu-button></ion-menu-button>
+      </ion-buttons>
+      <ion-title>Inventario</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  
+  <ion-content>
+    <ion-card>
+      <ion-row *ngIf="picking_menu">
+        <ion-col col-2 class="ion-align-self-center ion-text-center" [ngClass]="{'selected': current_selected_type == option.value}" *ngFor="let option of picking_menu" (click)="get_picking_types(option.value, search)">
+          <ion-icon class="icon" [name]="option.icon"></ion-icon><br/>
+          {{option.name}}
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-toolbar>
+          <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
+        </ion-toolbar>
+      </ion-row>
+    </ion-card>
+    <ion-card>
+      <app-picking-type-info [picking_types]="picking_types"></app-picking-type-info>
+    </ion-card>
+
+    <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
+      <ion-infinite-scroll-content
+        loadingSpinner="bubbles"
+        loadingText="Cargando más productos...">
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  </ion-content>
+  

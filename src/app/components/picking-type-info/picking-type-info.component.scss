@@ -1,0 +1,32 @@
+ion-card {
+    ion-card-header {
+        min-height: 81px;
+        ion-card-subtitle {
+            &.success {
+                color: var(--ion-color-success);
+            }
+            &.warning {
+                color: var(--ion-color-warning);
+            }
+            &.primary {
+                color: var(--ion-color-primary);
+            }
+            &.secondary {
+                color: var(--ion-color-secondary);
+            }
+            &.tertiary {
+                color: var(--ion-color-tertiary);
+            }
+            &.medium {
+                color: var(--ion-color-medium);
+            }
+        }
+    }
+    ion-card-content {
+        min-height: 94px;
+    }
+    .link {
+        color: blue;
+        cursor: pointer; 
+    }
+}

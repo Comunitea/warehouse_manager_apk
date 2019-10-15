@@ -11,45 +11,12 @@
   <ion-card>
     <ion-card-content>
       <ion-row>
-        <ion-col col-2>
-            <div><strong>Referencia</strong></div>
-        </ion-col>
-        
-        <ion-col col-3>
-            <div><strong>Nombre</strong></div>
-        </ion-col>
-    
-        <ion-col col-1>
-          <div><strong>Precio de venta</strong></div>
-        </ion-col>
-
-        <ion-col col-1>
-          <div><strong>Último precio de compra</strong></div>
-        </ion-col>
-
-        <ion-col col-1>
-          <div><strong>A mano</strong></div>
-        </ion-col>
-
-        <ion-col col-1>
-          <div><strong>Pronóstico</strong></div>
-        </ion-col>
-
-        <ion-col col-1>
-          <div><strong>Unidad</strong></div>
-        </ion-col>
-
-        <ion-col col-2>
-          <div><strong>Código</strong></div>
-        </ion-col>
-      </ion-row>
-      <ion-row>
         <ion-toolbar>
           <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
         </ion-toolbar>
       </ion-row>
 
-      <app-location-product-list *ngFor="let product of products" [product]="product"></app-location-product-list>
+      <app-location-product-list [products]="products"></app-location-product-list>
 
       <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
         <ion-infinite-scroll-content

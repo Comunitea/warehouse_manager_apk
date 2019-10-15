@@ -19,25 +19,12 @@
   <ion-card>
     <ion-card-content>
       <ion-row>
-        <ion-col col-4>
-            <div><strong>Nombre</strong></div>
-        </ion-col>
-        
-        <ion-col col-4>
-            <div><strong>Tipo de ubicación</strong></div>
-        </ion-col>
-    
-        <ion-col col-4>
-          <div><strong>Compañía</strong></div>
-        </ion-col>
-      </ion-row>
-      <ion-row>
         <ion-toolbar>
           <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
         </ion-toolbar>
-      </ion-row>
+      </ion-row>   
       
-      <app-location-list *ngFor="let location of locations" [location]="location"></app-location-list>
+      <app-location-list [locations]="locations"></app-location-list>
 
       <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
         <ion-infinite-scroll-content

@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 })
 export class QuantListComponent implements OnInit {
 
-  @Input() quant: {}
+  @Input() quants: {}
 
   constructor(public router: Router) { }
 

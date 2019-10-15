@@ -1,21 +1,44 @@
-<ion-row *ngIf="product">
-  <ion-col col-7>
-      <div class="product_link" (click)="open_link(product.id)">{{product.name}}</div>
-  </ion-col>
-  
-  <ion-col col-2>
-      <div>{{product.default_code}}</div>
-  </ion-col>
+<ion-grid>
+  <ion-row>
+    <ion-col size="7">
+        <div><strong>Nombre</strong></div>
+    </ion-col>
+    
+    <ion-col size="2">
+        <div><strong>Código</strong></div>
+    </ion-col>
 
-  <ion-col col-1>
-    <div [ngClass]="{'danger': product.qty_available &lt;= 0}" >{{product.qty_available}}</div>
-  </ion-col>
-  
-  <ion-col col-1>
-    <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">{{product.virtual_available}}</div>
-  </ion-col>
+    <ion-col size="1">
+      <div><strong>Disponible</strong></div>
+    </ion-col>
+    
+    <ion-col size="1">
+      <div><strong>Previsto</strong></div>
+    </ion-col>
+    <ion-col size="1">
+      <div><strong>Precio de venta</strong></div>
+    </ion-col>
+  </ion-row>
 
-  <ion-col col-1>
-      <div>{{product.list_price}}€</div>
-  </ion-col>
-</ion-row>
+  <ion-row *ngFor="let product of products">
+      <ion-col size="7">
+          <div class="product_link" (click)="open_link(product.id)">{{product.name}}</div>
+      </ion-col>
+      
+      <ion-col size="2">
+          <div>{{product.default_code}}</div>
+      </ion-col>
+    
+      <ion-col size="1">
+        <div [ngClass]="{'danger': product.qty_available &lt;= 0}" >{{product.qty_available}}</div>
+      </ion-col>
+      
+      <ion-col size="1">
+        <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">{{product.virtual_available}}</div>
+      </ion-col>
+    
+      <ion-col size="1">
+          <div>{{product.list_price}}€</div>
+      </ion-col>
+    </ion-row>
+</ion-grid>

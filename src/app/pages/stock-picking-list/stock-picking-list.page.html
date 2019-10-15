@@ -9,42 +9,14 @@
 
 <ion-content>
   <ion-card>
-    <ion-row *ngIf="picking_types">
-      <ion-col col-2 class="ion-align-self-center ion-text-center" [ngClass]="{'selected': current_selected_type == option.value}" *ngFor="let option of picking_types" (click)="get_picking_list(option.value, search)">
-        <ion-icon class="icon" [name]="option.icon"></ion-icon><br/>
-        {{option.name}}
-      </ion-col>
-    </ion-row>
-  </ion-card>
-  <ion-card>
     <ion-card-content>
-      <ion-row>
-        <ion-col col-2>
-            <div><strong>Nombre</strong></div>
-        </ion-col>
-        
-        <ion-col col-3>
-            <div><strong>Origen</strong></div>
-        </ion-col>
-    
-        <ion-col col-3>
-          <div><strong>Destino</strong></div>
-        </ion-col>
-        
-        <ion-col col-2 class="ion-align-self-center ion-text-center">
-          <div><strong>Previsto</strong></div>
-        </ion-col>
-        <ion-col col-2 class="ion-align-self-center ion-text-center">
-          <div><strong>Estado</strong></div>
-        </ion-col>
-      </ion-row>
       <ion-row>
         <ion-toolbar>
           <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
         </ion-toolbar>
       </ion-row>
 
-      <app-picking-list *ngFor="let pick of pickings" [pick]="pick"></app-picking-list>
+      <app-picking-list [code]="current_code" [picks]="pickings"></app-picking-list>
 
       <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
         <ion-infinite-scroll-content

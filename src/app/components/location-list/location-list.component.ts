@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 })
 export class LocationListComponent implements OnInit {
 
-  @Input() location: {}
+  @Input() locations: {}
   ngSwitch: any
 
   constructor(public router: Router) { }

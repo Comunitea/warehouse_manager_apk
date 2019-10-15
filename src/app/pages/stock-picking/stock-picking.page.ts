@@ -3,7 +3,6 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 /* import { AudioService } from '../../services/audio.service'; */
-import { StockService } from '../../services/stock.service';
 
 @Component({
   selector: 'app-stock-picking',
@@ -12,27 +11,18 @@ import { StockService } from '../../services/stock.service';
 })
 export class StockPickingPage implements OnInit {
 
-  picking: number;
-  picking_data: {};
-  move_lines: {};
-
   constructor(
     private odoo: OdooService,
     public router: Router,
-    public alertCtrl: AlertController,
-    private route: ActivatedRoute,
+    public alertCtrl: AlertController
     /* private audio: AudioService, */
-    private stock: StockService
   ) { }
 
   ngOnInit() {
     this.odoo.isLoggedIn().then((data)=>{
       if (data==false) {
         this.router.navigateByUrl('/login');
-      } else {
-        var picking = this.route.snapshot.paramMap.get('id');
-        this.get_picking_info(picking);
-      }
+      } 
     })
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
@@ -47,23 +37,6 @@ export class StockPickingPage implements OnInit {
         buttons: ['Ok']
     });
     await alert.present();
-  }
-
-  get_picking_info(picking) {
-    this.stock.get_picking_info(picking).then((data)=>{
-      this.picking_data = data[0];
-      if(this.picking_data['move_lines']) {
-        this.stock.get_move_lines_list(this.picking_data['move_lines']).then((lines_data)=>{
-          this.move_lines = lines_data;
-        })
-        .catch((error)=>{
-          this.presentAlert('Error al recuperar los movimientos:', error);
-        });
-      }      
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al recuperar el picking:', error);
-    });
   }
 
 }

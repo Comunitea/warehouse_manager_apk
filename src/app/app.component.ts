@@ -21,10 +21,10 @@ export class AppComponent {
       icon: 'person'
     },
     {
-      title: 'Operaciones',
-      url: '/stock-picking-list',
-      icon: 'list-box'
-    },
+      title: 'Inventario',
+      url: '/stock-picking-type-list',
+      icon: 'book'
+    },  
     {
       title: 'Productos',
       url: '/product-list',

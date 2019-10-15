@@ -1,31 +1,56 @@
-<ion-row (click)="open_link(pick.id)">
-  <ion-col col-2>
-    <div>{{pick.name}}</div>
-  </ion-col>
-  
-  <ion-col col-3>
-    <div>{{pick.location_id[1]}}</div>
-  </ion-col>
+<ion-grid>
 
-  <ion-col col-3>
-    <div>{{pick.location_dest_id[1]}}</div>
-  </ion-col>
-  
-  <ion-col col-2  class="ion-align-self-center ion-text-center">
-    <div>{{pick.scheduled_date}}h</div>
-  </ion-col>
+  <ion-row>
+    <ion-col>
+        <div><strong>Nombre</strong></div>
+    </ion-col>
+    
+    <ion-col *ngIf="code != 'incoming'">
+        <div><strong>Origen</strong></div>
+    </ion-col>
 
-  <ion-col [ngClass]="{'success': pick.state == 'done',
-  'danger': pick.state == 'cancel', 
-  'primary': pick.state == 'assigned', 
-  'secondary': pick.state == 'confirmed', 
-  'tertiary': pick.state == 'waiting', 
-  'medium': pick.state == 'draft'}" col-2 [ngSwitch]="pick.state" class="ion-align-self-center ion-text-center">
-    <div *ngSwitchCase="'draft'">Borrador</div>
-    <div *ngSwitchCase="'waiting'">Faltan operaciones</div>
-    <div *ngSwitchCase="'confirmed'">En espera</div>
-    <div *ngSwitchCase="'assigned'">Preparado</div>
-    <div *ngSwitchCase="'done'">Hecho</div>
-    <div *ngSwitchCase="'cancel'">Cancel</div>
-  </ion-col>
-</ion-row>
+    <ion-col *ngIf="code != 'outgoing'">
+      <div><strong>Destino</strong></div>
+    </ion-col>
+    
+    <ion-col class="ion-align-self-center ion-text-center">
+      <div><strong>Previsto</strong></div>
+    </ion-col>
+    <ion-col class="ion-align-self-center ion-text-center">
+      <div><strong>Estado</strong></div>
+    </ion-col>
+  </ion-row>
+
+  <ion-row *ngFor="let pick of picks" (click)="open_link(pick.id, code)">
+    <ion-col>
+      <div>{{pick.name}}</div>
+    </ion-col>
+    
+    <ion-col *ngIf="code != 'incoming'">
+      <div>{{pick.location_id[1]}}</div>
+    </ion-col>
+  
+    <ion-col *ngIf="code != 'outgoing'">
+      <div>{{pick.location_dest_id[1]}}</div>
+    </ion-col>
+    
+    <ion-col class="ion-align-self-center ion-text-center">
+      <div>{{pick.scheduled_date}}h</div>
+    </ion-col>
+  
+    <ion-col [ngClass]="{'success': pick.state == 'done',
+    'danger': pick.state == 'cancel', 
+    'primary': pick.state == 'assigned', 
+    'secondary': pick.state == 'confirmed', 
+    'tertiary': pick.state == 'waiting', 
+    'medium': pick.state == 'draft'}" [ngSwitch]="pick.state" class="ion-align-self-center ion-text-center">
+      <div *ngSwitchCase="'draft'">Borrador</div>
+      <div *ngSwitchCase="'waiting'">Faltan operaciones</div>
+      <div *ngSwitchCase="'confirmed'">En espera</div>
+      <div *ngSwitchCase="'assigned'">Preparado</div>
+      <div *ngSwitchCase="'done'">Hecho</div>
+      <div *ngSwitchCase="'cancel'">Cancel</div>
+    </ion-col>
+  </ion-row>
+</ion-grid>
+

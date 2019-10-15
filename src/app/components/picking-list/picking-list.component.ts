@@ -8,15 +8,16 @@ import { Router } from '@angular/router';
 })
 export class PickingListComponent implements OnInit {
 
-  @Input() pick: {}
+  @Input() picks: {}
+  @Input() code: {}
   ngSwitch: any
 
   constructor(public router: Router) { }
 
   ngOnInit() {}
 
-  open_link(pick_id){
-    this.router.navigateByUrl('/stock-picking/'+pick_id);
+  open_link(pick_id, code){
+    this.router.navigateByUrl('/stock-picking/'+pick_id+'/'+code);
   }
 
 }

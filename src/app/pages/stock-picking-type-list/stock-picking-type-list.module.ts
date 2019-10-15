@@ -5,13 +5,14 @@ import { Routes, RouterModule } from '@angular/router';
 
 import { IonicModule } from '@ionic/angular';
 
-import { ProductListPage } from './product-list.page';
-import { ProductListInfoComponent } from '../../components/product-list-info/product-list-info.component';
+import { StockPickingTypeListPage } from './stock-picking-type-list.page';
+
+import { PickingTypeInfoComponent } from  '../../components/picking-type-info/picking-type-info.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: ProductListPage,
+    component: StockPickingTypeListPage
   }
 ];
 
@@ -22,7 +23,7 @@ const routes: Routes = [
     IonicModule,
     RouterModule.forChild(routes)
   ],
-  entryComponents: [ProductListInfoComponent],
-  declarations: [ProductListPage, ProductListInfoComponent]
+  entryComponents: [PickingTypeInfoComponent],
+  declarations: [StockPickingTypeListPage, PickingTypeInfoComponent]
 })
-export class ProductListPageModule {}
+export class StockPickingTypeListPageModule {}

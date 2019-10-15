@@ -14,10 +14,10 @@ const routes: Routes = [
   { path: 'logout',
     loadChildren: () => import('./pages/logout/logout.module').then(m => m.LogoutPageModule)
   },
-  { path: 'stock-picking/:id',
+  { path: 'stock-picking/:id/:code',
     loadChildren: () => import('./pages/stock-picking/stock-picking.module').then(m => m.StockPickingPageModule)
   },
-  { path: 'stock-picking-list',
+  { path: 'stock-picking-list/:id/:view/:code',
     loadChildren: () => import('./pages/stock-picking-list/stock-picking-list.module').then(m => m.StockPickingListPageModule)
   },
   { path: 'product/:id',
@@ -37,13 +37,16 @@ const routes: Routes = [
   },
   { path: 'stock-location-product-list/:id',
     loadChildren: () => import('./pages/stock-location-product-list/stock-location-product-list.module').then(m => m.StockLocationProductListPageModule)
+  },
+  { path: 'stock-picking-type-list',
+    loadChildren: () => import('./pages/stock-picking-type-list/stock-picking-type-list.module').then(m => m.StockPickingTypeListPageModule)
   }
   
 ];
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })
+    RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules, onSameUrlNavigation: 'reload' })
   ],
   exports: [RouterModule]
 })

@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 })
 export class ProductListInfoComponent implements OnInit {
 
-  @Input() product: {}
+  @Input() products: {}
 
   constructor(public router: Router) { }
 
