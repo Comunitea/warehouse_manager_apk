@@ -62,8 +62,8 @@ export class PickingInfoComponent implements OnInit {
     });
   }
 
-  async force_set_assigned_qty_done(move_id, model='stock.picking'){
-    await this.stock.force_set_assigned_qty_done(Number(move_id), model).then((lines_data)=>{
+  async force_set_qty_done(move_id, field, model='stock.picking'){
+    await this.stock.force_set_qty_done(Number(move_id), field, model).then((lines_data)=>{
       if (lines_data == true) {
         console.log("Reloading");
         this.move_lines = false;

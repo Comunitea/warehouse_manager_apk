@@ -15,7 +15,7 @@ export class StockService {
       'tree': ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state'],
       'form': ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state', 
       'picking_type_id', 'priority', 'note', 'move_lines', 'move_line_ids', 'quantity_done', 
-      'quantity_done_lines', 'reserved_availability', 'reserved_availability_lines', 'show_check_availability', 
+      'reserved_availability', 'product_uom_qty', 'show_check_availability', 
       'show_validate']
     },
 
@@ -217,25 +217,6 @@ export class StockService {
     return promise
   }
 
-  force_set_qty_done(move_id, model='stock.move') {
-    let self = this
-    let values = {
-      'id': move_id
-    }
-     
-    let promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute(model, 'force_set_qty_done_apk', values).then((done) => {
-       resolve(done)
-      })
-      .catch((err) => {
-        reject(false)
-        console.log("Error al validar")
-    });
-    })
-    
-    return promise
-  }
-
   force_set_assigned_qty_done(move_id, model='stock.move') {
     let self = this 
     let values = {
@@ -274,14 +255,15 @@ export class StockService {
     return promise
   }
 
-  force_set_available_qty_done(move_id, model='stock.move.line') {
+  force_set_qty_done(move_id, field, model='stock.move.line') {
     let self = this 
     let values = {
-      'id': move_id
+      'id': move_id,
+      'field': field
     }
     
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute(model, 'force_set_available_qty_done_apk', values).then((done) => {
+      self.odooCon.execute(model, 'force_set_qty_done_apk', values).then((done) => {
         console.log(done)
         resolve(done)
       })

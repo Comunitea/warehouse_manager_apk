@@ -40,30 +40,8 @@ export class MoveLineDetailsListComponent implements OnInit {
     
   }
 
-  force_set_available_qty_done(move_id){
-    this.stock.force_set_available_qty_done(Number(move_id), 'stock.move.line').then((lines_data)=>{
-      if (lines_data == true) {
-        this.get_move_lines_details_list();
-      }
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al forzar la cantidad:', error);
-    });
-  }
-
-  force_set_assigned_qty_done(move_id, model='stock.move.line'){
-    this.stock.force_set_assigned_qty_done(Number(move_id), model).then((lines_data)=>{
-      if (lines_data == true) {
-        this.get_move_lines_details_list();
-      }
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al forzar la cantidad:', error);
-    });
-  }
-
-  force_set_reserved_qty_done(move_id){
-    this.stock.force_set_reserved_qty_done(Number(move_id), 'stock.move.line').then((lines_data)=>{
+  force_set_qty_done(move_id, field){
+    this.stock.force_set_qty_done(Number(move_id), field, 'stock.move.line').then((lines_data)=>{
       if (lines_data == true) {
         this.get_move_lines_details_list();
       }

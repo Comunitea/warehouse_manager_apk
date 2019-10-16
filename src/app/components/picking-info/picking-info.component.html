@@ -79,7 +79,7 @@
         <app-move-line-details-list *ngIf="move_line_ids" [code]="picking_code" [move_line_ids]="move_line_ids"></app-move-line-details-list>
         <ion-col class="ion-text-right">
           <ion-item>
-            <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_set_assigned_qty_done(picking_data.id, 'stock.picking')">Reservas a hecho</ion-button>
+            <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_set_qty_done(picking_data.id, 'product_qty', 'stock.picking')">Reservas a hecho</ion-button>
             <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_reset_qties(picking_data.id, 'stock.picking')">Reset</ion-button>
           </ion-item>
         </ion-col>

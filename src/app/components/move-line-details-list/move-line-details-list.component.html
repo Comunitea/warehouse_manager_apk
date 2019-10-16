@@ -55,7 +55,7 @@
     </ion-col>
     
     <ion-col>
-      <div class="link" *ngIf="code != 'incoming' && (line.state == 'confirmed' || line.state == 'assigned') && line.qty_done == 0; else noLinkAvailable" (click)="force_set_available_qty_done(line.id)">{{line.qty_available}}</div>
+      <div class="link" *ngIf="code != 'incoming' && (line.state == 'confirmed' || line.state == 'assigned') && line.qty_done == 0; else noLinkAvailable" (click)="force_set_qty_done(line.id, 'qty_available')">{{line.qty_available}}</div>
     </ion-col>
 
     <ng-template #noLinkAvailable>
@@ -63,7 +63,7 @@
     </ng-template>
   
     <ion-col>
-      <div class="link" *ngIf="(line.state != 'done' || line.state == 'cancel') && line.qty_done == 0; else noLinkUom" (click)="force_set_reserved_qty_done(line.id)">{{line.product_uom_qty}}</div>
+      <div class="link" *ngIf="(line.state != 'done' || line.state == 'cancel') && line.qty_done == 0; else noLinkUom" (click)="force_set_qty_done(line.id, 'product_uom_qty')">{{line.product_uom_qty}}</div>
     </ion-col>
     
     <ng-template #noLinkUom>

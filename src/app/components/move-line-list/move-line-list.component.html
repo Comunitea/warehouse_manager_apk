@@ -29,7 +29,7 @@
     </ion-col>
 
     <ng-template #link_product_uom_qty>
-      <div (click)="force_set_qty_done(line.id)" >{{line.product_uom_qty}}</div>
+      <div (click)="force_set_qty_done(line.id, 'product_uom_qty', 'stock.move')" >{{line.product_uom_qty}}</div>
     </ng-template>
     
     <ion-col size="2">
