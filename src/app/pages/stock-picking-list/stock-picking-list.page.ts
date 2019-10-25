@@ -25,6 +25,8 @@ export class StockPickingListPage implements OnInit {
   view_selector: string;
   search: string;
   current_code: string;
+  show_scan_form: boolean
+  scanner_reading: string
 
   constructor(
     private odoo: OdooService,
@@ -32,7 +34,7 @@ export class StockPickingListPage implements OnInit {
     private route: ActivatedRoute,
     public alertCtrl: AlertController,
     /* private audio: AudioService, */
-    private stock: StockService
+    private stock: StockService,
   ) {
     this.view_domain = {
         'ready' : [['state', '=', 'assigned']],
@@ -40,7 +42,7 @@ export class StockPickingListPage implements OnInit {
         'late': [['state', 'in', ['assigned', 'waiting', 'confirmed']], ['scheduled_date', '<', new Date().toLocaleString()]],
         'backorders': [['state', 'in', ['waiting', 'confirmed', 'assigned']], ['backorder_id', '!=', false]]
     }
-
+    this.show_scan_form = true;
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -60,6 +62,14 @@ export class StockPickingListPage implements OnInit {
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
     });
+  }
+
+  onReadingEmitted(val: string) {
+    this.scanner_reading = val;
+  }
+
+  onShowEmitted(val: boolean) {
+    this.show_scan_form = val;
   }
 
   async presentAlert(titulo, texto) {

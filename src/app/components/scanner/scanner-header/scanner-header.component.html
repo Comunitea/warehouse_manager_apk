@@ -1,0 +1,14 @@
+<ion-buttons end>
+  <!-- Commented voice function -->
+  <!-- <button ion-button icon-only item-end (click)="lee_form()">
+    <ion-icon name="megaphone"></ion-icon>
+  </button> -->
+  <button ion-button icon-only item-end (click)="change_escuchando()">
+    <ion-icon *ngIf="escuchando" name="mic"></ion-icon>
+    <ion-icon *ngIf="!escuchando" name="mic-off"></ion-icon>
+  </button>
+    
+    <button ion-button icon-only item-end (click)="change_hide_scan_form()" color="primary">
+    <ion-icon name="barcode"></ion-icon>
+  </button>
+</ion-buttons>
