@@ -5,6 +5,7 @@ import { ConnectionOptions } from '../../interfaces/connection-options';
 import { OdooService } from '../../services/odoo.service';
 import { AlertController } from '@ionic/angular';
 import { Storage } from '@ionic/storage';
+import { AudioService } from '../../services/audio.service';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +20,7 @@ export class LoginPage implements OnInit {
   submitted: boolean;
 
   constructor(
+    private audio: AudioService,
     private odoo: OdooService,
     public router: Router,
     public alertCtrl: AlertController,
@@ -140,6 +142,7 @@ export class LoginPage implements OnInit {
   }
 
   async presentAlert(titulo, texto) {
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,

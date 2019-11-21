@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
-/* import { AudioService } from '../../services/audio.service'; */
+import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 
 @Component({
@@ -29,7 +29,7 @@ export class StockLocationListPage implements OnInit {
     private odoo: OdooService,
     public router: Router,
     public alertCtrl: AlertController,
-    /* private audio: AudioService, */
+    private audio: AudioService,
     private stock: StockService
   ) {
     this.location_types = [
@@ -118,7 +118,7 @@ export class StockLocationListPage implements OnInit {
   }
 
   async presentAlert(titulo, texto) {
-    /* this.audio.play('error'); */
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,
@@ -139,6 +139,7 @@ export class StockLocationListPage implements OnInit {
       if (Object.keys(this.locations).length == 1){
         this.router.navigateByUrl('/stock-location/'+this.locations[0]['id']);
       }
+      this.audio.play('click');
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);

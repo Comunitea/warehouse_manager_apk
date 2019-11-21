@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
-/* import { AudioService } from '../../services/audio.service'; */
+import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 
 @Component({
@@ -28,7 +28,7 @@ export class StockQuantListPage implements OnInit {
     public router: Router,
     public alertCtrl: AlertController,
     private route: ActivatedRoute,
-    /* private audio: AudioService, */
+    private audio: AudioService,
     private stock: StockService
   ) {
     this.show_scan_form = true;
@@ -62,7 +62,7 @@ export class StockQuantListPage implements OnInit {
   }
 
   async presentAlert(titulo, texto) {
-    /* this.audio.play('error'); */
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,
@@ -82,6 +82,7 @@ export class StockQuantListPage implements OnInit {
       if (Object.keys(this.quants).length == 1){
         this.router.navigateByUrl('/product/'+this.quants[0]['product_id'][0]);
       }
+      this.audio.play('click');
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de stock:', error);

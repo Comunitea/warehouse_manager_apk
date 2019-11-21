@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
-/* import { AudioService } from '../../services/audio.service'; */
+import { AudioService } from '../../services/audio.service';
 
 @Component({
   selector: 'app-stock-picking',
@@ -17,8 +17,8 @@ export class StockPickingPage implements OnInit {
   constructor(
     private odoo: OdooService,
     public router: Router,
-    public alertCtrl: AlertController
-    /* private audio: AudioService, */
+    public alertCtrl: AlertController,
+    private audio: AudioService,
   ) {
     this.show_scan_form = true;
   }
@@ -27,7 +27,8 @@ export class StockPickingPage implements OnInit {
     this.odoo.isLoggedIn().then((data)=>{
       if (data==false) {
         this.router.navigateByUrl('/login');
-      } 
+      }
+      this.audio.play('click');
     })
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
@@ -44,7 +45,7 @@ export class StockPickingPage implements OnInit {
   }
 
   async presentAlert(titulo, texto) {
-    /* this.audio.play('error'); */
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,

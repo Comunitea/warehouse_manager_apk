@@ -3,7 +3,7 @@ import { Storage } from '@ionic/storage';
 import { Router } from '@angular/router';
 import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
-/* import { AudioService } from '../../services/audio.service'; */
+import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 
 @Component({
@@ -28,7 +28,7 @@ export class ProductListPage implements OnInit {
     public router: Router,
     private storage: Storage,
     public alertCtrl: AlertController,
-    /* private audio: AudioService, */
+    private audio: AudioService,
     private stock: StockService
   ) {
     this.show_scan_form = true;
@@ -51,7 +51,7 @@ export class ProductListPage implements OnInit {
   }
 
   async presentAlert(titulo, texto) {
-    /* this.audio.play('error'); */
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,
@@ -81,6 +81,7 @@ export class ProductListPage implements OnInit {
       if (Object.keys(this.product_list).length == 1){
         this.router.navigateByUrl('/product/'+this.product_list[0]['id']);
       }
+      this.audio.play('click');
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);

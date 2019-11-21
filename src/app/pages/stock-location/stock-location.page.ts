@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
-/* import { AudioService } from '../../services/audio.service'; */
+import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 
 @Component({
@@ -20,7 +20,7 @@ export class StockLocationPage implements OnInit {
     public router: Router,
     public alertCtrl: AlertController,
     private route: ActivatedRoute,
-    /* private audio: AudioService, */
+    private audio: AudioService,
     private stock: StockService
   ) { }
 
@@ -39,7 +39,7 @@ export class StockLocationPage implements OnInit {
   }
 
   async presentAlert(titulo, texto) {
-    /* this.audio.play('error'); */
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,
@@ -50,7 +50,8 @@ export class StockLocationPage implements OnInit {
 
   get_location_info(location) {
     this.stock.get_location_info(location).then((data)=>{
-      this.location_data = data[0];   
+      this.location_data = data[0];
+      this.audio.play('click');   
     })
     .catch((error)=>{
       this.presentAlert('Error al recuperar el location:', error);
