@@ -36,10 +36,11 @@ export class StockPickingListPage implements OnInit {
     private audio: AudioService,
     private stock: StockService,
   ) {
+    let options = {day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h24'}
     this.view_domain = {
         'ready' : [['state', '=', 'assigned']],
         'waiting': [['state', 'in', ['waiting', 'confirmed']]],
-        'late': [['state', 'in', ['assigned', 'waiting', 'confirmed']], ['scheduled_date', '<', new Date().toLocaleString()]],
+        'late': [['state', 'in', ['assigned', 'waiting', 'confirmed']], ['scheduled_date', '<', new Date().toLocaleString('es-ES', options)]],
         'backorders': [['state', 'in', ['waiting', 'confirmed', 'assigned']], ['backorder_id', '!=', false]]
     }
     this.show_scan_form = true;
@@ -98,6 +99,7 @@ export class StockPickingListPage implements OnInit {
       this.audio.play('click');
     })
     .catch((error) => {
+      console.log(error);
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
     });
   }

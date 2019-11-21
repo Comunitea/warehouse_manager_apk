@@ -31,9 +31,8 @@ export class MoveLineDetailsListComponent implements OnInit {
   }
 
   ngOnChanges(changeRecord) {
-    if (changeRecord['scanner_reading']['currentValue']) {
+    if (changeRecord['scanner_reading'] && changeRecord['scanner_reading']['currentValue']) {
       let default_code = changeRecord['scanner_reading']['currentValue'];
-      /* Comprobar si en move_line_ids_info hay algún product_id con valor con el código que mando */
       console.log("Confirmamos cantidad reservada para el producto con default code:" + default_code);
       this.force_set_qty_done_by_product_code_apk(default_code, 'product_uom_qty');      
     }

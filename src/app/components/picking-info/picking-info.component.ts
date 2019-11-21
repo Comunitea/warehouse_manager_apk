@@ -24,7 +24,6 @@ export class PickingInfoComponent implements OnInit {
   constructor(
     public router: Router,
     public alertCtrl: AlertController,
-    /* private audio: AudioService, */
     private stock: StockService,
     private route: ActivatedRoute,
   ) { }

@@ -5,8 +5,8 @@
   </ion-card-header>
 
   <ion-card-content>
-    <div><strong>Compañía: </strong>{{location.company_id[1]}}</div>
-    <div><strong>Tipo de albarán: </strong>{{location.picking_type_id[1]}}</div>
+    <div *ngIf="location.company_id"><strong>Compañía: </strong>{{location.company_id[1]}}</div>
+    <div *ngIf="location.picking_type_id"><strong>Tipo de albarán: </strong>{{location.picking_type_id[1]}}</div>
     <div [ngSwitch]="location.usage">
       <strong>Tipo: </strong>
       <ion-text *ngSwitchCase="'supplier'">Ubicación de proveedor</ion-text>
