@@ -8,6 +8,8 @@ import { IonicModule } from '@ionic/angular';
 import { StockLocationListPage } from './stock-location-list.page';
 import { LocationListComponent } from '../../components/location-list/location-list.component';
 
+import { SharedModule } from '../../shared/shared.module';
+
 const routes: Routes = [
   {
     path: '',
@@ -20,7 +22,8 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     IonicModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    SharedModule
   ],
   entryComponents: [LocationListComponent],
   declarations: [StockLocationListPage, LocationListComponent]

@@ -17,6 +17,7 @@ export class PickingInfoComponent implements OnInit {
   move_line_ids: {};
   active_operation: boolean;
 
+  @Input() scanner_reading: string
   @Input() pick: {}
   ngSwitch: any
 

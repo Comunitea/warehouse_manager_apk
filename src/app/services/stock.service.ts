@@ -69,14 +69,19 @@ export class StockService {
 
   get_picking_list(view_domain, type_id, offset=0, limit=0, search) {
     let self = this;
-    let domain = view_domain;
+    let domain = [];
+    if (view_domain){
+      view_domain.forEach(lit_domain => {
+        domain.push(lit_domain);
+      });
+    }
 
     if (type_id) {
       domain.push(['picking_type_id', '=', Number(type_id)]);
     }
     
     if(search) {
-      domain.push(['name', 'ilike', search]);
+      domain.push(['name', 'ilike', '%'+search+'%']);
     }
 
     let model = 'stock.picking';
@@ -276,6 +281,28 @@ export class StockService {
     return promise
   }
 
+  force_set_qty_done_by_product_code_apk(product_code, field, model='stock.move.line', picking) {
+    let self = this 
+    let values = {
+      'default_code': product_code,
+      'field': field,
+      'picking': picking
+    }
+    
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'force_set_qty_done_by_product_code_apk', values).then((done) => {
+        console.log(done)
+        resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar")
+    });
+    })
+    
+    return promise
+  }
+
   force_reset_qties(pick_id, model='stock.picking') {
     let self = this 
     let values = {
@@ -340,10 +367,14 @@ export class StockService {
 
   get_location_products(location, offset=0, limit=0, search) {
     let self = this;
-    let domain = [['product_tmpl_id.location_id', 'child_of', Number(location)]];
+    let domain = [];
+
+    if (location) {
+      domain.push(['product_tmpl_id.location_id', 'child_of', Number(location)]);
+    }
     
     if(search) {
-      domain.push(['name', 'ilike', search]);
+      domain.push(['default_code', 'ilike', search]);
     }
 
     let model = 'product.product';
@@ -409,10 +440,14 @@ export class StockService {
 
   get_location_quants(location, offset=0, limit=0, search) {
     let self = this;
-    let domain = [['location_id', 'child_of', Number(location)]];
+    let domain = [];
+
+    if (location) {
+      domain.push(['location_id', 'child_of', Number(location)]);
+    }
     
     if(search) {
-      domain.push(['product_id.name', 'ilike', search]);
+      domain.push(['product_id.default_code', 'ilike', search]);
     }
 
     let model = 'stock.quant';

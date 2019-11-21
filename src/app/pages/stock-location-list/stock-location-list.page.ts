@@ -22,6 +22,8 @@ export class StockLocationListPage implements OnInit {
   location_types: {};
   current_selected_type: string;
   search: string;
+  show_scan_form: boolean;
+  scanner_reading: string;
 
   constructor(
     private odoo: OdooService,
@@ -86,7 +88,7 @@ export class StockLocationListPage implements OnInit {
         'size': 2
       }
     ]
-
+    this.show_scan_form = true;
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -103,6 +105,16 @@ export class StockLocationListPage implements OnInit {
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
     });
+  }
+
+  onReadingEmitted(val: string) {
+    this.scanner_reading = val;
+    this.search = val;
+    this.get_location_list(this.current_selected_type, this.search);
+  }
+
+  onShowEmitted(val: boolean) {
+    this.show_scan_form = val;
   }
 
   async presentAlert(titulo, texto) {
@@ -123,6 +135,9 @@ export class StockLocationListPage implements OnInit {
       this.locations = location_list;
       if(Object.keys(location_list).length < 25){
         this.limit_reached = true;
+      }
+      if (Object.keys(this.locations).length == 1){
+        this.router.navigateByUrl('/stock-location/'+this.locations[0]['id']);
       }
     })
     .catch((error) => {

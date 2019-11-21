@@ -20,6 +20,8 @@ export class StockQuantListPage implements OnInit {
   quants: {};
   search: string;
   location: string;
+  show_scan_form: boolean;
+  scanner_reading: string;
 
   constructor(
     private odoo: OdooService,
@@ -29,6 +31,7 @@ export class StockQuantListPage implements OnInit {
     /* private audio: AudioService, */
     private stock: StockService
   ) {
+    this.show_scan_form = true;
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -48,6 +51,16 @@ export class StockQuantListPage implements OnInit {
     });
   }
 
+  onReadingEmitted(val: string) {
+    this.scanner_reading = val;
+    this.search = val;
+    this.get_location_quants(this.search);
+  }
+
+  onShowEmitted(val: boolean) {
+    this.show_scan_form = val;
+  }
+
   async presentAlert(titulo, texto) {
     /* this.audio.play('error'); */
     const alert = await this.alertCtrl.create({
@@ -65,6 +78,9 @@ export class StockQuantListPage implements OnInit {
       this.quants = quants_list;
       if(Object.keys(quants_list).length < 25){
         this.limit_reached = true;
+      }
+      if (Object.keys(this.quants).length == 1){
+        this.router.navigateByUrl('/product/'+this.quants[0]['product_id'][0]);
       }
     })
     .catch((error) => {

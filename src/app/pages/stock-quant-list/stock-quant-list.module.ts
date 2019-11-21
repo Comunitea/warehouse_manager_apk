@@ -8,6 +8,8 @@ import { IonicModule } from '@ionic/angular';
 import { StockQuantListPage } from './stock-quant-list.page';
 import { QuantListComponent } from '../../components/quant-list/quant-list.component';
 
+import { SharedModule } from '../../shared/shared.module';
+
 const routes: Routes = [
   {
     path: '',
@@ -20,7 +22,8 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     IonicModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    SharedModule
   ],
   entryComponents: [QuantListComponent],
   declarations: [StockQuantListPage, QuantListComponent]

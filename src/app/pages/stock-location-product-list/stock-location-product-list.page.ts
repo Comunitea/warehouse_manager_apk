@@ -20,6 +20,8 @@ export class StockLocationProductListPage implements OnInit {
   products: {};
   search: string;
   location: string;
+  show_scan_form: boolean;
+  scanner_reading: string;
 
   constructor(
     private odoo: OdooService,
@@ -29,6 +31,7 @@ export class StockLocationProductListPage implements OnInit {
     /* private audio: AudioService, */
     private stock: StockService
   ) {
+    this.show_scan_form = true;
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -48,6 +51,16 @@ export class StockLocationProductListPage implements OnInit {
     });
   }
 
+  onReadingEmitted(val: string) {
+    this.scanner_reading = val;
+    this.search = val;
+    this.get_location_products(this.search);
+  }
+
+  onShowEmitted(val: boolean) {
+    this.show_scan_form = val;
+  }
+
   async presentAlert(titulo, texto) {
     /* this.audio.play('error'); */
     const alert = await this.alertCtrl.create({
@@ -65,6 +78,9 @@ export class StockLocationProductListPage implements OnInit {
       this.products = products_lists;
       if(Object.keys(products_lists).length < 25){
         this.limit_reached = true;
+      }
+      if (Object.keys(this.products).length == 1){
+        this.router.navigateByUrl('/product/'+this.products[0]['id']);
       }
     })
     .catch((error) => {

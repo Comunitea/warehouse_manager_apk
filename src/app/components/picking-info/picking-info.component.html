@@ -7,10 +7,10 @@
         <ion-card-subtitle>{{picking_data.picking_type_id[1]}}</ion-card-subtitle>
       </ion-col>
       <ion-col>
-        <ion-item class="ion-text-right">
-          <!-- <ion-button *ngIf="picking_data.show_check_availability" size="small" class="button-text" (click)="action_assign()">Asignar</ion-button> -->
-          <ion-button *ngIf="picking_data.show_validate" size="small" class="button-text" (click)="button_validate()">Validar</ion-button>
-        </ion-item>
+        <!-- <ion-button *ngIf="picking_data.show_check_availability" size="small" class="button-text" (click)="action_assign()">Asignar</ion-button> -->
+        <ion-button *ngIf="picking_data.show_validate" size="small" class="button-text" (click)="button_validate()">Validar</ion-button>
+        <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_set_qty_done(picking_data.id, 'product_qty', 'stock.picking')">Reservas a hecho</ion-button>
+        <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_reset_qties(picking_data.id, 'stock.picking')">Reset</ion-button>
       </ion-col>
     </ion-row>
   </ion-card-header>
@@ -53,7 +53,7 @@
     </ng-template>
 
     <ion-card-content *ngIf="move_lines || move_line_ids">
-      <app-move-line-list *ngIf="!active_operation && move_lines; else detailed_grid" [code]="picking_code" [move_lines]="move_lines"></app-move-line-list>
+      <app-move-line-list *ngIf="!active_operation && move_lines; else detailed_grid" [scanner_reading]="scanner_reading" [code]="picking_code" [move_lines]="move_lines"></app-move-line-list>
 
       <!-- <ion-grid>          
         <ion-row>
@@ -76,13 +76,7 @@
       </ion-grid> -->
 
       <ng-template #detailed_grid>
-        <app-move-line-details-list *ngIf="move_line_ids" [code]="picking_code" [move_line_ids]="move_line_ids"></app-move-line-details-list>
-        <ion-col class="ion-text-right">
-          <ion-item>
-            <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_set_qty_done(picking_data.id, 'product_qty', 'stock.picking')">Reservas a hecho</ion-button>
-            <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_reset_qties(picking_data.id, 'stock.picking')">Reset</ion-button>
-          </ion-item>
-        </ion-col>
+        <app-move-line-details-list *ngIf="move_line_ids" [code]="picking_code" [scanner_reading]="scanner_reading"  [move_line_ids]="move_line_ids"></app-move-line-details-list>
       </ng-template>
 
       <!-- <ng-template #reserved_lines>

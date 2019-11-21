@@ -10,6 +10,7 @@ import { AlertController } from '@ionic/angular';
 })
 export class MoveLineDetailsListComponent implements OnInit {
 
+  @Input() scanner_reading: string
   @Input() move_line_ids: {}
   @Input() code: string;
   move_line_ids_info: {};
@@ -29,6 +30,15 @@ export class MoveLineDetailsListComponent implements OnInit {
     }
   }
 
+  ngOnChanges(changeRecord) {
+    if (changeRecord['scanner_reading']['currentValue']) {
+      let default_code = changeRecord['scanner_reading']['currentValue'];
+      /* Comprobar si en move_line_ids_info hay algún product_id con valor con el código que mando */
+      console.log("Confirmamos cantidad reservada para el producto con default code:" + default_code);
+      this.force_set_qty_done_by_product_code_apk(default_code, 'product_uom_qty');      
+    }
+  }
+
   get_move_lines_details_list () {
     
     this.stock.get_move_lines_details_list(this.move_line_ids).then((lines_data)=>{
@@ -42,6 +52,17 @@ export class MoveLineDetailsListComponent implements OnInit {
 
   force_set_qty_done(move_id, field){
     this.stock.force_set_qty_done(Number(move_id), field, 'stock.move.line').then((lines_data)=>{
+      if (lines_data == true) {
+        this.get_move_lines_details_list();
+      }
+    })
+    .catch((error)=>{
+      this.presentAlert('Error al forzar la cantidad:', error);
+    });
+  }
+
+  force_set_qty_done_by_product_code_apk(product_code, field){
+    this.stock.force_set_qty_done_by_product_code_apk(product_code, field, 'stock.move.line', this.picking).then((lines_data)=>{
       if (lines_data == true) {
         this.get_move_lines_details_list();
       }

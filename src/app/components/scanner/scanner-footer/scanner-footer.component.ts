@@ -2,7 +2,6 @@ import { Component, OnInit, Input, HostListener, Output, EventEmitter } from '@a
 import { FormBuilder, FormGroup, FormControl } from '@angular/forms'; 
 import { ScannerService } from '../../../services/scanner.service';
 
-
 @Component({
   selector: 'app-scanner-footer',
   templateUrl: './scanner-footer.component.html',
@@ -21,7 +20,6 @@ export class ScannerFooterComponent implements OnInit {
   handleKeyboardEvent(event: KeyboardEvent) {
     this.scanner.key_press(event)
     this.scanner.timeout.then((val)=>{
-      console.log(val)
       this.scan_read(val)
     })
   }
@@ -37,7 +35,7 @@ export class ScannerFooterComponent implements OnInit {
     this.scanner.on()
 
     this.ScanReader = new FormGroup({
-      scan: new FormControl('scan')
+      scan: new FormControl()
    });
   }
 
@@ -49,7 +47,7 @@ export class ScannerFooterComponent implements OnInit {
     this.scanner_reading_changed.emit(this.scanner_reading)
   }
 
-  submitScan(){  
+  submitScan(){
     if (this.ScanReader) {
       this.scanner_reading = this.ScanReader.value['scan'];
       this.scanner_reading_changed.emit(this.scanner_reading)

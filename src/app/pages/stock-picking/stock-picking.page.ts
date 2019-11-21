@@ -11,12 +11,17 @@ import { OdooService } from '../../services/odoo.service';
 })
 export class StockPickingPage implements OnInit {
 
+  show_scan_form: boolean
+  scanner_reading: string
+
   constructor(
     private odoo: OdooService,
     public router: Router,
     public alertCtrl: AlertController
     /* private audio: AudioService, */
-  ) { }
+  ) {
+    this.show_scan_form = true;
+  }
 
   ngOnInit() {
     this.odoo.isLoggedIn().then((data)=>{
@@ -27,6 +32,15 @@ export class StockPickingPage implements OnInit {
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
     });
+  }
+
+  onReadingEmitted(val: string) {
+    this.scanner_reading = val;
+    console.log(this.scanner_reading);
+  }
+
+  onShowEmitted(val: boolean) {
+    this.show_scan_form = val;
   }
 
   async presentAlert(titulo, texto) {

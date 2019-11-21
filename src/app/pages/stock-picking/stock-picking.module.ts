@@ -10,6 +10,8 @@ import { PickingInfoComponent } from '../../components/picking-info/picking-info
 import { MoveLineListComponent } from '../../components/move-line-list/move-line-list.component';
 import { MoveLineDetailsListComponent } from '../../components/move-line-details-list/move-line-details-list.component';
 
+import { SharedModule } from '../../shared/shared.module';
+
 const routes: Routes = [
   {
     path: '',
@@ -22,7 +24,8 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     IonicModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    SharedModule
   ],
   entryComponents: [PickingInfoComponent, MoveLineListComponent, MoveLineDetailsListComponent],
   declarations: [StockPickingPage, PickingInfoComponent, MoveLineListComponent, MoveLineDetailsListComponent]

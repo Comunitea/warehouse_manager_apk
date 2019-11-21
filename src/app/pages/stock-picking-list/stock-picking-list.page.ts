@@ -25,8 +25,8 @@ export class StockPickingListPage implements OnInit {
   view_selector: string;
   search: string;
   current_code: string;
-  show_scan_form: boolean
-  scanner_reading: string
+  show_scan_form: boolean;
+  scanner_reading: string;
 
   constructor(
     private odoo: OdooService,
@@ -66,6 +66,8 @@ export class StockPickingListPage implements OnInit {
 
   onReadingEmitted(val: string) {
     this.scanner_reading = val;
+    this.search = val;
+    this.get_picking_list(this.search);
   }
 
   onShowEmitted(val: boolean) {
@@ -89,6 +91,9 @@ export class StockPickingListPage implements OnInit {
       this.pickings = picking_list;
       if(Object.keys(picking_list).length < 25){
         this.limit_reached = true;
+      }
+      if (Object.keys(this.pickings).length == 1){
+        this.router.navigateByUrl('/stock-picking/'+this.pickings[0]['id']+'/'+this.current_code);
       }
     })
     .catch((error) => {

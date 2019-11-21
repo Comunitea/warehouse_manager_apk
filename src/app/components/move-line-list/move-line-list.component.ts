@@ -10,6 +10,7 @@ import { StockService } from '../../services/stock.service';
 })
 export class MoveLineListComponent implements OnInit {
 
+  @Input() scanner_reading: string
   @Input() move_lines: {}
   @Input() code: string;
   move_lines_info: {};

@@ -20,6 +20,8 @@ export class ProductListPage implements OnInit {
   limit_reached: boolean;
   product_list: {};
   search: string;
+  show_scan_form: boolean;
+  scanner_reading: string;
 
   constructor(
     private odoo: OdooService,
@@ -29,6 +31,7 @@ export class ProductListPage implements OnInit {
     /* private audio: AudioService, */
     private stock: StockService
   ) {
+    this.show_scan_form = true;
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -56,6 +59,16 @@ export class ProductListPage implements OnInit {
     });
     await alert.present();
   }
+
+  onReadingEmitted(val: string) {
+    this.scanner_reading = val;
+    this.search = val;
+    this.get_product_list(this.search);
+  }
+
+  onShowEmitted(val: boolean) {
+    this.show_scan_form = val;
+  }
   
   get_product_list(search=null){
     this.offset = 0;
@@ -64,6 +77,9 @@ export class ProductListPage implements OnInit {
       this.product_list = data;
       if(Object.keys(data).length < 25){
         this.limit_reached = true;
+      }
+      if (Object.keys(this.product_list).length == 1){
+        this.router.navigateByUrl('/product/'+this.product_list[0]['id']);
       }
     })
     .catch((error) => {

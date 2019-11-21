@@ -1,7 +1,7 @@
 <ion-footer>
   <form [formGroup]="ScanReader" class ="alignBottom" *ngIf="show_scan_form">
     <ion-item>
-      <ion-label color="primary" item-start>Scan: </ion-label>
+      <ion-label item-start>Scan: </ion-label>
       <ion-input #scan type="text" formControlName="scan" ></ion-input>
     
       <button ion-button icon-only item-end clear (click)="submitScan()">
