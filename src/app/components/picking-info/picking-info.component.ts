@@ -2,6 +2,9 @@ import { Component, OnInit, Input } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { StockService } from '../../services/stock.service';
+import { AudioService } from '../../services/audio.service';
+import { Location } from "@angular/common";
+import { LoadingController } from '@ionic/angular';
 
 @Component({
   selector: 'app-picking-info',
@@ -16,6 +19,7 @@ export class PickingInfoComponent implements OnInit {
   move_lines: {};
   move_line_ids: {};
   active_operation: boolean;
+  loading: any;
 
   @Input() scanner_reading: string
   @Input() pick: {}
@@ -26,6 +30,9 @@ export class PickingInfoComponent implements OnInit {
     public alertCtrl: AlertController,
     private stock: StockService,
     private route: ActivatedRoute,
+    public audio: AudioService,
+    private location: Location,
+    public loadingController: LoadingController
   ) { }
 
   ngOnInit() {
@@ -51,14 +58,20 @@ export class PickingInfoComponent implements OnInit {
   }
 
   button_validate(){
+    this.presentLoading();
     this.stock.button_validate(Number(this.picking)).then((lines_data)=>{
       if (lines_data && lines_data['err'] == false) {
         console.log("Reloading");
-        this.get_picking_info(this.picking);
+        this.loading.dismiss()
+        this.location.back();
+      } else if (lines_data['err'] != false) {
+        this.loading.dismiss()
+        this.presentAlert('Error al validar el albarán:', lines_data['err']);
       }
     })
     .catch((error)=>{
-      this.presentAlert('Error al validar el albarán:', error['msg']['error_msg']);
+      this.loading.dismiss()
+      this.presentAlert('Error al validar el albarán:', error);
     });
   }
 
@@ -91,13 +104,22 @@ export class PickingInfoComponent implements OnInit {
   }
 
   async presentAlert(titulo, texto) {
-    /* this.audio.play('error'); */
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,
         buttons: ['Ok']
     });
     await alert.present();
+  }
+
+  async presentLoading() {
+    this.loading = await this.loadingController.create({
+      message: 'Validando...',
+      translucent: true,
+      cssClass: 'custom-class custom-loading'
+    });
+    await this.loading.present();
   }
 
   get_picking_info(picking) {

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
@@ -13,6 +13,9 @@ export class StockPickingPage implements OnInit {
 
   show_scan_form: boolean
   scanner_reading: string
+  next: number;
+  prev: number;
+  moves: any;
 
   constructor(
     private odoo: OdooService,
@@ -21,6 +24,7 @@ export class StockPickingPage implements OnInit {
     private audio: AudioService,
   ) {
     this.show_scan_form = true;
+    this.moves = ['up', 'down', 'left', 'right'];
   }
 
   ngOnInit() {
@@ -36,8 +40,12 @@ export class StockPickingPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
-    this.scanner_reading = val;
-    console.log(this.scanner_reading);
+    if (this.moves.includes(val)) {
+      this.page_controller(val);
+    } else {
+      console.log(this.scanner_reading);
+      this.scanner_reading = val;
+    }
   }
 
   onShowEmitted(val: boolean) {
@@ -52,6 +60,20 @@ export class StockPickingPage implements OnInit {
         buttons: ['Ok']
     });
     await alert.present();
+  }
+
+  // Navigation 
+
+  page_controller(direction) {
+    if (direction == 'up') {
+      console.log("up");
+    } else if (direction == 'down') {
+      console.log("down");
+    } else if (direction == 'left') {
+      console.log("left");
+    } else if (direction == 'right') {
+      console.log("right");
+    }
   }
 
 }
