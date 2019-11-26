@@ -464,4 +464,154 @@ export class StockService {
     return promise
   }
 
+  // Move location
+
+  create_new_move_location(location_barcode) {
+    let self = this
+    let model
+    
+    let values = {
+      'location_barcode': location_barcode
+    }
+     
+    model = 'wiz.stock.move.location';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'create_wiz_from_apk', values).then((done) => {
+        resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar:" + err)
+    });
+    })
+    
+    return promise
+  }
+
+  create_new_move_location_line(location_move_id, location_id, location_dest_id, product_barcode) {
+    let self = this
+    let model
+    
+    let values = {
+      'origin_location_id': location_id,
+      'product_barcode': product_barcode,
+      'move_location_wizard_id': location_move_id,
+      'destination_location_id': location_dest_id
+    }
+     
+    model = 'wiz.stock.move.location.line';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'create_wiz_line_from_apk', values).then((done) => {
+       resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar:" + err)
+    });
+    })
+    
+    return promise
+  }
+
+  change_qty(line_id, qty) {
+    let self = this
+    let model
+    
+    let values = {
+      'id': line_id,
+      'move_quantity': qty
+    }
+     
+    model = 'wiz.stock.move.location.line';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'edit_wiz_line_qty_from_apk', values).then((done) => {
+       resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar:" + err)
+    });
+    })
+    
+    return promise
+  }
+
+  change_move_location(location_move_id, type, location_id) {
+    let self = this
+    let model
+    let values
+
+    if (type=="origin") {
+      values = {
+        'id': location_move_id,
+        'origin_location_id': location_id
+      }
+    } else if (type=="destination") {
+      values = {
+        'id': location_move_id,
+        'destination_location_id': location_id
+      }
+    }
+     
+    model = 'wiz.stock.move.location';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'edit_wiz_location_from_apk', values).then((done) => {
+       resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar:" + err)
+    });
+    })
+    
+    return promise
+  }
+
+  set_multiple_move_location(location_move_id, type) {
+    let self = this
+    let model
+    let values
+
+    values = {
+      'id': location_move_id,
+      'action': type
+    }
+
+    model = 'wiz.stock.move.location';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'set_multiple_move_location', values).then((done) => {
+       resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar:" + err)
+    });
+    })
+    
+    return promise
+  }
+
+  action_move_location(location_move_id) {
+    let self = this
+    let model
+    let values
+
+    values = {
+      'id': location_move_id
+    }
+
+    model = 'wiz.stock.move.location';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'action_move_location_apk', values).then((done) => {
+       resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar:" + err)
+    });
+    })
+    
+    return promise
+  }
+  
 }

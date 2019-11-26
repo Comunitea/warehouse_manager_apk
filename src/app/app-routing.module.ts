@@ -40,8 +40,10 @@ const routes: Routes = [
   },
   { path: 'stock-picking-type-list',
     loadChildren: () => import('./pages/stock-picking-type-list/stock-picking-type-list.module').then(m => m.StockPickingTypeListPageModule)
-  }
-  
+  },
+  { path: 'stock-move-location',
+    loadChildren: () => import('./pages/stock-move-location/stock-move-location.module').then(m => m.StockMoveLocationPageModule)
+   }  
 ];
 
 @NgModule({

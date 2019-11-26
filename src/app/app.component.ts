@@ -38,6 +38,11 @@ export class AppComponent {
       icon: 'home'
     },
     {
+      title: 'Nuevo Movimiento',
+      url: '/stock-move-location',
+      icon: 'cart'
+    },
+    {
       title: 'Salir',
       url: '/logout',
       icon: 'log-out'
