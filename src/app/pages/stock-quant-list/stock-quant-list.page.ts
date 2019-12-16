@@ -4,6 +4,8 @@ import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
+import { ScannerOptions } from '../../interfaces/scanner-options';
+import { Storage } from '@ionic/storage';
 
 @Component({
   selector: 'app-stock-quant-list',
@@ -11,6 +13,8 @@ import { StockService } from '../../services/stock.service';
   styleUrls: ['./stock-quant-list.page.scss'],
 })
 export class StockQuantListPage implements OnInit {
+
+  scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
 
   @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
 
@@ -29,9 +33,10 @@ export class StockQuantListPage implements OnInit {
     public alertCtrl: AlertController,
     private route: ActivatedRoute,
     private audio: AudioService,
-    private stock: StockService
+    private stock: StockService,
+    private storage: Storage
   ) {
-    this.show_scan_form = true;
+    this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -42,12 +47,24 @@ export class StockQuantListPage implements OnInit {
       if (data==false) {
         this.router.navigateByUrl('/login');
       } else {
+        this.show_scan_form = this.scanner_options['reader'];
         this.location = this.route.snapshot.paramMap.get('id');
         this.get_location_quants();
       }
     })
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
+    });
+  }
+
+  check_scanner_values() {
+    this.storage.get('SCANNER').then((val) => {
+      if (val){
+        this.scanner_options = val;
+      } 
+    })
+    .catch((error)=>{
+      this.presentAlert('Error al acceder a las opciones del scanner:', error);
     });
   }
 

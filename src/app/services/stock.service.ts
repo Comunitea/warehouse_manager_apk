@@ -477,6 +477,9 @@ export class StockService {
     model = 'wiz.stock.move.location';
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'create_wiz_from_apk', values).then((done) => {
+        if(done['err'] == true) {
+          reject(done['error']);
+        }
         resolve(done)
       })
       .catch((err) => {
@@ -502,7 +505,10 @@ export class StockService {
     model = 'wiz.stock.move.location.line';
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'create_wiz_line_from_apk', values).then((done) => {
-       resolve(done)
+        if(done['err'] == true) {
+          reject(done['error']);
+        }
+        resolve(done)
       })
       .catch((err) => {
         reject(false)
@@ -525,7 +531,10 @@ export class StockService {
     model = 'wiz.stock.move.location.line';
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'edit_wiz_line_qty_from_apk', values).then((done) => {
-       resolve(done)
+        if(done['err'] == true) {
+          reject(done['error']);
+        }
+        resolve(done)
       })
       .catch((err) => {
         reject(false)
@@ -556,7 +565,10 @@ export class StockService {
     model = 'wiz.stock.move.location';
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'edit_wiz_location_from_apk', values).then((done) => {
-       resolve(done)
+        if(done['err'] == true) {
+          reject(done['error']);
+        }
+        resolve(done)
       })
       .catch((err) => {
         reject(false)
@@ -580,7 +592,10 @@ export class StockService {
     model = 'wiz.stock.move.location';
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'set_multiple_move_location', values).then((done) => {
-       resolve(done)
+        if(done['err'] == true) {
+          reject(done['error']);
+        }
+        resolve(done)
       })
       .catch((err) => {
         reject(false)
@@ -603,7 +618,10 @@ export class StockService {
     model = 'wiz.stock.move.location';
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'action_move_location_apk', values).then((done) => {
-       resolve(done)
+        if(done['err'] == true) {
+          reject(done['error']);
+        }
+        resolve(done)
       })
       .catch((err) => {
         reject(false)

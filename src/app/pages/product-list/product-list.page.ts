@@ -5,6 +5,7 @@ import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
+import { ScannerOptions } from '../../interfaces/scanner-options';
 
 @Component({
   selector: 'app-product-list',
@@ -12,6 +13,8 @@ import { StockService } from '../../services/stock.service';
   styleUrls: ['./product-list.page.scss'],
 })
 export class ProductListPage implements OnInit {
+
+  scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
 
   @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
 
@@ -31,7 +34,7 @@ export class ProductListPage implements OnInit {
     private audio: AudioService,
     private stock: StockService
   ) {
-    this.show_scan_form = true;
+    this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -43,10 +46,22 @@ export class ProductListPage implements OnInit {
         this.router.navigateByUrl('/login');
       } else {
         this.get_product_list();
+        this.show_scan_form = this.scanner_options['reader'];
       }
     })
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
+    });
+  }
+
+  check_scanner_values() {
+    this.storage.get('SCANNER').then((val) => {
+      if (val){
+        this.scanner_options = val;
+      } 
+    })
+    .catch((error)=>{
+      this.presentAlert('Error al acceder a las opciones del scanner:', error);
     });
   }
 

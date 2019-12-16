@@ -4,7 +4,8 @@ import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
-import { unsupported } from '@angular/compiler/src/render3/view/util';
+import { ScannerOptions } from '../../interfaces/scanner-options';
+import { Storage } from '@ionic/storage';
 
 @Component({
   selector: 'app-stock-move-location',
@@ -12,6 +13,8 @@ import { unsupported } from '@angular/compiler/src/render3/view/util';
   styleUrls: ['./stock-move-location.page.scss'],
 })
 export class StockMoveLocationPage implements OnInit {
+
+  scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
 
   location_id: string;
   location_dest_id: string;
@@ -30,11 +33,12 @@ export class StockMoveLocationPage implements OnInit {
     public router: Router,
     public alertCtrl: AlertController,
     private audio: AudioService,
-    private stock: StockService
+    private stock: StockService,
+    private storage: Storage
   ) {
     this.awaitting_origin = false;
     this.awaitting_destination = false;
-    this.show_scan_form = true;
+    this.check_scanner_values();
     this.notification = undefined;
   }
 
@@ -43,9 +47,21 @@ export class StockMoveLocationPage implements OnInit {
       if (data==false) {
         this.router.navigateByUrl('/login');
       }
+      this.show_scan_form = this.scanner_options['reader'];
     })
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
+    });
+  }
+  
+  check_scanner_values() {
+    this.storage.get('SCANNER').then((val) => {
+      if (val){
+        this.scanner_options = val;
+      } 
+    })
+    .catch((error)=>{
+      this.presentAlert('Error al acceder a las opciones del scanner:', error);
     });
   }
 

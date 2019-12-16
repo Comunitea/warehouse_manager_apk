@@ -1,6 +1,7 @@
 import { Component, OnInit, Input, HostListener, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, FormControl } from '@angular/forms'; 
 import { ScannerService } from '../../../services/scanner.service';
+import { AudioService } from '../../../services/audio.service';
 
 @Component({
   selector: 'app-scanner-footer',
@@ -30,7 +31,8 @@ export class ScannerFooterComponent implements OnInit {
 
   constructor(
     public scanner: ScannerService,
-    public formBuilder: FormBuilder
+    public formBuilder: FormBuilder,
+    private audio: AudioService
   ) {
     this.scanner.on()
 
@@ -43,14 +45,16 @@ export class ScannerFooterComponent implements OnInit {
 
 
   scan_read(val){
+    this.audio.play('barcode_ok');
     this.scanner_reading = val;
-    this.scanner_reading_changed.emit(this.scanner_reading)
+    this.scanner_reading_changed.emit(this.scanner_reading);
   }
 
   submitScan(){
     if (this.ScanReader) {
+      this.audio.play('barcode_ok');
       this.scanner_reading = this.ScanReader.value['scan'];
-      this.scanner_reading_changed.emit(this.scanner_reading)
+      this.scanner_reading_changed.emit(this.scanner_reading);
     }
   }
 

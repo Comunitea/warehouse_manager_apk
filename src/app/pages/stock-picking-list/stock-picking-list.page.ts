@@ -4,6 +4,8 @@ import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
+import { ScannerOptions } from '../../interfaces/scanner-options';
+import { Storage } from '@ionic/storage';
 
 @Component({
   selector: 'app-stock-picking-list',
@@ -11,6 +13,8 @@ import { StockService } from '../../services/stock.service';
   styleUrls: ['./stock-picking-list.page.scss'],
 })
 export class StockPickingListPage implements OnInit {
+
+  scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
 
   @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
 
@@ -35,6 +39,7 @@ export class StockPickingListPage implements OnInit {
     public alertCtrl: AlertController,
     private audio: AudioService,
     private stock: StockService,
+    private storage: Storage
   ) {
     let options = {day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h24'}
     this.view_domain = {
@@ -43,7 +48,7 @@ export class StockPickingListPage implements OnInit {
         'late': [['state', 'in', ['assigned', 'waiting', 'confirmed']], ['scheduled_date', '<', new Date().toLocaleString('es-ES', options)]],
         'backorders': [['state', 'in', ['waiting', 'confirmed', 'assigned']], ['backorder_id', '!=', false]]
     }
-    this.show_scan_form = true;
+    this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -54,6 +59,7 @@ export class StockPickingListPage implements OnInit {
       if (data==false) {
         this.router.navigateByUrl('/login');
       } else {
+        this.show_scan_form = this.scanner_options['reader'];
         this.current_type_id = this.route.snapshot.paramMap.get('id');
         this.view_selector = this.route.snapshot.paramMap.get('view');
         this.current_code = this.route.snapshot.paramMap.get('code');
@@ -62,6 +68,17 @@ export class StockPickingListPage implements OnInit {
     })
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
+    });
+  }
+
+  check_scanner_values() {
+    this.storage.get('SCANNER').then((val) => {
+      if (val){
+        this.scanner_options = val;
+      } 
+    })
+    .catch((error)=>{
+      this.presentAlert('Error al acceder a las opciones del scanner:', error);
     });
   }
 
