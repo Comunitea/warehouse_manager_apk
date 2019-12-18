@@ -13,6 +13,7 @@ export class MoveLineDetailsListComponent implements OnInit {
   @Input() scanner_reading: string
   @Input() move_line_ids: {}
   @Input() code: string;
+  @Input() picking_fields: string;
   move_line_ids_info: {};
   picking: string;
 

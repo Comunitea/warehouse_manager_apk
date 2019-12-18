@@ -38,18 +38,18 @@ export class StockLocationListPage implements OnInit {
     private storage: Storage
   ) {
     this.location_types = [
-      {
-        'value': 'all',
-        'name': 'Todos',
-        'icon': 'book',
-        'size': 2
-      },
-      {
-        'value': 'supplier',
-        'name': 'Proveedor',
-        'icon': 'boat',
-        'size': 1
-      },
+      //{
+      //  'value': 'all',
+      //  'name': 'Todos',
+      // 'icon': 'book',
+      //  'size': 2
+      //}
+      //{
+      //  'value': 'supplier',
+      //  'name': 'Proveedor',
+      //  'icon': 'boat',
+      //  'size': 1
+      //},
       {
         'value': 'view',
         'name': 'Ver',
@@ -62,24 +62,24 @@ export class StockLocationListPage implements OnInit {
         'icon': 'cube',
         'size': 1
       },
-      {
-        'value': 'customer',
-        'name': 'Cliente',
-        'icon': 'cash',
-        'size': 1
-      },
-      {
-        'value': 'inventory',
-        'name': 'Inventario',
-        'icon': 'clipboard',
-        'size': 1
-      },
-      {
-        'value': 'procurement',
-        'name': 'Abastecimiento',
-        'icon': 'log-in',
-        'size': 1
-      },
+      //{
+      //  'value': 'customer',
+      //  'name': 'Cliente',
+      //  'icon': 'cash',
+      // / 'size': 1
+      //},
+      //{
+      //  'value': 'inventory',
+      //  'name': 'Inventario',
+      //  'icon': 'clipboard',
+      //  'size': 1
+      //},
+      //{
+      //  'value': 'procurement',
+      //  'name': 'Abastecimiento',
+      //  'icon': 'log-in',
+      //  'size': 1
+      //},
       {
         'value': 'production',
         'name': 'Producción',

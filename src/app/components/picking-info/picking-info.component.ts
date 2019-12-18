@@ -36,7 +36,7 @@ export class PickingInfoComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.active_operation = true;
+    this.active_operation = false;
     this.picking = this.route.snapshot.paramMap.get('id');
     this.get_picking_info(this.picking);
   }

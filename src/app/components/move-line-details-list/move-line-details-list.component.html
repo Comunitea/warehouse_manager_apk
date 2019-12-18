@@ -1,76 +1,80 @@
 <ion-grid>
   <ion-row>  
-   <ion-col>
+    <ion-col size="6">
       <div><strong>Producto</strong></div>
     </ion-col>
 
-    <ion-col *ngIf="code != 'incoming'">
+    <ion-col *ngIf="picking_fields.indexOf('location_id')<0">
       <div><strong>De</strong></div>
     </ion-col>
   
-    <ion-col *ngIf="code != 'outgoing'">
+    <ion-col *ngIf="picking_fields.indexOf('location_dest_id')<0">
       <div><strong>A</strong></div>
     </ion-col>
   
-    <ion-col>
+    <!--ion-col *ngIf="picking_fields.indexOf('package_id')<0">
       <div><strong>Pqt. O.</strong></div>
     </ion-col>
   
-    <ion-col>
+    <ion-col  *ngIf="picking_fields.indexOf('package_dest_id')<0">
       <div><strong>Pqt. D.</strong></div>
-    </ion-col>
+    </ion-col-->
     
-    <ion-col>
+    <ion-col size="1" *ngIf="picking_fields.indexOf('qty_available')<0">
       <div><strong>Dis.</strong></div>
     </ion-col>
   
-    <ion-col>
+    <ion-col size="1">
       <div><strong>Res.</strong></div>
     </ion-col>
     
-    <ion-col>
+    <ion-col size="1">
       <div><strong>Hecha</strong></div>
     </ion-col>
   </ion-row>
 
   <ion-row *ngFor="let line of move_line_ids_info" [ngClass]="{'success': line.qty_done == line.product_uom_qty}">
-    <ion-col>
-      <div class="link" (click)="open_link(line.product_id[0])">{{line.product_id[1]}}</div>
+    <ion-col size="6" >
+      <div class="link" (click)="open_link(line.product_id[0])">{{line.product_id[1]}} <strong *ngIf="line.lot_id"> = > {{line.lot_id[1]}}</strong></div>
     </ion-col>
   
-    <ion-col *ngIf="code != 'incoming'">
+    <ion-col *ngIf="picking_fields.indexOf('location_id')<0">
       <div>{{line.location_id[1]}}</div>
+      <div *ngIf="line.package_id" >{{line.package_id[1]}}</div>
     </ion-col>
   
-    <ion-col *ngIf="code != 'outgoing'">
+    <ion-col *ngIf="picking_fields.indexOf('location_dest_id')<0">
       <div>{{line.location_dest_id[1]}}</div>
+      <div *ngIf="line.result_package_id" >{{line.result_package_id[1]}}</div>
     </ion-col>
   
-    <ion-col>
+    <!--ion-col  *ngIf="picking_fields.indexOf('result_package_id')<0">
       <div>{{line.package_id[1]}}</div>
     </ion-col>
   
-    <ion-col>
+    <ion-col  *ngIf="picking_fields.indexOf('package_dest_id')<0">
       <div>{{line.result_package_id[1]}}</div>
-    </ion-col>
+    </ion-col-->
     
-    <ion-col>
-      <div class="link" *ngIf="code != 'incoming' && (line.state == 'confirmed' || line.state == 'assigned') && line.qty_done == 0; else noLinkAvailable" (click)="force_set_qty_done(line.id, 'qty_available')">{{line.qty_available}}</div>
+    <ion-col size="1" *ngIf="picking_fields.indexOf('qty_available')<0">
+      <div class="link" *ngIf="code != 'incoming' && (line.state == 'confirmed' || line.state == 'assigned') && line.qty_done == 0; else noLinkAvailable" 
+        (click)="force_set_qty_done(line.id, 'qty_available')">{{line.qty_available}}</div>
     </ion-col>
 
-    <ng-template #noLinkAvailable>
+    <ng-template #noLinkAvailable >
         <div>{{line.qty_available}}</div>
     </ng-template>
   
-    <ion-col>
-      <div class="link" *ngIf="(line.state != 'done' || line.state == 'cancel') && line.qty_done == 0; else noLinkUom" (click)="force_set_qty_done(line.id, 'product_uom_qty')">{{line.product_uom_qty}}</div>
+    <ion-col size="1">
+      <div class="link" *ngIf="(line.state != 'done' || line.state == 'cancel') && line.qty_done == 0; else noLinkUom" 
+      (click)="force_set_qty_done(line.id, 'product_uom_qty')">{{line.product_uom_qty}}</div>
     </ion-col>
     
     <ng-template #noLinkUom>
         <div>{{line.product_uom_qty}}</div>
     </ng-template>
 
-    <ion-col>
+    <ion-col size="1">
 
       <div>{{line.qty_done}}</div>
     </ion-col>

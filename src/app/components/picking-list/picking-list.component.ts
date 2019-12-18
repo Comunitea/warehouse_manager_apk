@@ -10,6 +10,7 @@ export class PickingListComponent implements OnInit {
 
   @Input() picks: {}
   @Input() code: {}
+  @Input() picking_fields: any
   ngSwitch: any
 
   constructor(public router: Router) { }

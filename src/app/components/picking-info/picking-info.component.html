@@ -26,14 +26,16 @@
       <ion-text *ngSwitchCase="2">Urgente</ion-text>
       <ion-text *ngSwitchCase="3">Muy Urgente</ion-text>
     </div>
+    
     <div *ngIf="picking_data.note"><strong>Nota: </strong>{{picking_data.note}}</div>
+
   </ion-card-content>
 
 </ion-card>
 
 <div>
 
-  <ion-card *ngIf="move_lines && move_line_ids">
+  <ion-card *ngIf="move_lines">
     <ion-card-header>
       <ion-row>
         <ion-col>
@@ -52,8 +54,14 @@
       <ion-card-title>Operaciones detalladas</ion-card-title>
     </ng-template>
 
-    <ion-card-content *ngIf="move_lines || move_line_ids">
-      <app-move-line-list *ngIf="!active_operation && move_lines; else detailed_grid" [scanner_reading]="scanner_reading" [code]="picking_code" [move_lines]="move_lines"></app-move-line-list>
+    <ion-card-content *ngIf="move_lines">
+      <app-move-line-list *ngIf="!active_operation && move_lines; else detailed_grid" 
+          [scanner_reading]="scanner_reading" 
+          [code]="picking_code" 
+          [picking_fields] = "picking_data.picking_fields"
+          [move_lines]="move_lines">
+      </app-move-line-list>
+
 
       <!-- <ion-grid>          
         <ion-row>
@@ -74,11 +82,13 @@
           </ion-col>
         </ion-row>
       </ion-grid> -->
-
       <ng-template #detailed_grid>
-        <app-move-line-details-list *ngIf="move_line_ids" [code]="picking_code" [scanner_reading]="scanner_reading"  [move_line_ids]="move_line_ids"></app-move-line-details-list>
+        <app-move-line-details-list *ngIf="move_line_ids" 
+        [code]="picking_code" 
+        [picking_fields] = "picking_data.picking_fields"
+        [scanner_reading]="scanner_reading"  
+        [move_line_ids]="move_line_ids"></app-move-line-details-list>
       </ng-template>
-
       <!-- <ng-template #reserved_lines>
         <div>{{picking_data.reserved_availability_lines}}</div>
       </ng-template>
@@ -86,6 +96,27 @@
       <ng-template #done_lines>
         <div>{{picking_data.quantity_done_lines}}</div>
       </ng-template> -->
+
+    </ion-card-content>
+  </ion-card>
+  
+   <ion-card *ngIf="move_line_ids">
+    <ion-card-header>
+      <ion-row>
+        <ion-col>
+          <ion-card-title>Operaciones detalladas</ion-card-title>
+        </ion-col>
+      </ion-row>
+    </ion-card-header>
+
+    
+
+    <ion-card-content *ngIf="move_line_ids">
+       <app-move-line-details-list *ngIf="move_line_ids" 
+        [code]="picking_code" 
+        [picking_fields] = "picking_data.picking_fields"
+        [scanner_reading]="scanner_reading"  
+        [move_line_ids]="move_line_ids"></app-move-line-details-list>
 
     </ion-card-content>
   </ion-card>
