@@ -5,7 +5,6 @@ import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 import { ScannerOptions } from '../../interfaces/scanner-options';
-import { Storage } from '@ionic/storage';
 
 @Component({
   selector: 'app-stock-location-list',
@@ -26,7 +25,6 @@ export class StockLocationListPage implements OnInit {
   location_types: {};
   current_selected_type: string;
   search: string;
-  show_scan_form: boolean;
   scanner_reading: string;
 
   constructor(
@@ -35,7 +33,6 @@ export class StockLocationListPage implements OnInit {
     public alertCtrl: AlertController,
     private audio: AudioService,
     private stock: StockService,
-    private storage: Storage
   ) {
     this.location_types = [
       {
@@ -93,7 +90,6 @@ export class StockLocationListPage implements OnInit {
         'size': 2
       }
     ]
-    this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -105,7 +101,6 @@ export class StockLocationListPage implements OnInit {
         this.router.navigateByUrl('/login');
       } else {
         this.get_location_list('internal');
-        this.show_scan_form = this.scanner_options['reader'];
       }
     })
     .catch((error)=>{
@@ -113,25 +108,10 @@ export class StockLocationListPage implements OnInit {
     });
   }
 
-  check_scanner_values() {
-    this.storage.get('SCANNER').then((val) => {
-      if (val){
-        this.scanner_options = val;
-      } 
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al acceder a las opciones del scanner:', error);
-    });
-  }
-
   onReadingEmitted(val: string) {
     this.scanner_reading = val;
     this.search = val;
     this.get_location_list(this.current_selected_type, this.search);
-  }
-
-  onShowEmitted(val: boolean) {
-    this.show_scan_form = val;
   }
 
   async presentAlert(titulo, texto) {

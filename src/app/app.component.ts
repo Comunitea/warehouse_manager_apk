@@ -55,7 +55,7 @@ export class AppComponent {
     private splashScreen: SplashScreen,
     private statusBar: StatusBar,
     private storage: Storage,
-    private OdooService: OdooService,
+    private OdooService: OdooService
   ) {
     player.preload('click', 'assets/audio/click.mp3');
     player.preload('ok', 'assets/audio/ok.mp3');

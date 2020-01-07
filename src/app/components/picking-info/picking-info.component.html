@@ -10,7 +10,7 @@
         <!-- <ion-button *ngIf="picking_data.show_check_availability" size="small" class="button-text" (click)="action_assign()">Asignar</ion-button> -->
         <ion-button *ngIf="picking_data.show_validate" size="small" class="button-text" (click)="button_validate()">Validar</ion-button>
         <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_set_qty_done(picking_data.id, 'product_qty', 'stock.picking')">Reservas a hecho</ion-button>
-        <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_reset_qties(picking_data.id, 'stock.picking')">Reset</ion-button>
+        <ion-button size="small" *ngIf="picking_data && (picking_data.state == 'confirmed' || picking_data.state == 'assigned')" class="button-text" (click)="force_reset_qties(picking_data.id)">Reset</ion-button>
       </ion-col>
     </ion-row>
   </ion-card-header>

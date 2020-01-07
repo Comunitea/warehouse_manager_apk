@@ -4,8 +4,6 @@ import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
-import { ScannerOptions } from '../../interfaces/scanner-options';
-import { Storage } from '@ionic/storage';
 
 @Component({
   selector: 'app-stock-picking-list',
@@ -13,8 +11,6 @@ import { Storage } from '@ionic/storage';
   styleUrls: ['./stock-picking-list.page.scss'],
 })
 export class StockPickingListPage implements OnInit {
-
-  scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
 
   @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
 
@@ -29,7 +25,6 @@ export class StockPickingListPage implements OnInit {
   view_selector: string;
   search: string;
   current_code: string;
-  show_scan_form: boolean;
   scanner_reading: string;
 
   constructor(
@@ -38,8 +33,7 @@ export class StockPickingListPage implements OnInit {
     private route: ActivatedRoute,
     public alertCtrl: AlertController,
     private audio: AudioService,
-    private stock: StockService,
-    private storage: Storage
+    private stock: StockService
   ) {
     let options = {day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h24'}
     this.view_domain = {
@@ -48,7 +42,6 @@ export class StockPickingListPage implements OnInit {
         'late': [['state', 'in', ['assigned', 'waiting', 'confirmed']], ['scheduled_date', '<', new Date().toLocaleString('es-ES', options)]],
         'backorders': [['state', 'in', ['waiting', 'confirmed', 'assigned']], ['backorder_id', '!=', false]]
     }
-    this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -59,7 +52,6 @@ export class StockPickingListPage implements OnInit {
       if (data==false) {
         this.router.navigateByUrl('/login');
       } else {
-        this.show_scan_form = this.scanner_options['reader'];
         this.current_type_id = this.route.snapshot.paramMap.get('id');
         this.view_selector = this.route.snapshot.paramMap.get('view');
         this.current_code = this.route.snapshot.paramMap.get('code');
@@ -71,25 +63,10 @@ export class StockPickingListPage implements OnInit {
     });
   }
 
-  check_scanner_values() {
-    this.storage.get('SCANNER').then((val) => {
-      if (val){
-        this.scanner_options = val;
-      } 
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al acceder a las opciones del scanner:', error);
-    });
-  }
-
   onReadingEmitted(val: string) {
     this.scanner_reading = val;
     this.search = val;
     this.get_picking_list(this.search);
-  }
-
-  onShowEmitted(val: boolean) {
-    this.show_scan_form = val;
   }
 
   async presentAlert(titulo, texto) {

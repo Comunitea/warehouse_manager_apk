@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <app-scanner-header slot="end" (show_scan_form_changed)="onShowEmitted($event)" [show_scan_form]=show_scan_form></app-scanner-header>
+    <app-scanner-header slot="end"></app-scanner-header>
     <ion-title>Listado de ubicaciones</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -37,4 +37,4 @@
   </ion-card>
 </ion-content>
 
-<app-scanner-footer (scanner_reading_changed)="onReadingEmitted($event)" [show_scan_form]=show_scan_form [scanner_reading]="scanner_reading"></app-scanner-footer>
+<app-scanner-footer (scanner_reading_changed)="onReadingEmitted($event)" [scanner_reading]="scanner_reading"></app-scanner-footer>

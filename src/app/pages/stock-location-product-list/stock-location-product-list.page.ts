@@ -24,7 +24,6 @@ export class StockLocationProductListPage implements OnInit {
   products: {};
   search: string;
   location: string;
-  show_scan_form: boolean;
   scanner_reading: string;
 
   constructor(
@@ -36,7 +35,6 @@ export class StockLocationProductListPage implements OnInit {
     private stock: StockService,
     private storage: Storage
   ) {
-    this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -49,7 +47,6 @@ export class StockLocationProductListPage implements OnInit {
       } else {
         this.location = this.route.snapshot.paramMap.get('id');
         this.get_location_products();
-        this.show_scan_form = this.scanner_options['reader'];
       }
     })
     .catch((error)=>{
@@ -57,25 +54,10 @@ export class StockLocationProductListPage implements OnInit {
     });
   }
 
-  check_scanner_values() {
-    this.storage.get('SCANNER').then((val) => {
-      if (val){
-        this.scanner_options = val;
-      } 
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al acceder a las opciones del scanner:', error);
-    });
-  }
-
   onReadingEmitted(val: string) {
     this.scanner_reading = val;
     this.search = val;
     this.get_location_products(this.search);
-  }
-
-  onShowEmitted(val: boolean) {
-    this.show_scan_form = val;
   }
 
   async presentAlert(titulo, texto) {

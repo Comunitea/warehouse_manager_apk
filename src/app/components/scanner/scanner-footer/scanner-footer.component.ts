@@ -25,7 +25,6 @@ export class ScannerFooterComponent implements OnInit {
     })
   }
 
-  @Input() show_scan_form: boolean
   @Input() scanner_reading: string
   @Output() scanner_reading_changed = new EventEmitter<string>();
 

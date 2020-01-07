@@ -1,8 +1,9 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { StockService } from '../../services/stock.service';
 import { AudioService } from '../../services/audio.service';
+import { VoiceService } from '../../services/voice.service';
 import { Location } from "@angular/common";
 import { LoadingController } from '@ionic/angular';
 
@@ -20,8 +21,10 @@ export class PickingInfoComponent implements OnInit {
   move_line_ids: {};
   active_operation: boolean;
   loading: any;
+  audio_command: any[];
 
   @Input() scanner_reading: string
+  @Input() voice_command: boolean;
   @Input() pick: {}
   ngSwitch: any
 
@@ -32,13 +35,18 @@ export class PickingInfoComponent implements OnInit {
     private route: ActivatedRoute,
     public audio: AudioService,
     private location: Location,
-    public loadingController: LoadingController
-  ) { }
+    public loadingController: LoadingController,
+    private cd: ChangeDetectorRef,
+    private voice: VoiceService,
+  ) {}
 
   ngOnInit() {
     this.active_operation = true;
     this.picking = this.route.snapshot.paramMap.get('id');
     this.get_picking_info(this.picking);
+    this.voice.voice_command_refresh$.subscribe(data => {
+      this.voice_command_check();
+    });
   }
 
   open_link(location_id){
@@ -133,5 +141,37 @@ export class PickingInfoComponent implements OnInit {
       this.presentAlert('Error al recuperar el picking:', error);
     });
   }
+
+  // Voice command
+
+  voice_command_check() {
+    console.log("voice_command_check");
+    console.log(this.voice.voice_command);
+    if (this.voice.voice_command) {
+      let voice_command_register = this.voice.voice_command;
+      console.log("Recibida orden de voz: " + voice_command_register);
+      
+      if (this.check_if_value_in_responses("validar", voice_command_register) && this.picking_data['show_validate']) {
+        console.log("entra al validate");
+        this.button_validate();
+      } else if (this.picking_data && (this.picking_data['state'] == 'confirmed' || this.picking_data['state'] == 'assigned') && this.check_if_value_in_responses("hecho", voice_command_register)){
+        console.log("entra al hecho");
+        this.force_set_qty_done(this.picking_data['id'], 'product_qty', 'stock.picking');
+      } else if (this.picking_data && (this.picking_data['state'] == 'confirmed' || this.picking_data['state'] == 'assigned') && this.check_if_value_in_responses("reiniciar", voice_command_register)){
+        console.log("entra al reset");
+        this.force_reset_qties(this.picking_data['id']);
+      }
+    }
+  }
+
+  check_if_value_in_responses(value, dict) {
+    if(value == dict[0] || value == dict[1] || value == dict[2]) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+
 
 }
