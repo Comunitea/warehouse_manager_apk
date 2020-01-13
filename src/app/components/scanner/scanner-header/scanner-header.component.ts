@@ -15,6 +15,8 @@ export class ScannerHeaderComponent implements OnInit {
 
   scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
 
+  @Input() disabled_reader: boolean;
+
   constructor(
     private storage: Storage,
     private audio: AudioService,
@@ -31,11 +33,16 @@ export class ScannerHeaderComponent implements OnInit {
       } else {
         this.save_scanner_options();
       }
-      this.voice.isAvailable();
+      if(this.voice.available == null){
+        this.voice.isAvailable(); 
+      }
     })
     .catch((error)=>{
       this.presentAlert('Error al acceder a las opciones del scanner:', error);
     });
+    if(this.voice.available){
+      this.check_escuchando();
+    }
   }
 
   async presentAlert(titulo, texto) {

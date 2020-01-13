@@ -37,7 +37,7 @@ export class PickingInfoComponent implements OnInit {
     private location: Location,
     public loadingController: LoadingController,
     private cd: ChangeDetectorRef,
-    private voice: VoiceService,
+    private voice: VoiceService
   ) {}
 
   ngOnInit() {

@@ -4,4 +4,7 @@ ion-buttons {
         background-color: white;
         font-size: 30px;
     }
+    button.disabled {
+        color: var(--ion-color-medium-tint);
+    }
 }

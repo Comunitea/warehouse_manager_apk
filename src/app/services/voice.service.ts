@@ -19,13 +19,16 @@ export class VoiceService {
     this.voice.isRecognitionAvailable().then(
       (available: boolean) => {
         this.available = available;
-        console.log(available)
+        console.log(available);
       }
-    )
+    ).catch((error)=>{
+      this.available = false;
+      console.log("Voz no disponible: " +error);
+    });
   }
 
   publishVoiceRefresh(){
-    this.voice_command_refresh.next()
+    this.voice_command_refresh.next();
   }
 
   getSupportedLanguages(): void {
@@ -63,17 +66,22 @@ export class VoiceService {
     console.log("Escucha");
     let options = {
       language: 'es-ES',
-      matches: 3,
+      matches: 1000,
       prompt: "Te escucho",
       showPopup: true,
       showPartial: false
     }
-    this.voice.startListening(options).subscribe(matches => {
+    this.voice.startListening(options).subscribe((matches => {
       this.voice_command = matches;
       this.publishVoiceRefresh();
       this.voice.stopListening().then(() => {
+        this.active_voice = false;
         console.log("Dejo de escuchar");
       });
+    }),(onerror) => {
+      this.active_voice =false;
+      this.voice.stopListening();
+      console.log('error:', onerror)
     });
   }
 }

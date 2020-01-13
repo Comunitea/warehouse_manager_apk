@@ -8,6 +8,8 @@ import { IonicModule } from '@ionic/angular';
 import { ProductPage } from './product.page';
 import { ProductInfoComponent } from '../../components/product-info/product-info.component';
 
+import { SharedModule } from '../../shared/shared.module';
+
 const routes: Routes = [
   {
     path: '',
@@ -20,7 +22,8 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     IonicModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    SharedModule
   ],
   entryComponents: [ProductInfoComponent],
   declarations: [ProductPage, ProductInfoComponent]
