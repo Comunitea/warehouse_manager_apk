@@ -16,7 +16,7 @@
       <div><strong>Precio de venta: </strong>{{product.list_price}}€</div>
       <div><strong>Precio de compra: </strong>{{product.standard_price}}€</div>
       <div [ngClass]="{'danger': product.qty_available &lt;= 0}"><strong>A mano: </strong>{{product.qty_available}}</div>
-      <div [ngClass]="{'danger': product.qty_available &lt;= 0}"><strong>Previsto: </strong>{{product.virtual_available}}</div>
+      <div [ngClass]="{'danger': product.virtual_available &lt;= 0}"><strong>Previsto: </strong>{{product.virtual_available}}</div>
     </ion-card-content>
   
   </ion-card>

@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Storage } from '@ionic/storage';
-import { AlertController } from '@ionic/angular';
+import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
@@ -12,6 +12,14 @@ import { StockService } from '../../services/stock.service';
   styleUrls: ['./product.page.scss'],
 })
 export class ProductPage implements OnInit {
+
+  @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
+
+  offset: number;
+  limit: number;
+  limit_reached: boolean;
+  quants: {};
+  location_ids: boolean;
 
   product_data: {};
   placeholder: string;
@@ -24,7 +32,11 @@ export class ProductPage implements OnInit {
     private audio: AudioService,
     private stock: StockService,
     private storage: Storage,
-  ) { }
+  ) {
+    this.offset = 0;
+    this.limit = 25;
+    this.limit_reached = false;
+  }
 
   ngOnInit() {
     this.odoo.isLoggedIn().then((data)=>{
@@ -67,10 +79,61 @@ export class ProductPage implements OnInit {
       }
       this.product_data = data[0];  
       this.audio.play('click');
+      this.get_location_quants(this.product_data['default_code']);
     })
     .catch((error)=>{
       this.presentAlert('Error al recuperar el picking:', error);
     });
+  }
+
+  get_location_quants(search=null){
+    this.offset = 0;
+    this.limit_reached = false;
+    this.stock.get_location_quants(null, this.offset, this.limit, search, 'form').then((quants_list:Array<{}>)=> {
+      this.quants = quants_list;
+      console.log(this.quants);
+      if(Object.keys(quants_list).length < 25){
+        this.limit_reached = true;
+      }
+      this.audio.play('click');
+    })
+    .catch((error) => {
+      this.presentAlert('Error al recuperador el listado de stock:', error);
+    });
+  }
+
+  // Infinitescroll
+
+  loadData(event) {
+    setTimeout(() => {
+      console.log('Loading more locations');
+      event.target.complete();
+      this.quant_list_infinite_scroll_add();
+
+      // App logic to determine if all data is loaded
+      // and disable the infinite scroll
+      if (this.limit_reached) {
+        event.target.disabled = true;
+      }
+    }, 500);
+  }
+
+  quant_list_infinite_scroll_add(){
+    this.offset += this.limit;
+    this.stock.get_location_quants(null, this.offset, this.limit, this.product_data['default_code'], 'form').then((data:Array<{}>)=> {
+      let current_length = Object.keys(this.quants).length;
+      if(Object.keys(data).length < 25){
+        this.limit_reached = true;
+      }
+      for(var k in data) this.quants[current_length+Number(k)]=data[k];
+    })
+    .catch((error) => {
+      this.presentAlert('Error al recuperador el listado de stock:', error);
+    });
+  }
+
+  toggleInfiniteScroll() {
+    this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
   }
 
 }

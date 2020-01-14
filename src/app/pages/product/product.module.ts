@@ -7,6 +7,7 @@ import { IonicModule } from '@ionic/angular';
 
 import { ProductPage } from './product.page';
 import { ProductInfoComponent } from '../../components/product-info/product-info.component';
+import { ProductQuantListComponent } from '../../components/product-quant-list/product-quant-list.component';
 
 import { SharedModule } from '../../shared/shared.module';
 
@@ -26,6 +27,6 @@ const routes: Routes = [
     SharedModule
   ],
   entryComponents: [ProductInfoComponent],
-  declarations: [ProductPage, ProductInfoComponent]
+  declarations: [ProductPage, ProductInfoComponent, ProductQuantListComponent]
 })
 export class ProductPageModule {}
