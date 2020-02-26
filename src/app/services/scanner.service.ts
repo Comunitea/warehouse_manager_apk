@@ -5,6 +5,8 @@ import { Injectable, HostListener } from '@angular/core';
 })
 export class ScannerService {
 
+  public active_scanner: boolean;
+
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     

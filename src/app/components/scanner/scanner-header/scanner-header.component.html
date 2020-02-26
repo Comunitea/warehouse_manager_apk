@@ -1,15 +1,22 @@
 <ion-buttons end>
   <!-- Commented voice function -->
   <button ion-button icon-only item-end (click)="change_volume()">
-    <ion-icon *ngIf="volume" name="megaphone"></ion-icon>
-    <ion-icon *ngIf="!volume" name="volume-off"></ion-icon>
+    <ion-icon *ngIf="audio.active_audio" name="megaphone"></ion-icon>
+    <ion-icon *ngIf="!audio.active_audio" name="volume-off"></ion-icon>
   </button>
-  <button ion-button icon-only item-end (click)="change_escuchando()">
-    <ion-icon *ngIf="escuchando" name="mic"></ion-icon>
-    <ion-icon *ngIf="!escuchando" name="mic-off"></ion-icon>
+  <button *ngIf="voice.available" ion-button icon-only item-end (click)="change_escuchando()">
+    <ion-icon *ngIf="voice.active_voice" name="mic"></ion-icon>
+    <ion-icon *ngIf="!voice.active_voice" name="mic-off"></ion-icon>
+  </button>
+
+  <button *ngIf="!voice.available" disabled="disabled" class="disabled" ion-button icon-only item-end>
+    <ion-icon name="mic"></ion-icon>
   </button>
     
-    <button ion-button icon-only item-end (click)="change_hide_scan_form()">
+  <button *ngIf="!disabled_reader" ion-button icon-only item-end (click)="change_hide_scan_form()">
+    <ion-icon name="barcode"></ion-icon>
+  </button>
+  <button *ngIf="disabled_reader" disabled="disabled" class="disabled" ion-button icon-only item-end>
     <ion-icon name="barcode"></ion-icon>
   </button>
 </ion-buttons>

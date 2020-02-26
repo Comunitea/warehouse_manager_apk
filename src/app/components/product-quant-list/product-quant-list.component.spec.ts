@@ -1,22 +1,22 @@
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { LocationInfoComponent } from './location-info.component';
+import { ProductQuantListComponent } from './product-quant-list.component';
 
-describe('LocationInfoComponent', () => {
-  let component: LocationInfoComponent;
-  let fixture: ComponentFixture<LocationInfoComponent>;
+describe('ProductQuantListComponent', () => {
+  let component: ProductQuantListComponent;
+  let fixture: ComponentFixture<ProductQuantListComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ LocationInfoComponent ],
+      declarations: [ ProductQuantListComponent ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(LocationInfoComponent);
+    fixture = TestBed.createComponent(ProductQuantListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

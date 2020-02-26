@@ -24,3 +24,11 @@
 @import "~@ionic/angular/css/text-alignment.css";
 @import "~@ionic/angular/css/text-transformation.css";
 @import "~@ionic/angular/css/flex-utils.css";
+
+
+/* Medias */
+@media screen and (max-width: 640px) {
+    ion-card-header, ion-card-content.card-content-md {
+        padding: 5px;
+    }
+}

@@ -41,6 +41,10 @@
       <ion-col size="7">
       <div style='font-size: small'>{{product.name}}</div>
     </ion-col>
+
+    <ion-col size-xs="6" size-sm="2" size-md="2">
+      <div><strong class="ion-hide-sm-up">Referencia: </strong>{{product.default_code}}</div>
+    </ion-col>
   
     <!--ion-col size="1">
       <div>{{product.lst_price}}</div>
@@ -58,8 +62,8 @@
       <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">{{product.virtual_available}}</div>
     </ion-col>
   
-    <ion-col size="1">
-      <div>{{product.uom_id[1]}}</div>
+    <ion-col size-xs="3" size-sm="1" size-md="1">
+      <div><strong class="ion-hide-sm-up">Unidad: </strong>{{product.uom_id[1]}}</div>
     </ion-col>
   
     <ion-col size="2">

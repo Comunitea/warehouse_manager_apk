@@ -46,7 +46,7 @@ export class StockService {
 
     'stock.quant': {
       'tree': ['id', 'product_id', 'reserved_quantity', 'quantity'],
-      'form': ['id', 'product_id', 'reserved_quantity', 'quantity']
+      'form': ['id', 'product_id', 'reserved_quantity', 'quantity', 'location_id']
     },
 
     'stock.picking.type': {
@@ -314,7 +314,6 @@ export class StockService {
     
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'force_set_qty_done_apk', values).then((done) => {
-        console.log(done)
         resolve(done)
       })
       .catch((err) => {
@@ -336,7 +335,6 @@ export class StockService {
     
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'force_set_qty_done_by_product_code_apk', values).then((done) => {
-        console.log(done)
         resolve(done)
       })
       .catch((err) => {
@@ -483,7 +481,7 @@ export class StockService {
 
   // Quants
 
-  get_location_quants(location, offset=0, limit=0, search) {
+  get_location_quants(location, offset=0, limit=0, search, ftype=null) {
     let self = this;
     let domain = [];
 
@@ -497,6 +495,9 @@ export class StockService {
 
     let model = 'stock.quant';
     let fields = this.STOCK_FIELDS[model]['tree']
+    if(ftype != null){
+      fields = this.STOCK_FIELDS[model][ftype]  
+    }
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
         for (let sm_id in data){data[sm_id]['model'] = model}

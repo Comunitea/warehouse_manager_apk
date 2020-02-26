@@ -8,6 +8,8 @@ import { StatusBar } from '@ionic-native/status-bar/ngx';
 
 import { IonicStorageModule } from '@ionic/storage';
 import { NativeAudio } from '@ionic-native/native-audio/ngx';
+import { SpeechRecognition } from '@ionic-native/speech-recognition/ngx';
+import { TextToSpeech } from '@ionic-native/text-to-speech/ngx';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
@@ -26,6 +28,8 @@ import { AppRoutingModule } from './app-routing.module';
     SplashScreen,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     NativeAudio,
+    SpeechRecognition,
+    TextToSpeech
   ],
   bootstrap: [AppComponent]
 })

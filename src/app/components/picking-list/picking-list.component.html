@@ -1,7 +1,7 @@
 <ion-grid>
   
   <ion-row>
-    <ion-col>
+    <ion-col size="4">
         <div><strong>Nombre</strong></div>
     </ion-col>
     
@@ -22,7 +22,7 @@
   </ion-row>
 
   <ion-row *ngFor="let pick of picks" (click)="open_link(pick.id, code)">
-    <ion-col>
+    <ion-col size-xs="12" size-sm="4" size-md="4">
       <div>{{pick.name}}</div>
     </ion-col>
     
@@ -38,7 +38,7 @@
       <div>{{pick.scheduled_date}}h</div>
     </ion-col>
   
-    <ion-col [ngClass]="{'success': pick.state == 'done',
+    <ion-col size-xs="6" size-sm="2" size-md="2" [ngClass]="{'success': pick.state == 'done',
     'danger': pick.state == 'cancel', 
     'primary': pick.state == 'assigned', 
     'secondary': pick.state == 'confirmed', 
@@ -53,4 +53,3 @@
     </ion-col>
   </ion-row>
 </ion-grid>
-

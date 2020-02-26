@@ -14,23 +14,25 @@
   </ion-row>
   
   <ion-row *ngFor="let location of locations" (click)="open_link(location.id)">
-    <ion-col size="12">
+    <ion-col size-xs="12" size-sm="4" size-md="4">
       <div>{{location.display_name}}</div>
     </ion-col>
   
-    <!--ion-col size="4" [ngSwitch]="location.usage" class="ion-align-self-center ion-text-center">
-      <div *ngSwitchCase="'supplier'">Ubicación de proveedor</div>
-      <div *ngSwitchCase="'customer'">Ubicación de cliente</div>
-      <div *ngSwitchCase="'inventory'">Ubicación de inventario</div>
-      <div *ngSwitchCase="'procurement'">Abastecimiento</div>
-      <div *ngSwitchCase="'view'">Ver</div>
-      <div *ngSwitchCase="'internal'">Ubicación interna</div>
-      <div *ngSwitchCase="'production'">Producción</div>
-      <div *ngSwitchCase="'transit'">Ubicación de tránsito</div>
+    <ion-col size-xs="6" size-sm="4" size-md="4" [ngSwitch]="location.usage" class="ion-align-self-center ion-text-center">
+      <div *ngSwitchCase="'supplier'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de proveedor</div>
+      <div *ngSwitchCase="'view'"><strong class="ion-hide-sm-up">Tipo: </strong>Ver</div>
+      <div *ngSwitchCase="'internal'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación interna</div>
+      <div *ngSwitchCase="'customer'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de cliente</div>
+      <div *ngSwitchCase="'inventory'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de inventario</div>
+      <div *ngSwitchCase="'procurement'"><strong class="ion-hide-sm-up">Tipo: </strong>Abastecimiento</div>
+      <div *ngSwitchCase="'production'"><strong class="ion-hide-sm-up">Tipo: </strong>Producción</div>
+      <div *ngSwitchCase="'transit'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de tránsito</div>
     </ion-col>
     
-    <ion-col size="4">
-      <div>{{location.company_id[1]}}</div>
-    </ion-col-->
+    <ion-col size-xs="6" size-sm="4" size-md="4">
+      <div>
+        <strong class="ion-hide-sm-up">Compañía: </strong>{{location.company_id[1]}}
+      </div>
+    </ion-col>
   </ion-row>
 </ion-grid>

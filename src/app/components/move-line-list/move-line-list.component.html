@@ -24,7 +24,7 @@
     
     <!--ion-col size="2">
       <div *ngIf="(line.quantity_done != 0 || (line.state != 'confirmed' && line.state != 'partially_available' && line.state != 'assigned')); else link_product_uom_qty">
-        {{line.product_uom_qty}}
+        <strong class="ion-hide-sm-up">Pedida: </strong>{{line.product_uom_qty}}
       </div>
     </ion-col>
 

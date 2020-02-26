@@ -6,7 +6,6 @@ import { Routes, RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 
 import { StockPickingPage } from './stock-picking.page';
-import { PickingInfoComponent } from '../../components/picking-info/picking-info.component';
 import { MoveLineListComponent } from '../../components/move-line-list/move-line-list.component';
 import { MoveLineDetailsListComponent } from '../../components/move-line-details-list/move-line-details-list.component';
 
@@ -27,7 +26,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     SharedModule
   ],
-  entryComponents: [PickingInfoComponent, MoveLineListComponent, MoveLineDetailsListComponent],
-  declarations: [StockPickingPage, PickingInfoComponent, MoveLineListComponent, MoveLineDetailsListComponent]
+  entryComponents: [MoveLineListComponent, MoveLineDetailsListComponent],
+  declarations: [StockPickingPage, MoveLineListComponent, MoveLineDetailsListComponent]
 })
 export class StockPickingPageModule {}

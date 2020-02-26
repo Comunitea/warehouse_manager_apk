@@ -5,7 +5,6 @@ import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
-import { ScannerOptions } from '../../interfaces/scanner-options';
 
 @Component({
   selector: 'app-product-list',
@@ -14,8 +13,6 @@ import { ScannerOptions } from '../../interfaces/scanner-options';
 })
 export class ProductListPage implements OnInit {
 
-  scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
-
   @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
 
   offset: number;
@@ -23,18 +20,15 @@ export class ProductListPage implements OnInit {
   limit_reached: boolean;
   product_list: {};
   search: string;
-  show_scan_form: boolean;
   scanner_reading: string;
 
   constructor(
     private odoo: OdooService,
     public router: Router,
-    private storage: Storage,
     public alertCtrl: AlertController,
     private audio: AudioService,
     private stock: StockService
   ) {
-    this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
     this.limit_reached = false;
@@ -46,22 +40,10 @@ export class ProductListPage implements OnInit {
         this.router.navigateByUrl('/login');
       } else {
         this.get_product_list();
-        this.show_scan_form = this.scanner_options['reader'];
       }
     })
     .catch((error)=>{
       this.presentAlert('Error al comprobar tu sesión:', error);
-    });
-  }
-
-  check_scanner_values() {
-    this.storage.get('SCANNER').then((val) => {
-      if (val){
-        this.scanner_options = val;
-      } 
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al acceder a las opciones del scanner:', error);
     });
   }
 
@@ -79,10 +61,6 @@ export class ProductListPage implements OnInit {
     this.scanner_reading = val;
     this.search = val;
     this.get_product_list(this.search);
-  }
-
-  onShowEmitted(val: boolean) {
-    this.show_scan_form = val;
   }
   
   get_product_list(search=null){
