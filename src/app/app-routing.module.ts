@@ -43,7 +43,11 @@ const routes: Routes = [
   },
   { path: 'stock-move-location',
     loadChildren: () => import('./pages/stock-move-location/stock-move-location.module').then(m => m.StockMoveLocationPageModule)
-   }  
+   },
+   { path: 'move-line-form/:id', 
+   loadChildren: () => import ('./pages/move-line-form/move-line-form.module').then(m => m.MoveLineFormPageModule) 
+  }
+ 
 ];
 
 @NgModule({

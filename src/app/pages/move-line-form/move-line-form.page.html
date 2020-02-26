@@ -1,0 +1,47 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Movimiento</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+<ion-card *ngIf="data">
+
+    <ion-card-header>
+      <ion-card-title style="text-align-last: center;">{{data.name}}</ion-card-title>
+    </ion-card-header>
+  
+    <ion-card-content style="text-align-last: center;">
+      <div class="product_img" style="text-align-last: center;">
+        <ion-img *ngIf="data.base64" src="data:image/jpeg;base64,{{ data['image_medium'] }}" style="text-align-last: center;"></ion-img>
+        <ion-img *ngIf="!data.base64" src="{{ data['image_medium'] }}" style="text-align-last: center;"></ion-img>
+        <ion-label>
+          <strong>  {{data.name}} </strong>
+        </ion-label>
+      </div>
+      <div><strong>Pick: </strong>{{data.picking_id && data.picking_id.name}}</div>
+      <div><strong>Referencia: </strong>{{data.default_code}}</div>
+      <div><strong>{{data.location_id.name}} >> {{data.location_dest_id.name}}</strong></div>
+      <ion-row>
+         <ion-col><ion-badge (click)="changeqty(-1)"> - </ion-badge>
+        </ion-col>
+        <ion-col (click)="changeqty(0)"><strong>Cantidad: </strong><br/>
+          <ion-badge class="primary"> {{data.qty_done}} de {{data.product_uom_qty}} </ion-badge> 
+        </ion-col>
+        <ion-col><ion-badge (click)="changeqty(+1)"> + </ion-badge>
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-col (click)="get_move_line_info(data.id, -1)">Anterior
+        </ion-col>
+        <ion-col (click)="action_done(data.id)">Validar
+        </ion-col>
+        <ion-col (click)="get_move_line_info(data.id, +1)">Siguiente
+        </ion-col>
+      </ion-row>
+    </ion-card-content>
+  
+  </ion-card>
+</ion-content>
+

@@ -13,6 +13,7 @@ export class MoveLineListComponent implements OnInit {
   @Input() scanner_reading: string
   @Input() move_lines: {}
   @Input() code: string;
+  @Input() picking_fields: string;
   move_lines_info: {};
 
   constructor(
@@ -29,8 +30,8 @@ export class MoveLineListComponent implements OnInit {
     }
   }
 
-  open_link(product_id){
-    this.router.navigateByUrl('/product/'+product_id);
+  open_link(move_line){
+    this.router.navigateByUrl('/move-line-form/'+move_line);
   }
 
   get_move_lines_list () {

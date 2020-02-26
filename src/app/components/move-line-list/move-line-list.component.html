@@ -1,28 +1,28 @@
 <ion-grid>
   <ion-row>
-    <ion-col>
-      <div><strong>Producto</strong></div>
+    <ion-col size="10">
+      <div style="font-size: small"><strong>Producto</strong></div>
     </ion-col>  
 
     <ion-col size="2">
-      <div><strong>Pedida</strong></div>
+      <div style="font-size: small"><strong>Qty</strong></div>
     </ion-col>
 
-    <ion-col size="2">
+    <!--ion-col size="2">
       <div><strong>Reservada</strong></div>
     </ion-col>
     
     <ion-col size="2">
       <div><strong>Hecha</strong></div>
-    </ion-col>
+    </ion-col-->
   </ion-row>
 
   <ion-row *ngFor="let line of move_lines_info" [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">
-    <ion-col>
-      <div class="product_link" (click)="open_link(line.product_id[0])">{{line.product_id[1]}}</div>
+    <ion-col size="10" >
+      <div (click)="open_link(line)" style="font-size: small">{{line.product_id[1]}}</div>
     </ion-col>
     
-    <ion-col size="2">
+    <!--ion-col size="2">
       <div *ngIf="(line.quantity_done != 0 || (line.state != 'confirmed' && line.state != 'partially_available' && line.state != 'assigned')); else link_product_uom_qty">
         {{line.product_uom_qty}}
       </div>
@@ -30,18 +30,25 @@
 
     <ng-template #link_product_uom_qty>
       <div (click)="force_set_qty_done(line.id, 'product_uom_qty', 'stock.move')" >{{line.product_uom_qty}}</div>
-    </ng-template>
+    </ng-template-->
     
-    <ion-col size="2">
-      <div *ngIf="(line.quantity_done != 0 || line.reserved_availability == 0 || code == 'incoming' || (line.state == 'done' || line.state == 'assigned')); else link_qty_done">{{line.reserved_availability}}</div>
+    <ion-col size="2" >
+      <div *ngIf="(line.quantity_done != 0 || line.reserved_availability == 0 || code == 'incoming' || (line.state == 'done' || line.state == 'assigned')); else link_qty_done" 
+        style="font-size: small">
+        {{line.quantity_done}} // {{line.reserved_availability}}
+      </div>
     </ion-col>
 
     <ng-template #link_qty_done>
-      <div (click)="force_set_assigned_qty_done(line.id)">{{line.reserved_availability}}</div>
+      <div (click)="force_set_assigned_qty_done(line.id)" 
+        style="font-size: small">
+        {{line.quantity_done}} // {{line.reserved_availability}}
+      </div>
     </ng-template>
     
-    <ion-col size="2">
+    <!--ion-col size="2">
       <div>{{line.quantity_done}}</div>
-    </ion-col>
+    </ion-col-->
+     
   </ion-row>
 </ion-grid>

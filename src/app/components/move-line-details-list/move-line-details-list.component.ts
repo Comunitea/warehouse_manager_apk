@@ -13,6 +13,8 @@ export class MoveLineDetailsListComponent implements OnInit {
   @Input() scanner_reading: string
   @Input() move_line_ids: {}
   @Input() code: string;
+  @Input() picking_fields: string;
+  @Input() hide_product: boolean
   move_line_ids_info: {};
   picking: string;
 
@@ -32,12 +34,17 @@ export class MoveLineDetailsListComponent implements OnInit {
 
   ngOnChanges(changeRecord) {
     if (changeRecord['scanner_reading'] && changeRecord['scanner_reading']['currentValue']) {
-      let default_code = changeRecord['scanner_reading']['currentValue'];
-      console.log("Confirmamos cantidad reservada para el producto con default code:" + default_code);
-      this.force_set_qty_done_by_product_code_apk(default_code, 'product_uom_qty');      
+      let code = changeRecord['scanner_reading']['currentValue'];
+      let picking = +this.picking
+      this.stock.find_move_line_id(code, picking).then((move_id)=>{
+          console.log(move_id)
+          this.router.navigateByUrl('/move-line-form/'+move_id);
+        })
+      .catch((error)=>{
+        this.presentAlert('Error al recuperar un movieminto para:', code);
+      });
     }
   }
-
   get_move_lines_details_list () {
     
     this.stock.get_move_lines_details_list(this.move_line_ids).then((lines_data)=>{
@@ -71,8 +78,10 @@ export class MoveLineDetailsListComponent implements OnInit {
     });
   }
 
-  open_link(pick_id){
-    this.router.navigateByUrl('/product/'+pick_id);
+  open_link(pick_id){    
+
+    this.router.navigateByUrl('/move-line-form/'+pick_id);
+     //this.router.navigateByUrl('/product/'+pick_id);
   }
 
   async presentAlert(titulo, texto) {

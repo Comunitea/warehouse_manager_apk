@@ -10,7 +10,9 @@
         <ion-img *ngIf="!product.base64" src="{{ product['image_medium'] }}"></ion-img>
         <ion-label>{{product.description_short}}</ion-label>
       </div>
+      <div><strong>Id: </strong>{{product.id}}</div>
       <div><strong>Categoría: </strong>{{product.categ_id[1]}}</div>
+
       <div><strong>Referencia: </strong>{{product.default_code}}</div>
       <div><strong>Codigo de barras: </strong>{{product.barcode}}</div>
       <div><strong>Precio de venta: </strong>{{product.list_price}}€</div>

@@ -91,9 +91,9 @@ export class StockPickingTypeListPage implements OnInit {
     await alert.present();
   }
   
-  get_picking_types(picking_state=null, search=null){
+  get_picking_types(picking_state = null, search = null) {
     if (picking_state && picking_state != 'all') {
-      this.current_selected_type =picking_state;
+      this.current_selected_type = picking_state;
       picking_state = [picking_state];
     } else {
       this.current_selected_type = 'all';

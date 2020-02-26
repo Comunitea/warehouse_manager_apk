@@ -1,22 +1,22 @@
 <ion-grid>
-
+  
   <ion-row>
     <ion-col>
         <div><strong>Nombre</strong></div>
     </ion-col>
     
-    <ion-col *ngIf="code != 'incoming'">
+    <ion-col *ngIf="picking_fields.indexOf('location_id')<0">
         <div><strong>Origen</strong></div>
     </ion-col>
 
-    <ion-col *ngIf="code != 'outgoing'">
+    <ion-col *ngIf="picking_fields.indexOf('location_dest_id')<0">
       <div><strong>Destino</strong></div>
     </ion-col>
     
-    <ion-col class="ion-align-self-center ion-text-center">
+    <ion-col class="ion-align-self-center ion-text-center" *ngIf="picking_fields.indexOf('scheduled_date')<0">
       <div><strong>Previsto</strong></div>
     </ion-col>
-    <ion-col class="ion-align-self-center ion-text-center">
+    <ion-col class="ion-align-self-center ion-text-center" *ngIf="picking_fields.indexOf('state')<0">
       <div><strong>Estado</strong></div>
     </ion-col>
   </ion-row>
@@ -26,15 +26,15 @@
       <div>{{pick.name}}</div>
     </ion-col>
     
-    <ion-col *ngIf="code != 'incoming'">
+    <ion-col *ngIf="picking_fields.indexOf('location_id')<0">
       <div>{{pick.location_id[1]}}</div>
     </ion-col>
   
-    <ion-col *ngIf="code != 'outgoing'">
+    <ion-col *ngIf="picking_fields.indexOf('location_dest_id')<0">
       <div>{{pick.location_dest_id[1]}}</div>
     </ion-col>
     
-    <ion-col class="ion-align-self-center ion-text-center">
+    <ion-col class="ion-align-self-center ion-text-center" *ngIf="picking_fields.indexOf('scheduled_date')<0">
       <div>{{pick.scheduled_date}}h</div>
     </ion-col>
   
@@ -43,7 +43,7 @@
     'primary': pick.state == 'assigned', 
     'secondary': pick.state == 'confirmed', 
     'tertiary': pick.state == 'waiting', 
-    'medium': pick.state == 'draft'}" [ngSwitch]="pick.state" class="ion-align-self-center ion-text-center">
+    'medium': pick.state == 'draft'}" [ngSwitch]="pick.state" class="ion-align-self-center ion-text-center" *ngIf="picking_fields.indexOf('state')<0">
       <div *ngSwitchCase="'draft'">Borrador</div>
       <div *ngSwitchCase="'waiting'">Faltan operaciones</div>
       <div *ngSwitchCase="'confirmed'">En espera</div>

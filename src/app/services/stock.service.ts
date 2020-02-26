@@ -12,30 +12,30 @@ export class StockService {
   STOCK_FIELDS = {
 
     'stock.picking': {
-      'tree': ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state'],
-      'form': ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state', 
-      'picking_type_id', 'priority', 'note', 'move_lines', 'move_line_ids', 'quantity_done', 
+      'tree': ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state','picking_fields'],
+      'form': ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state', 'group_code',
+      'picking_type_id', 'priority', 'note', 'move_lines', 'move_line_ids', 'quantity_done', 'picking_fields',
       'reserved_availability', 'product_uom_qty', 'show_check_availability', 
       'show_validate']
     },
 
     'stock.move': {
-      'tree': ['id', 'product_id', 'product_uom_qty', 'reserved_availability', 'quantity_done'],
-      'form': ['id', 'product_id', 'product_uom_qty', 'reserved_availability', 'quantity_done', 'state']
+      'tree': ['id', 'product_id', 'product_uom_qty', 'reserved_availability', 'quantity_done', 'tracking'],
+      'form': ['id', 'product_id', 'product_uom_qty', 'reserved_availability', 'quantity_done', 'state', 'tracking']
     },
 
     'stock.move.line': {
-      'tree': ['id', 'product_id', 'product_uom_qty', 'qty_available', 'qty_done', 'location_id', 'location_dest_id', 
-      'package_id', 'result_package_id'],
-      'form': ['id', 'product_id', 'product_uom_qty', 'qty_available', 'qty_done', 'location_id', 'location_dest_id', 
-      'package_id', 'result_package_id', 'state', 'picking_id']
+      'tree': ['id', 'product_id', 'product_uom_qty', 'qty_available', 'qty_done', 'location_id', 'location_dest_id', 'lot_id',
+      'package_id', 'result_package_id', 'tracking'],
+      'form': ['id', 'product_id', 'product_uom_qty', 'qty_available', 'qty_done', 'location_id', 'location_dest_id', 'lot_id',
+      'package_id', 'result_package_id', 'state', 'picking_id', 'tracking']
     },
 
     'product.product': {
       'tree': ['id', 'name', 'default_code', 'list_price', 'qty_available', 'virtual_available'],
-      'form': ['id', 'name', 'default_code', 'list_price', 'standard_price', 'qty_available', 'virtual_available', 'categ_id', 
+      'form': ['id', 'name', 'default_code', 'list_price', 'standard_price', 'qty_available', 'virtual_available', 'categ_id', 'tracking', 
       'barcode', 'description_short', 'image_medium'],
-      'location-tree': ['id', 'name', 'default_code', 'list_price', 'last_purchase_price', 'qty_available', 'virtual_available', 
+      'location-tree': ['id', 'name', 'default_code', 'list_price', 'last_purchase_price', 'qty_available', 'virtual_available', 'tracking', 
       'barcode', 'uom_id']
     },
 
@@ -51,7 +51,7 @@ export class StockService {
 
     'stock.picking.type': {
       'tree': ['id', 'name', 'color', 'warehouse_id', 'code'],
-      'form': ['id', 'name', 'color', 'warehouse_id', 'code', 'count_picking_ready', 'count_picking_waiting', 'count_picking_late', 
+      'form': ['id', 'name', 'color', 'warehouse_id', 'code', 'count_picking_ready', 'count_picking_waiting', 'count_picking_late', 'group_code',
       'count_picking_backorders', 'rate_picking_late', 'rate_picking_backorders']
     }
 
@@ -119,13 +119,10 @@ export class StockService {
   get_picking_types(picking_codes, offset=0, limit=0, search) {
     let self = this;
     let domain = [];
-    
-    domain = [['code', 'in', picking_codes], ['active', '=', true]];
-
+    domain = [['code', 'in', picking_codes], ['active', '=', true], ['app_integrated','=', true]];
     if(search) {
       domain.push(['name', 'ilike', search]);
     }
-
     let model = 'stock.picking.type';
     let fields = this.STOCK_FIELDS[model]['form']
     let promise = new Promise( (resolve, reject) => {
@@ -180,13 +177,42 @@ export class StockService {
         console.log("Error al validar")
     });
     })
-    
     return promise
   }
 
   // Move_lines
+  
+  find_move_line_id(code, picking_id){
+    let self = this;
+    let values = {'code': code, 'picking_id': picking_id};
+    let model = 'stock.move.line';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'find_move_line_id', values).then((data) => {
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
+  get_move_line_info(move_id, index=0) {
+    let self = this;
+    let values = {'id': move_id, 'index': index};
+    let model = 'stock.move.line';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'get_move_line_info_apk', values).then((data) => {
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
 
-  get_move_lines_list(line_ids) {
+
+  get_move_lines_list_search(line_ids) {
     let self = this;
     let domain = [['id', 'in', line_ids]];
 
@@ -194,6 +220,25 @@ export class StockService {
     let fields = this.STOCK_FIELDS[model]['tree']
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
+        for (let sm_id in data){data[sm_id]['model'] = model}
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
+
+
+  get_move_lines_list(line_ids) {
+    let self = this;
+    let domain = [['id', 'in', line_ids]];
+    let model = 'stock.move';
+    let fields = this.STOCK_FIELDS[model]['tree'];
+    let values = {'domain': domain, 'fields': fields, 'model': model}
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'get_apk_object', values).then((data:any) => {
         for (let sm_id in data){data[sm_id]['model'] = model}
           resolve(data)
       })
@@ -229,7 +274,7 @@ export class StockService {
     }
      
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute(model, 'force_set_assigned_qty_done_apk', values).then((done) => {
+      self.odooCon.execute(model, 'force_set_qty_done_apk', values).then((done) => {
        resolve(done)
       })
       .catch((err) => {

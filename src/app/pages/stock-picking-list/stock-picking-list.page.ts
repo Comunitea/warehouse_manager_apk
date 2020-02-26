@@ -31,6 +31,7 @@ export class StockPickingListPage implements OnInit {
   current_code: string;
   show_scan_form: boolean;
   scanner_reading: string;
+  picking_fields: string;
 
   constructor(
     private odoo: OdooService,
@@ -48,6 +49,7 @@ export class StockPickingListPage implements OnInit {
         'late': [['state', 'in', ['assigned', 'waiting', 'confirmed']], ['scheduled_date', '<', new Date().toLocaleString('es-ES', options)]],
         'backorders': [['state', 'in', ['waiting', 'confirmed', 'assigned']], ['backorder_id', '!=', false]]
     }
+    this.picking_fields = "picking_fields"
     this.check_scanner_values();
     this.offset = 0;
     this.limit = 25;
@@ -105,20 +107,23 @@ export class StockPickingListPage implements OnInit {
   get_picking_list(search=null){
     this.offset = 0;
     this.limit_reached = false;
-    this.stock.get_picking_list(this.view_domain[this.view_selector], this.current_type_id, this.offset, this.limit, search).then((picking_list:Array<{}>)=> {
-      this.pickings = picking_list;
-      if(Object.keys(picking_list).length < 25){
-        this.limit_reached = true;
-      }
-      if (Object.keys(this.pickings).length == 1){
-        this.router.navigateByUrl('/stock-picking/'+this.pickings[0]['id']+'/'+this.current_code);
-      }
-      this.audio.play('click');
-    })
-    .catch((error) => {
-      console.log(error);
-      this.presentAlert('Error al recuperador el listado de operaciones:', error);
-    });
+    
+        this.stock.get_picking_list(this.view_domain[this.view_selector], this.current_type_id, this.offset, this.limit, search).then((picking_list:Array<{}>)=> {
+          this.pickings = picking_list;
+          if (picking_list){
+            this.picking_fields = picking_list[0]['picking_fields']}
+          if(Object.keys(picking_list).length < 25){
+            this.limit_reached = true;
+          }
+          if (Object.keys(this.pickings).length == 1){
+            this.router.navigateByUrl('/stock-picking/'+this.pickings[0]['id']+'/'+this.current_code);
+          }
+          this.audio.play('click');
+        })
+        .catch((error) => {
+          console.log(error);
+          this.presentAlert('Error al recuperador el listado de operaciones:', error);
+        });
   }
 
   get_search_results(ev:any){
@@ -132,6 +137,7 @@ export class StockPickingListPage implements OnInit {
     setTimeout(() => {
       console.log('Loading more locations');
       event.target.complete();
+
       this.picking_list_infinite_scroll_add();
 
       // App logic to determine if all data is loaded

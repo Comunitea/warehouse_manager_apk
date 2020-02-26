@@ -20,6 +20,7 @@ export class PickingInfoComponent implements OnInit {
   move_line_ids: {};
   active_operation: boolean;
   loading: any;
+  hide_product: boolean;
 
   @Input() scanner_reading: string
   @Input() pick: {}
@@ -36,7 +37,8 @@ export class PickingInfoComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.active_operation = true;
+    this.active_operation = false;
+    this.hide_product = true;
     this.picking = this.route.snapshot.paramMap.get('id');
     this.get_picking_info(this.picking);
   }

@@ -10,8 +10,13 @@
   <ion-content>
     <ion-card>
       <ion-row *ngIf="picking_menu">
-        <ion-col col-2 class="ion-align-self-center ion-text-center" [ngClass]="{'selected': current_selected_type == option.value}" *ngFor="let option of picking_menu" (click)="get_picking_types(option.value, search)">
-          <ion-icon class="icon" [name]="option.icon"></ion-icon><br/>
+        <ion-col col-2 class="ion-align-self-center ion-text-center" 
+          [ngClass]="{'selected': current_selected_type == option.value}" 
+          *ngFor="let option of picking_menu" 
+          (click)="get_picking_types(option.value, search)">
+          <ion-icon class="icon" [name]="option.icon"></ion-icon
+          >
+          <br/>
           {{option.name}}
         </ion-col>
       </ion-row>

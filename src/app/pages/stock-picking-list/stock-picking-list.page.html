@@ -4,7 +4,7 @@
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
     <app-scanner-header slot="end" (show_scan_form_changed)="onShowEmitted($event)" [show_scan_form]=show_scan_form></app-scanner-header>
-    <ion-title>Listado de operaciones</ion-title>
+    <ion-title>Listado de albaranes</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -17,7 +17,7 @@
         </ion-toolbar>
       </ion-row>
 
-      <app-picking-list [code]="current_code" [picks]="pickings"></app-picking-list>
+      <app-picking-list [code]="current_code" [picking_fields]="picking_fields" [picks]="pickings"></app-picking-list>
 
       <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
         <ion-infinite-scroll-content
