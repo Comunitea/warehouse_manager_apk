@@ -269,7 +269,6 @@ export class StockService {
     
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'force_set_qty_done_apk', values).then((done) => {
-        console.log(done)
         resolve(done)
       })
       .catch((err) => {
@@ -291,7 +290,6 @@ export class StockService {
     
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'force_set_qty_done_by_product_code_apk', values).then((done) => {
-        console.log(done)
         resolve(done)
       })
       .catch((err) => {

@@ -9,7 +9,26 @@
 </ion-header>
 
 <ion-content>
-  <app-product-info [product]="product_data"></app-product-info>
+  <ion-card *ngIf="product_data">
+    <ion-card-header>
+      <ion-card-title>{{product_data.name}}</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <div class="product_img">
+      <ion-img *ngIf="product_data.base64" src="data:image/jpeg;base64,{{ product_data['image_medium'] }}"></ion-img>
+      <ion-img *ngIf="!product_data.base64" src="{{ product_data['image_medium'] }}"></ion-img>
+      <ion-label *ngIf="product_data.description_short">{{product_data.description_short}}</ion-label>
+      </div>
+      <div><strong>Categoría: </strong>{{product_data.categ_id[1]}}</div>
+      <div><strong>Referencia: </strong>{{product_data.default_code}}</div>
+      <div *ngIf="product_data.barcode"><strong>Codigo de barras: </strong>{{product_data.barcode}}</div>
+      <div><strong>Precio de venta: </strong>{{product_data.list_price}}€</div>
+      <div><strong>Precio de compra: </strong>{{product_data.standard_price}}€</div>
+      <div [ngClass]="{'danger': product_data.qty_available &lt;= 0}"><strong>A mano: </strong>{{product_data.qty_available}}</div>
+      <div [ngClass]="{'danger': product_data.virtual_available &lt;= 0}"><strong>Previsto: </strong>{{product_data.virtual_available}}</div>
+    </ion-card-content>
+  </ion-card>
 
   <app-product-quant-list [quants]="quants"></app-product-quant-list>
   

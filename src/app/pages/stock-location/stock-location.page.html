@@ -9,5 +9,35 @@
 </ion-header>
 
 <ion-content>
-  <app-location-info [location]="location_data"></app-location-info>
+  <ion-card *ngIf="location_data">
+
+    <ion-card-header>
+      <ion-card-title>{{location_data.display_name}}</ion-card-title>
+    </ion-card-header>
+  
+    <ion-card-content>
+      <div *ngIf="location_data.company_id"><strong>Compañía: </strong>{{location_data.company_id[1]}}</div>
+      <div *ngIf="location_data.picking_type_id"><strong>Tipo de albarán: </strong>{{location_data.picking_type_id[1]}}</div>
+      <div [ngSwitch]="location_data.usage">
+        <strong>Tipo: </strong>
+        <ion-text *ngSwitchCase="'supplier'">Ubicación de proveedor</ion-text>
+        <ion-text *ngSwitchCase="'view'">Ver</ion-text>
+        <ion-text *ngSwitchCase="'internal'">Ubicación interna</ion-text>
+        <ion-text *ngSwitchCase="'customer'">Ubicación de cliente</ion-text>
+        <ion-text *ngSwitchCase="'inventory'">Ubicación de inventario</ion-text>
+        <ion-text *ngSwitchCase="'procurement'">Abastecimiento</ion-text>
+        <ion-text *ngSwitchCase="'production'">Producción</ion-text>
+        <ion-text *ngSwitchCase="'transit'">Ubicación de tránsito</ion-text>
+      </div>
+      <ion-row>
+        <ion-col>
+          <ion-button (click)="open_link('stock', location_data.id)" expand="block">Stock actual</ion-button>
+        </ion-col>
+        <ion-col>
+          <ion-button (click)="open_link('product', location_data.id)" expand="block">Productos</ion-button>
+          </ion-col>
+      </ion-row>
+    </ion-card-content>
+  
+  </ion-card>
 </ion-content>

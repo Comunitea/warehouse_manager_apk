@@ -6,7 +6,6 @@ import { Routes, RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 
 import { StockLocationPage } from './stock-location.page';
-import { LocationInfoComponent } from '../../components/location-info/location-info.component';
 
 import { SharedModule } from '../../shared/shared.module';
 
@@ -25,7 +24,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     SharedModule
   ],
-  entryComponents: [LocationInfoComponent],
-  declarations: [StockLocationPage, LocationInfoComponent]
+  entryComponents: [],
+  declarations: [StockLocationPage]
 })
 export class StockLocationPageModule {}
