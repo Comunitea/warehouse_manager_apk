@@ -9,3 +9,13 @@ div {
         cursor: pointer;
     }
 }
+
+/* Medias */
+@media screen and (max-width: 576px) {
+    ion-grid > ion-row:first-child {
+        display: none;
+    }
+    ion-grid > ion-row {
+        border: 1px black solid;
+    }
+}

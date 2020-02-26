@@ -13,16 +13,16 @@
     </ion-col>
   </ion-row>
   <ion-row *ngFor="let quant of quants">
-      <ion-col size="8">
+      <ion-col size-xs="12" size-sm="8" size="8">
       <div class="product_link" (click)="open_link(quant.location_id[0])">{{quant.location_id[1]}}</div>
     </ion-col>
     
-    <ion-col size="2">
-      <div>{{quant.reserved_quantity}}</div>
+    <ion-col size-xs="6" size-sm="2" size="2">
+      <div><strong class="ion-hide-sm-up">Reservado: </strong>{{quant.reserved_quantity}}</div>
     </ion-col>
     
-    <ion-col size="2">
-      <div [ngClass]="{'danger': quant.quantity &lt;= 0}">{{quant.quantity}}</div>
+    <ion-col size-xs="6" size-sm="2" size="2">
+      <div [ngClass]="{'danger': quant.quantity &lt;= 0}"><strong class="ion-hide-sm-up">A mano: </strong>{{quant.quantity}}</div>
     </ion-col>
   </ion-row>
 </ion-grid>

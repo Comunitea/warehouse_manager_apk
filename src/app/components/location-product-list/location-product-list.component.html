@@ -1,12 +1,12 @@
 <ion-grid>
   
   <ion-row>
+    <ion-col size="3">
+      <div><strong>Nombre</strong></div>
+    </ion-col>
+
     <ion-col size="2">
         <div><strong>Referencia</strong></div>
-    </ion-col>
-    
-    <ion-col size="3">
-        <div><strong>Nombre</strong></div>
     </ion-col>
 
     <ion-col size="1">
@@ -35,36 +35,40 @@
   </ion-row>
 
   <ion-row *ngFor="let product of products">
-    <ion-col size="2">
-      <div>{{product.default_code}}</div>
-    </ion-col>
-  
-    <ion-col size="3">
+    <ion-col size-xs="12" size-sm="3" size-md="3">
       <div class="product_link" (click)="open_link(product.id)">{{product.name}}</div>
     </ion-col>
-  
-    <ion-col size="1">
-      <div>{{product.lst_price}}</div>
+
+    <ion-col size-xs="6" size-sm="2" size-md="2">
+      <div><strong class="ion-hide-sm-up">Referencia: </strong>{{product.default_code}}</div>
     </ion-col>
   
-    <ion-col size="1">
-      <div>{{product.last_purchase_price}}</div>
+    <ion-col size-xs="3" size-sm="1" size-md="1">
+      <div><strong class="ion-hide-sm-up">Precio venta: </strong>{{product.lst_price}}</div>
     </ion-col>
   
-    <ion-col size="1">
-      <div [ngClass]="{'danger': product.qty_available &lt;= 0}">{{product.qty_available}}</div>
+    <ion-col size-xs="3" size-sm="1" size-md="1">
+      <div><strong class="ion-hide-sm-up">Precio compra: </strong>{{product.last_purchase_price}}</div>
     </ion-col>
   
-    <ion-col size="1">
-      <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">{{product.virtual_available}}</div>
+    <ion-col size-xs="3" size-sm="1" size-md="1">
+      <div [ngClass]="{'danger': product.qty_available &lt;= 0}">
+        <strong class="ion-hide-sm-up">A mano: </strong>{{product.qty_available}}
+      </div>
     </ion-col>
   
-    <ion-col size="1">
-      <div>{{product.uom_id[1]}}</div>
+    <ion-col size-xs="3" size-sm="1" size-md="1">
+      <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">
+        <strong class="ion-hide-sm-up">Pronóstico: </strong>{{product.virtual_available}}
+      </div>
     </ion-col>
   
-    <ion-col size="2">
-      <div>{{product.barcode}}</div>
+    <ion-col size-xs="3" size-sm="1" size-md="1">
+      <div><strong class="ion-hide-sm-up">Unidad: </strong>{{product.uom_id[1]}}</div>
+    </ion-col>
+  
+    <ion-col size-xs="3" size-sm="2" size-md="2">
+      <div><strong class="ion-hide-sm-up">Código: </strong>{{product.barcode}}</div>
     </ion-col>
   </ion-row>
 </ion-grid>

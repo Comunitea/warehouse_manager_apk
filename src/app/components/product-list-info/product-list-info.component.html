@@ -1,5 +1,5 @@
 <ion-grid>
-  <ion-row>
+  <ion-row class="ion-align-items-center">
     <ion-col size="7">
         <div><strong>Nombre</strong></div>
     </ion-col>
@@ -21,24 +21,30 @@
   </ion-row>
 
   <ion-row *ngFor="let product of products">
-      <ion-col size="7">
+      <ion-col size-xs="12" size-sm="7" size-md="7">
           <div class="product_link" (click)="open_link(product.id)">{{product.name}}</div>
       </ion-col>
       
-      <ion-col size="2">
-          <div>{{product.default_code}}</div>
+      <ion-col size-xs="6" size-sm="2" size-md="2">
+          <div><strong class="ion-hide-sm-up">Código: </strong>{{product.default_code}}</div>
       </ion-col>
     
-      <ion-col size="1">
-        <div [ngClass]="{'danger': product.qty_available &lt;= 0}" >{{product.qty_available}}</div>
+      <ion-col size-xs="6" size-sm="1" size-md="1">
+        <div [ngClass]="{'danger': product.qty_available &lt;= 0}">
+          <strong class="ion-hide-sm-up">Disponible: </strong>{{product.qty_available}}
+        </div>
       </ion-col>
       
-      <ion-col size="1">
-        <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">{{product.virtual_available}}</div>
+      <ion-col size-xs="6" size-sm="1" size-md="1">
+        <div [ngClass]="{'danger': product.virtual_available &lt;= 0}">
+          <strong class="ion-hide-sm-up">Previsto: </strong>{{product.virtual_available}}
+        </div>
       </ion-col>
     
-      <ion-col size="1">
-          <div>{{product.list_price}}€</div>
+      <ion-col size-xs="6" size-sm="1" size-md="1">
+          <div>
+            <strong class="ion-hide-sm-up">Precio de venta</strong>{{product.list_price}}€
+          </div>
       </ion-col>
     </ion-row>
 </ion-grid>

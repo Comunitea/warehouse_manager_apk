@@ -1,6 +1,6 @@
 <ion-grid>
   <ion-row>
-    <ion-col>
+    <ion-col size="6">
       <div><strong>Producto</strong></div>
     </ion-col>  
 
@@ -18,30 +18,38 @@
   </ion-row>
 
   <ion-row *ngFor="let line of move_lines_info" [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">
-    <ion-col>
+    <ion-col size-xs="12" size-sm="6" size-md="6">
       <div class="product_link" (click)="open_link(line.product_id[0])">{{line.product_id[1]}}</div>
     </ion-col>
     
-    <ion-col size="2">
+    <ion-col size-xs="6" size-sm="2" size-md="2">
       <div *ngIf="(line.quantity_done != 0 || (line.state != 'confirmed' && line.state != 'partially_available' && line.state != 'assigned')); else link_product_uom_qty">
-        {{line.product_uom_qty}}
+        <strong class="ion-hide-sm-up">Pedida: </strong>{{line.product_uom_qty}}
       </div>
     </ion-col>
 
     <ng-template #link_product_uom_qty>
-      <div (click)="force_set_qty_done(line.id, 'product_uom_qty', 'stock.move')" >{{line.product_uom_qty}}</div>
+      <div (click)="force_set_qty_done(line.id, 'product_uom_qty', 'stock.move')" >
+        <strong class="ion-hide-sm-up">Pedida: </strong>{{line.product_uom_qty}}
+      </div>
     </ng-template>
     
-    <ion-col size="2">
-      <div *ngIf="(line.quantity_done != 0 || line.reserved_availability == 0 || code == 'incoming' || (line.state == 'done' || line.state == 'assigned')); else link_qty_done">{{line.reserved_availability}}</div>
+    <ion-col size-xs="6" size-sm="2" size-md="2">
+      <div *ngIf="(line.quantity_done != 0 || line.reserved_availability == 0 || code == 'incoming' || (line.state == 'done' || line.state == 'assigned')); else link_qty_done">
+        <strong class="ion-hide-sm-up">Reservada: </strong>{{line.reserved_availability}}
+      </div>
     </ion-col>
 
     <ng-template #link_qty_done>
-      <div (click)="force_set_assigned_qty_done(line.id)">{{line.reserved_availability}}</div>
+      <div (click)="force_set_assigned_qty_done(line.id)">
+        <strong class="ion-hide-sm-up">Reservada: </strong>{{line.reserved_availability}}
+      </div>
     </ng-template>
     
-    <ion-col size="2">
-      <div>{{line.quantity_done}}</div>
+    <ion-col  size-xs="6" size-sm="2" size-md="2">
+      <div>
+        <strong class="ion-hide-sm-up">Hecha: </strong>{{line.quantity_done}}
+      </div>
     </ion-col>
   </ion-row>
 </ion-grid>
