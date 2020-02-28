@@ -78,10 +78,12 @@ export class MoveLineDetailsListComponent implements OnInit {
     });
   }
 
-  open_link(pick_id){    
+  open_link_product(pick_id){    
+    this.router.navigateByUrl('/product/'+pick_id);
+  }
 
+  open_link(pick_id){   
     this.router.navigateByUrl('/move-line-form/'+pick_id);
-     //this.router.navigateByUrl('/product/'+pick_id);
   }
 
   async presentAlert(titulo, texto) {

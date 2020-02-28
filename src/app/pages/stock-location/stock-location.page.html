@@ -20,12 +20,12 @@
       <div *ngIf="location_data.picking_type_id"><strong>Tipo de albarán: </strong>{{location_data.picking_type_id[1]}}</div>
       <div [ngSwitch]="location_data.usage">
         <strong>Tipo: </strong>
-        <ion-text *ngSwitchCase="'supplier'">Ubicación de proveedor</ion-text>
+        <!-- <ion-text *ngSwitchCase="'supplier'">Ubicación de proveedor</ion-text> -->
         <ion-text *ngSwitchCase="'view'">Ver</ion-text>
         <ion-text *ngSwitchCase="'internal'">Ubicación interna</ion-text>
-        <ion-text *ngSwitchCase="'customer'">Ubicación de cliente</ion-text>
+        <!-- <ion-text *ngSwitchCase="'customer'">Ubicación de cliente</ion-text>
         <ion-text *ngSwitchCase="'inventory'">Ubicación de inventario</ion-text>
-        <ion-text *ngSwitchCase="'procurement'">Abastecimiento</ion-text>
+        <ion-text *ngSwitchCase="'procurement'">Abastecimiento</ion-text> -->
         <ion-text *ngSwitchCase="'production'">Producción</ion-text>
         <ion-text *ngSwitchCase="'transit'">Ubicación de tránsito</ion-text>
       </div>

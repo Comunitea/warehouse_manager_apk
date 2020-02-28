@@ -12,19 +12,19 @@
             'success': picking_type.color == 4,
             'warning': picking_type.color == 5}">{{picking_type.warehouse_id[1]}}</ion-card-subtitle>
         </ion-card-header>
-    
+
         <ion-card-content>
           <ion-row>
             <ion-col [ngSwitch]="picking_type.code">
-              <ion-button size="small" class="button-text" (click)="open_link(picking_type.id, 'ready', picking_type.group_code)" *ngSwitchCase="'incoming'">{{picking_type.count_picking_ready}} por recibir</ion-button>
-              <ion-button size="small" class="button-text" (click)="open_link(picking_type.id, 'ready', picking_type.group_code)" *ngSwitchCase="'outgoing'">{{picking_type.count_picking_ready}} por hacer</ion-button>
-              <ion-button size="small" class="button-text" (click)="open_link(picking_type.id, 'ready', picking_type.group_code)" *ngSwitchCase="'internal'">{{picking_type.count_picking_ready}} traspasos</ion-button>
+              <ion-button size="small" class="button-text" (click)="open_link(picking_type.id, 'ready', picking_type.code)" *ngSwitchCase="'incoming'">{{picking_type.count_picking_ready}} por recibir</ion-button>
+              <ion-button size="small" class="button-text" (click)="open_link(picking_type.id, 'ready', picking_type.code)" *ngSwitchCase="'outgoing'">{{picking_type.count_picking_ready}} por hacer</ion-button>
+              <ion-button size="small" class="button-text" (click)="open_link(picking_type.id, 'ready', picking_type.code)" *ngSwitchCase="'internal'">{{picking_type.count_picking_ready}} traspasos</ion-button>
             </ion-col>
             <ion-col>
-              <div class="link" (click)="open_link(picking_type.id, 'waiting', picking_type.group_code)">{{picking_type.count_picking_waiting}} en espera</div>
-              <div class="link" (click)="open_link(picking_type.id, 'late', picking_type.group_code)" *ngIf="picking_type.count_picking_late">{{picking_type.count_picking_late}} retrasados</div>
+              <div class="link" (click)="open_link(picking_type.id, 'waiting', picking_type.code)">{{picking_type.count_picking_waiting}} en espera</div>
+              <div class="link" (click)="open_link(picking_type.id, 'late', picking_type.code)" *ngIf="picking_type.count_picking_late">{{picking_type.count_picking_late}} retrasados</div>
               <ion-progress-bar *ngIf="picking_type.count_picking_late" color="primary" type="determinate" [value]="picking_type.rate_picking_late/100"></ion-progress-bar>
-              <div class="link" (click)="open_link(picking_type.id, 'backorders', picking_type.group_code)" *ngIf="picking_type.count_picking_backorders">{{picking_type.count_picking_backorders}} pendientes</div>
+              <div class="link" (click)="open_link(picking_type.id, 'backorders', picking_type.code)" *ngIf="picking_type.count_picking_backorders">{{picking_type.count_picking_backorders}} pendientes</div>
               <ion-progress-bar *ngIf="picking_type.count_picking_backorders" color="primary" type="determinate" [value]="picking_type.rate_picking_backorders/100"></ion-progress-bar>
             </ion-col>
           </ion-row>
@@ -32,4 +32,4 @@
       </ion-card>
     </ion-col>
   </ion-row>
-</ion-grid>
+</ion-grid> 

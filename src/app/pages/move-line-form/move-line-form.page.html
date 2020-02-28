@@ -1,5 +1,9 @@
 <ion-header>
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <app-scanner-header slot="end"></app-scanner-header>
     <ion-title>Movimiento</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -8,36 +12,38 @@
 <ion-card *ngIf="data">
 
     <ion-card-header>
-      <ion-card-title style="text-align-last: center;">{{data.name}}</ion-card-title>
+      <ion-card-title class="ion-text-center">{{data.name}}</ion-card-title>
     </ion-card-header>
   
-    <ion-card-content style="text-align-last: center;">
-      <div class="product_img" style="text-align-last: center;">
-        <ion-img *ngIf="data.base64" src="data:image/jpeg;base64,{{ data['image_medium'] }}" style="text-align-last: center;"></ion-img>
-        <ion-img *ngIf="!data.base64" src="{{ data['image_medium'] }}" style="text-align-last: center;"></ion-img>
-        <ion-label>
-          <strong>  {{data.name}} </strong>
-        </ion-label>
+    <ion-card-content class="ion-text-center">
+      <div class="product_img" class="ion-text-center">
+        <ion-img *ngIf="data.base64" src="data:image/jpeg;base64,{{ data['image'] }}" ></ion-img>
+        <ion-img *ngIf="!data.base64" src="{{ data['image'] }}"></ion-img>
       </div>
-      <div><strong>Pick: </strong>{{data.picking_id && data.picking_id.name}}</div>
+      <ion-label>
+        <strong>  {{data.name}} </strong>
+      </ion-label>
+      <div><strong>Pick: </strong>{{data.picking_id.id && data.picking_id.name}}</div>
       <div><strong>Referencia: </strong>{{data.default_code}}</div>
       <div><strong>{{data.location_id.name}} >> {{data.location_dest_id.name}}</strong></div>
       <ion-row>
-         <ion-col><ion-badge (click)="changeqty(-1)"> - </ion-badge>
+         <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'"><ion-badge class="link" (click)="changeqty(-1)"> - </ion-badge>
         </ion-col>
-        <ion-col (click)="changeqty(0)"><strong>Cantidad: </strong><br/>
+        <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'" class="link" (click)="changeqty(0)"><strong>Cantidad: </strong><br/>
           <ion-badge class="primary"> {{data.qty_done}} de {{data.product_uom_qty}} </ion-badge> 
         </ion-col>
-        <ion-col><ion-badge (click)="changeqty(+1)"> + </ion-badge>
+        <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'"><ion-badge class="link" (click)="changeqty(+1)"> + </ion-badge>
         </ion-col>
       </ion-row>
 
       <ion-row>
-        <ion-col (click)="get_move_line_info(data.id, -1)">Anterior
+        <ion-col class="link" (click)="get_move_line_info(data.id, -1)">Anterior
         </ion-col>
-        <ion-col (click)="action_done(data.id)">Validar
+        <ion-col *ngIf="data.ready_to_validate" class="link" (click)="button_validate(data.picking_id.id)">Validar
         </ion-col>
-        <ion-col (click)="get_move_line_info(data.id, +1)">Siguiente
+        <ion-col *ngIf="!data.ready_to_validate" class="link" (click)="action_confirm(data.id)">Confirmar
+        </ion-col>
+        <ion-col class="link" (click)="get_move_line_info(data.id, +1)">Siguiente
         </ion-col>
       </ion-row>
     </ion-card-content>
@@ -45,3 +51,10 @@
   </ion-card>
 </ion-content>
 
+<app-scanner-footer (scanner_reading_changed)="onReadingEmitted($event)" [scanner_reading]="scanner_reading"></app-scanner-footer>
+
+<ng-template #lineDoneTemplate>
+  <ion-col><strong>Cantidad: </strong><br/>
+    <ion-badge class="secondary"> {{data.qty_done}} de {{data.product_uom_qty}} </ion-badge>
+  </ion-col>
+</ng-template>

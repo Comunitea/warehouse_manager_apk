@@ -1,5 +1,5 @@
 import { OdooService } from '../../services/odoo.service';
-import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Input} from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { StockService } from '../../services/stock.service';
@@ -7,6 +7,7 @@ import { AudioService } from '../../services/audio.service';
 import { VoiceService } from '../../services/voice.service';
 import { Location } from "@angular/common";
 import { LoadingController } from '@ionic/angular';
+import { ActionSheetController } from '@ionic/angular';
 
 @Component({
   selector: 'app-stock-picking',
@@ -44,7 +45,7 @@ export class StockPickingPage implements OnInit {
     private route: ActivatedRoute,
     private location: Location,
     public loadingController: LoadingController,
-    private cd: ChangeDetectorRef,
+    public actionSheetController: ActionSheetController
   ) {
     this.moves = ['up', 'down', 'left', 'right'];
   }
@@ -211,6 +212,75 @@ export class StockPickingPage implements OnInit {
     } else {
       return false;
     }
+  }
+
+  create_buttons() {
+
+    let buttons = [{
+      text: 'Cancel',
+      icon: 'close',
+      role: 'cancel',
+      handler: () => {
+        console.log('Cancel clicked');
+      }
+    }]
+
+    if (this.picking_data['show_validate']) {
+      let button = {
+        text: 'Validar',
+        icon: '',
+        role: '',
+        handler: () => {
+          this.button_validate();
+        }
+      }
+      buttons.push(button);
+    }
+
+    if (this.picking_data && (this.picking_data['state'] == 'confirmed' || this.picking_data['state'] == 'assigned')) {
+
+      let button = {
+        text: 'Reservas a hecho',
+        icon: '',
+        role: '',
+        handler: () => {
+          this.force_set_qty_done(this.picking_data['id'], 'product_qty', 'stock.picking')
+        }
+      }
+
+      let buttonReset = {
+        text: 'Reset',
+        icon: '',
+        role: '',
+        handler: () => {
+          this.force_reset_qties(this.picking_data['id'])
+        }
+      }
+
+      buttons.push(button);
+      buttons.push(buttonReset);
+
+    }   
+
+    /* if (this.picking_data['show_check_availability']) {
+      actionSheet.buttons.push({
+        text: 'Asignar',
+          handler: () => {
+            this.action_assign();
+          }
+      })
+    } */
+    
+    return buttons;
+  }
+
+  async presentActionSheet() {
+    const actionSheet = await this.actionSheetController.create({
+      header: 'Opciones',
+      buttons: this.create_buttons()
+    });
+
+    await actionSheet.present();
   }
 
 }

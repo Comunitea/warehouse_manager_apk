@@ -286,6 +286,29 @@ export class StockService {
     return promise
   }
 
+  set_qty_done_from_apk(move_id, qty_done) {
+    let self = this 
+    let values = {
+      'id': move_id,
+      'qty_done': qty_done
+    }
+
+    let model = 'stock.move.line';
+    console.log(values);
+     
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'set_qty_done_from_apk', values).then((done) => {
+       resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar")
+    });
+    })
+    
+    return promise
+  }
+
   force_set_reserved_qty_done(move_id, model='stock.move') {
     let self = this 
     let values = {
@@ -664,6 +687,34 @@ export class StockService {
     model = 'wiz.stock.move.location';
     let promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'action_move_location_apk', values).then((done) => {
+        if(done['err'] == true) {
+          reject(done['error']);
+        }
+        resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar:" + err)
+    });
+    })
+    
+    return promise
+  }
+
+  // QR 
+
+  process_qr_lines(qr_codes) {
+    let self = this
+    let model
+    let values
+
+    values = {
+      'qr_codes': qr_codes
+    }
+
+    model = 'stock.picking';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'process_qr_lines', values).then((done) => {
         if(done['err'] == true) {
           reject(done['error']);
         }

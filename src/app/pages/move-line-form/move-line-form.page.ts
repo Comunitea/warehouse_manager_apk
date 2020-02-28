@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Storage } from '@ionic/storage';
 import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
+import { Location } from "@angular/common";
+import { LoadingController } from '@ionic/angular';
 
 
 @Component({
@@ -14,10 +16,13 @@ import { StockService } from '../../services/stock.service';
 })
 export class MoveLineFormPage implements OnInit {
 
+  moves: any;
   data: {};
   placeholder: string;
   move: BigInteger;
   qty_done: BigInteger;
+  loading: any;
+  @Input() scanner_reading: string;
 
   constructor(
     private odoo: OdooService,
@@ -27,7 +32,11 @@ export class MoveLineFormPage implements OnInit {
     private audio: AudioService,
     private stock: StockService,
     private storage: Storage,
-  ) { }
+    private location: Location,
+    public loadingController: LoadingController,
+  ) {
+    this.moves = ['up', 'down', 'left', 'right'];
+  }
 
 
   ngOnInit() {
@@ -50,6 +59,36 @@ export class MoveLineFormPage implements OnInit {
     });
   }
 
+  onReadingEmitted(val: string) {
+    if (this.moves.includes(val)) {
+      this.page_controller(val);
+    } else {
+      this.scanner_reading = val;
+    }
+  }
+
+  // Navigation 
+
+  page_controller(direction) {
+    if (direction == 'up') {
+      console.log("up");
+      this.location.back();
+    } else if (direction == 'down') {
+      console.log("down");
+      if (this.data['ready_to_validate']){
+        this.button_validate(this.data['picking_id']['id']);
+      } else {
+        this.action_confirm();
+      }
+    } else if (direction == 'left') {
+      console.log("left");
+      this.get_move_line_info(this.data['id'], -1);
+    } else if (direction == 'right') {
+      console.log("right");
+      this.get_move_line_info(this.data['id'], +1);
+    }
+  }
+
   async presentAlert(titulo, texto) {
     this.audio.play('error');
     const alert = await this.alertCtrl.create({
@@ -69,20 +108,59 @@ export class MoveLineFormPage implements OnInit {
     }
       
   }
+
   get_move_line_info(move, index=0) {
-    console.log(move);
     this.stock.get_move_line_info(move, index).then((data) => {
-      if (data['image_medium'] == false) {
+      if (data['image'] == false) {
         data['base64'] = false;
-        data['image_medium'] = this.placeholder;
+        data['image'] = this.placeholder;
       } else {
         data['base64'] = true;
       }
       this.data = data;
+      console.log(this.data);
       this.audio.play('click');
     })
     .catch((error) => {
       this.presentAlert('Error al recuperar el movimiento:', error);
     });
   }
+
+  action_confirm(){
+    this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((lines_data)=>{
+      console.log(lines_data);
+      this.get_move_line_info(this.data['id']);
+    })
+    .catch((error)=>{
+      this.presentAlert('Error al validar el albarán:', error);
+    });
+  }
+
+  button_validate(picking_id){
+    this.presentLoading();
+    this.stock.button_validate(Number(picking_id)).then((lines_data)=>{
+      if (lines_data && lines_data['err'] == false) {
+        console.log("Reloading");
+        this.loading.dismiss()
+        this.location.back();
+      } else if (lines_data['err'] != false) {
+        this.loading.dismiss()
+        this.presentAlert('Error al validar el albarán:', lines_data['err']);
+      }
+    })
+    .catch((error)=>{
+      this.loading.dismiss()
+      this.presentAlert('Error al validar el albarán:', error);
+    });
+  }
+
+  async presentLoading() {
+    this.loading = await this.loadingController.create({
+      message: 'Validando...',
+      translucent: true,
+      cssClass: 'custom-class custom-loading'
+    });
+    await this.loading.present();
+  }
+
 }
