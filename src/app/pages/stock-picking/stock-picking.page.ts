@@ -29,6 +29,9 @@ export class StockPickingPage implements OnInit {
   active_operation: boolean;
   loading: any;
   audio_command: any[];
+  not_allowed_fields: {}
+  not_allowed_m_fields: {}
+  not_allowed_ml_fields: {}
   
   @Input() scanner_reading: string
   @Input() voice_command: boolean;
@@ -55,7 +58,7 @@ export class StockPickingPage implements OnInit {
       if (data==false) {
         this.router.navigateByUrl('/login');
       }
-      this.active_operation = true;
+      this.active_operation = false;
       this.picking = this.route.snapshot.paramMap.get('id');
       this.get_picking_info(this.picking);
       this.voice.voice_command_refresh$.subscribe(data => {
@@ -175,7 +178,19 @@ export class StockPickingPage implements OnInit {
   get_picking_info(picking) {
     this.stock.get_picking_info(picking).then((data)=>{
       this.picking_data = data[0];
-      this.picking_code = data[0].code;
+      this.picking_code = data[0].group_code[0];
+      if (this.picking_data && this.picking_data['picking_fields']) {
+        this.not_allowed_fields = this.picking_data['picking_fields'].split(',');
+        console.log(this.not_allowed_fields);
+      }
+      if (this.picking_data && this.picking_data['move_fields']) {
+        this.not_allowed_m_fields = this.picking_data['move_fields'].split(',');
+        console.log(this.not_allowed_m_fields);
+      }
+      if (this.picking_data && this.picking_data['move_line_fields']) {
+        this.not_allowed_ml_fields = this.picking_data['move_line_fields'].split(',');
+        console.log(this.not_allowed_ml_fields);
+      }
       this.move_lines = this.picking_data['move_lines'];
       this.move_line_ids = this.picking_data['move_line_ids'];
     })

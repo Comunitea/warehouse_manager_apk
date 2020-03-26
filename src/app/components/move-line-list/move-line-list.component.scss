@@ -2,6 +2,9 @@ ion-row {
     &.success {
         color: var(--ion-color-success);
     }
+    &.product_link {
+        cursor: pointer;
+    }
 }
 div.product_link {
     color: blue;

@@ -1,10 +1,10 @@
-<ion-grid>
+<ion-grid *ngIf="not_allowed_fields && move_lines">
   <ion-row>
-    <ion-col size="10">
+    <ion-col size="10" *ngIf="not_allowed_fields.indexOf('product_id') == -1">
       <div style="font-size: small"><strong>Producto</strong></div>
     </ion-col>  
 
-    <ion-col size="2">
+    <ion-col size="2" *ngIf="not_allowed_fields.indexOf('reserved_availability') == -1">
       <div style="font-size: small"><strong>Qty</strong></div>
     </ion-col>
 
@@ -17,9 +17,9 @@
     </ion-col-->
   </ion-row>
 
-  <ion-row *ngFor="let line of move_lines_info" [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">
-    <ion-col size="10" >
-      <div (click)="open_link(line)" style="font-size: small">{{line.product_id[1]}}</div>
+  <ion-row class="product_link" *ngFor="let line of move_lines_info" [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">
+    <ion-col size="10" *ngIf="not_allowed_fields.indexOf('product_id') == -1">
+      <div (click)="open_link(line.id)" style="font-size: small">{{line.product_id[1]}}</div>
     </ion-col>
     
     <!--ion-col size="2">
@@ -32,17 +32,17 @@
       <div (click)="force_set_qty_done(line.id, 'product_uom_qty', 'stock.move')" >{{line.product_uom_qty}}</div>
     </ng-template-->
     
-    <ion-col size="2" >
+    <ion-col size="2" *ngIf="not_allowed_fields.indexOf('product_uom_qty') == -1 && not_allowed_fields.indexOf('quantity_done') == -1">
       <div *ngIf="(line.quantity_done != 0 || line.reserved_availability == 0 || code == 'incoming' || (line.state == 'done' || line.state == 'assigned')); else link_qty_done" 
         style="font-size: small">
-        {{line.quantity_done}} // {{line.reserved_availability}}
+        {{line.quantity_done}} // {{line.product_uom_qty}}
       </div>
     </ion-col>
 
     <ng-template #link_qty_done>
       <div (click)="force_set_assigned_qty_done(line.id)" 
         style="font-size: small">
-        {{line.quantity_done}} // {{line.reserved_availability}}
+        {{line.quantity_done}} // {{line.product_uom_qty}}
       </div>
     </ng-template>
     

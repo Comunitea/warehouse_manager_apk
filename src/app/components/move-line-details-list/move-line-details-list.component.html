@@ -1,68 +1,68 @@
-<ion-grid>
+<ion-grid *ngIf="not_allowed_fields && move_line_ids">
   <ion-row class="ion-align-items-center">  
 
-    <ion-col size="3">
+    <ion-col size="3" *ngIf="not_allowed_fields.indexOf('product_id') == -1">
       <div><strong>Pro.</strong></div>
     </ion-col>
 
-    <ion-col size="2" *ngIf="code != 'incoming'">
+    <ion-col size="2" *ngIf="not_allowed_fields.indexOf('location_id') == -1">
       <div><strong>De</strong></div>
     </ion-col>
   
-    <ion-col size="2" *ngIf="code != 'outgoing'">
+    <ion-col size="2" *ngIf="not_allowed_fields.indexOf('location_dest_id') == -1">
       <div><strong>A</strong></div>
     </ion-col>
   
-    <ion-col size="1">
+    <ion-col size="1" *ngIf="not_allowed_fields.indexOf('package_id') == -1">
       <div><strong>Pqt. O.</strong></div>
     </ion-col>
   
-    <ion-col size="1">
+    <ion-col size="1" *ngIf="not_allowed_fields.indexOf('result_package_id') == -1">
       <div><strong>Pqt. D.</strong></div>
     </ion-col>
     
-    <ion-col size="1">
+    <ion-col size="1" *ngIf="not_allowed_fields.indexOf('qty_available') == -1">
       <div><strong>Dis.</strong></div>
     </ion-col>
   
-    <ion-col size="1">
+    <ion-col size="1" *ngIf="not_allowed_fields.indexOf('product_uom_qty') == -1">
       <div><strong>Res.</strong></div>
     </ion-col>
     
-    <ion-col size="1">
+    <ion-col size="1" *ngIf="not_allowed_fields.indexOf('qty_done') == -1">
       <div><strong>Hecha</strong></div>
     </ion-col>
   </ion-row>
 
   <ion-row *ngFor="let line of move_line_ids_info" [ngClass]="{'success': line.qty_done == line.product_uom_qty}">
-    <ion-col size-xs="12" size-sm="3" size-md="3">
+    <ion-col size-xs="12" size-sm="3" size-md="3" *ngIf="not_allowed_fields.indexOf('product_id') == -1">
       <div class="link" (click)="open_link(line.id)">{{line.product_id[1]}}</div>
     </ion-col>
   
-    <ion-col size-xs="6" size-sm="2" size-md="2" *ngIf="code != 'incoming'">
+    <ion-col size-xs="6" size-sm="2" size-md="2" *ngIf="not_allowed_fields.indexOf('location_id') == -1">
       <div>
         <strong class="ion-hide-sm-up">De: </strong>{{line.location_id[1]}}
       </div>
     </ion-col>
   
-    <ion-col size-xs="6" size-sm="2" size-md="2" *ngIf="code != 'outgoing'">
+    <ion-col size-xs="6" size-sm="2" size-md="2" *ngIf="not_allowed_fields.indexOf('location_dest_id') == -1">
       <div>
         <strong class="ion-hide-sm-up">A: </strong>{{line.location_dest_id[1]}}
       </div>
     </ion-col>
   
-    <ion-col size-xs="6" size-sm="1" size-md="1">
+    <ion-col size-xs="6" size-sm="1" size-md="1" *ngIf="not_allowed_fields.indexOf('package_id') == -1">
       <div>
         <strong class="ion-hide-sm-up">Pqt. O: </strong>{{line.package_id[1]}}
       </div>
     </ion-col>
   
-    <ion-col size-xs="6" size-sm="1"size-md="1">
+    <ion-col size-xs="6" size-sm="1"size-md="1" *ngIf="not_allowed_fields.indexOf('result_package_id') == -1">
       <div><strong class="ion-hide-sm-up">Pqt D: </strong>{{line.result_package_id[1]}}</div>
     </ion-col>
     
-    <ion-col size-xs="6" size-sm="1"size-md="1">
-      <div class="link" *ngIf="code != 'incoming' && (line.state == 'confirmed' || line.state == 'assigned') && line.qty_done == 0; else noLinkAvailable" (click)="force_set_qty_done(line.id, 'qty_available')">
+    <ion-col size-xs="6" size-sm="1"size-md="1" *ngIf="not_allowed_fields.indexOf('qty_available') == -1">
+      <div class="link" *ngIf="(line.state == 'confirmed' || line.state == 'assigned') && line.qty_done == 0; else noLinkAvailable" (click)="force_set_qty_done(line.id, 'qty_available')">
         <strong class="ion-hide-sm-up">Dis: </strong>{{line.qty_available}}
       </div>
     </ion-col>
@@ -71,7 +71,7 @@
         <div><strong class="ion-hide-sm-up">Dis: </strong>{{line.qty_available}}</div>
     </ng-template>
   
-    <ion-col size-xs="6" size-sm="1"size-md="1">
+    <ion-col size-xs="6" size-sm="1"size-md="1" *ngIf="not_allowed_fields.indexOf('product_uom_qty') == -1">
       <div class="link" *ngIf="(line.state != 'done' || line.state == 'cancel') && line.qty_done == 0; else noLinkUom" (click)="force_set_qty_done(line.id, 'product_uom_qty')">
         <strong class="ion-hide-sm-up">Res: </strong>{{line.product_uom_qty}}
       </div>
@@ -81,7 +81,7 @@
         <div><strong class="ion-hide-sm-up">Res: </strong>{{line.product_uom_qty}}</div>
     </ng-template>
 
-    <ion-col size-xs="6" size-sm="1"size-md="1">
+    <ion-col size-xs="6" size-sm="1"size-md="1" *ngIf="not_allowed_fields.indexOf('qty_done') == -1">
 
       <div><strong class="ion-hide-sm-up">Hecha: </strong>{{line.qty_done}}</div>
     </ion-col>

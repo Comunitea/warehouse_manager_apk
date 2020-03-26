@@ -22,7 +22,7 @@
 
   <ion-row *ngFor="let product of products">
       <ion-col size-xs="12" size-sm="7" size-md="7">
-          <div class="product_link" (click)="open_link(product.id)">{{product.name}}</div>
+          <div class="product_link" (click)="open_link(product.id)">{{product.display_name}}</div>
       </ion-col>
       
       <ion-col size-xs="6" size-sm="2" size-md="2">

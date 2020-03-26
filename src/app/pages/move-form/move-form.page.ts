@@ -10,11 +10,11 @@ import { LoadingController } from '@ionic/angular';
 
 
 @Component({
-  selector: 'app-move-line-form',
-  templateUrl: './move-line-form.page.html',
-  styleUrls: ['./move-line-form.page.scss'],
+  selector: 'app-move-form',
+  templateUrl: './move-form.page.html',
+  styleUrls: ['./move-form.page.scss'],
 })
-export class MoveLineFormPage implements OnInit {
+export class MoveFormPage implements OnInit {
 
   moves: any;
   data: {};
@@ -23,6 +23,7 @@ export class MoveLineFormPage implements OnInit {
   qty_done: BigInteger;
   loading: any;
   @Input() scanner_reading: string;
+  new_lots: any;
 
   constructor(
     private odoo: OdooService,
@@ -51,7 +52,7 @@ export class MoveLineFormPage implements OnInit {
           this.presentAlert('Error al comprobar tu sesión:', error);
         });
         const move = +this.route.snapshot.paramMap.get('id');
-        this.get_move_line_info(move);
+        this.get_move_info(move);
       }
     })
     .catch((error) => {
@@ -64,6 +65,7 @@ export class MoveLineFormPage implements OnInit {
       this.page_controller(val);
     } else {
       this.scanner_reading = val;
+      this.process_reading();
     }
   }
 
@@ -82,10 +84,10 @@ export class MoveLineFormPage implements OnInit {
       }
     } else if (direction == 'left') {
       console.log("left");
-      this.get_move_line_info(this.data['id'], -1);
+      this.get_move_info(this.data['id'], -1);
     } else if (direction == 'right') {
       console.log("right");
-      this.get_move_line_info(this.data['id'], +1);
+      this.get_move_info(this.data['id'], +1);
     }
   }
 
@@ -101,16 +103,17 @@ export class MoveLineFormPage implements OnInit {
 
   changeqty(qty){
     if (qty == 0) {
-      this.data['qty_done'] = this.data['product_uom_qty'];
+      this.data['quantity_done'] = this.data['product_uom_qty'];
     }
     else{
-      this.data['qty_done'] += qty;
+      this.data['quantity_done'] += qty;
     }
       
   }
 
-  get_move_line_info(move, index=0) {
-    this.stock.get_move_line_info(move, index).then((data) => {
+  get_move_info(move, index=0) {
+    this.stock.get_move_info(move, index).then((data) => {
+      this.new_lots = false;
       console.log(data);
       if (data['image'] == false) {
         data['base64'] = false;
@@ -128,13 +131,17 @@ export class MoveLineFormPage implements OnInit {
   }
 
   action_confirm(){
-    this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((lines_data)=>{
-      console.log(lines_data);
-      this.get_move_line_info(this.data['id']);
-    })
-    .catch((error)=>{
-      this.presentAlert('Error al validar el albarán:', error);
-    });
+    if (this.data['tracking'] == 'none') {
+      this.stock.set_move_qty_done_from_apk(this.data['id'], this.data['quantity_done']).then((lines_data)=>{
+        console.log(lines_data);
+        this.get_move_info(this.data['id'], +1);
+      })
+      .catch((error)=>{
+        this.presentAlert('Error al validar el albarán:', error);
+      });
+    } else if (this.data['tracking'] != 'none' && this.new_lots){
+      this.update_lots();
+    }
   }
 
   button_validate(picking_id){
@@ -162,6 +169,31 @@ export class MoveLineFormPage implements OnInit {
       cssClass: 'custom-class custom-loading'
     });
     await this.loading.present();
+  }
+
+  update_lots(){
+    this.stock.set_lot_ids_apk(this.data['id'], this.new_lots).then((lines_data)=>{
+      this.get_move_info(this.data['id']);
+    })
+    .catch((error)=>{
+      this.presentAlert('Error al validar el albarán:', error);
+    });
+  }
+
+  process_reading() {
+    if (this.data['tracking'] == 'none' && Number(this.scanner_reading)) {
+      this.data['quantity_done'] = Number(this.scanner_reading);
+    } else if (this.data['tracking'] != 'none') {
+      if(!this.new_lots){
+        this.new_lots = new Array();
+      }
+      this.new_lots.push([this.scanner_reading, 1]); /* Editar más adelante, serial cantidad = 1, lot cantidad = a introducir */
+      /* Provisional, cuando estén preparada la función para gestionar cantidades en lot_ids editar */
+      /* if (this.data['tracking'] == 'serial') { */
+      if (this.data['tracking'] == 'serial' || this.data['tracking'] == 'lot') {
+        this.data['quantity_done']++;
+      }
+    } 
   }
 
 }

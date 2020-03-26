@@ -26,6 +26,7 @@ export class StockPickingListPage implements OnInit {
   search: string;
   current_code: string;
   scanner_reading: string;
+  not_allowed_fields: {};
 
   constructor(
     private odoo: OdooService,
@@ -84,6 +85,10 @@ export class StockPickingListPage implements OnInit {
     this.limit_reached = false;
     this.stock.get_picking_list(this.view_domain[this.view_selector], this.current_type_id, this.offset, this.limit, search).then((picking_list:Array<{}>)=> {
       this.pickings = picking_list;
+      if (this.pickings[0] && this.pickings[0]['picking_fields']) {
+        this.not_allowed_fields = this.pickings[0]['picking_fields'].split(',');
+        console.log(this.not_allowed_fields);
+      }
       if(Object.keys(picking_list).length < 25){
         this.limit_reached = true;
       }

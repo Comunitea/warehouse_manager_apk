@@ -66,9 +66,8 @@ export class StockService {
   }
 
   // Pickings
-
-  get_picking_list(view_domain, type_id, offset=0, limit=0, search) {
-    let self = this;
+  get_picking_list(view_domain=null, type_id=null, offset=0, limit=0, search=null) {
+    let self = this
     let domain = [];
     if (view_domain){
       view_domain.forEach(lit_domain => {
@@ -83,57 +82,85 @@ export class StockService {
     if(search) {
       domain.push(['name', 'ilike', '%'+search+'%']);
     }
-
-    let model = 'stock.picking';
-    let fields = this.STOCK_FIELDS[model]['tree']
+    let values = {
+      'domain': domain,
+      'model': 'stock.picking',
+      'offset': offset,
+      'limit': limit
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done)
       })
       .catch((err) => {
-        reject(err)
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
   get_picking_info(picking_id) {
-    let self = this;
+    let self = this
     let domain = [['id', '=', picking_id]];
 
-    let model = 'stock.picking';
-    let fields = this.STOCK_FIELDS[model]['form']
+    let values = {
+      'domain': domain,
+      'model': 'stock.picking',
+      'offset': 0,
+      'limit': 0,
+      'fields': ['id', 'display_name', 'location_id', 'location_dest_id', 'scheduled_date', 'state', 'group_code',
+      'picking_type_id', 'priority', 'note', 'move_lines', 'move_line_ids', 'quantity_done', 'picking_fields',
+      'reserved_availability', 'product_uom_qty', 'show_check_availability', 'move_fields', 'move_line_fields', 
+      'show_validate']
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
-  get_picking_types(picking_codes, offset=0, limit=0, search) {
-    let self = this;
+  get_picking_types(picking_codes, offset=0, limit=0, search=null) {
+    let self = this
     let domain = [];
     domain = [['code', 'in', picking_codes], ['active', '=', true], ['app_integrated','=', true]];
+    
     if(search) {
-      domain.push(['name', 'ilike', search]);
+      domain.push(['name', 'ilike', '%'+search+'%']);
     }
-    let model = 'stock.picking.type';
-    let fields = this.STOCK_FIELDS[model]['form']
+    let values = {
+      'domain': domain,
+      'model': 'stock.picking.type',
+      'offset': offset,
+      'limit': limit,
+      'fields': ['id', 'name', 'color', 'warehouse_id', 'code', 'count_picking_ready', 'count_picking_waiting', 'count_picking_late', 'group_code',
+      'count_picking_backorders', 'rate_picking_late', 'rate_picking_backorders']
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        console.log(err);
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
@@ -180,6 +207,61 @@ export class StockService {
     return promise
   }
 
+  // Move
+
+  get_move_info(move_id, index=0) {
+    let self = this;
+    let values = {'id': move_id, 'index': index};
+    let model = 'stock.move';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'get_move_info_apk', values).then((data) => {
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
+
+  set_lot_ids_apk(move_id, reading) {
+    let self = this;
+    let values = {'id': move_id, 'reading': reading};
+    let model = 'stock.move';
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'set_lot_ids_apk', values).then((data) => {
+          resolve(data)
+      })
+      .catch((err) => {
+        reject(err)
+    });
+    })
+    return promise
+  }
+
+  set_move_qty_done_from_apk(move_id, qty_done) {
+    let self = this 
+    let values = {
+      'id': move_id,
+      'quantity_done': qty_done
+    }
+
+    let model = 'stock.move';
+    console.log(values);
+     
+    let promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'set_qty_done_from_apk', values).then((done) => {
+       resolve(done)
+      })
+      .catch((err) => {
+        reject(false)
+        console.log("Error al validar")
+    });
+    })
+    
+    return promise
+  }
+
   // Move_lines
   
   find_move_line_id(code, picking_id){
@@ -211,7 +293,6 @@ export class StockService {
     return promise
   }
 
-
   get_move_lines_list_search(line_ids) {
     let self = this;
     let domain = [['id', 'in', line_ids]];
@@ -230,40 +311,53 @@ export class StockService {
     return promise
   }
 
+  get_move_lines_list(picking_id) {
+    let self = this
+    let domain = [['picking_id', '=', parseInt(picking_id)]];
 
-  get_move_lines_list(line_ids) {
-    let self = this;
-    let domain = [['id', 'in', line_ids]];
-    let model = 'stock.move';
-    let fields = this.STOCK_FIELDS[model]['tree'];
-    let values = {'domain': domain, 'fields': fields, 'model': model}
+    let values = {
+      'domain': domain,
+      'model': 'stock.move',
+      'offset': 0,
+      'limit': 0
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute(model, 'get_apk_object', values).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
-  get_move_lines_details_list(line_ids) {
-    let self = this;
-    let domain = [['id', 'in', line_ids]];
+  get_move_lines_details_list(picking_id) {
+    let self = this
+    let domain = [['picking_id', '=', parseInt(picking_id)]];
 
-    let model = 'stock.move.line';
-    let fields = this.STOCK_FIELDS[model]['tree']
+    let values = {
+      'domain': domain,
+      'model': 'stock.move.line',
+      'offset': 0,
+      'limit': 0
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
@@ -391,48 +485,66 @@ export class StockService {
 
   // Products
 
-  get_product_list(offset=0, limit=0, search) {
-    let self = this;
+  get_product_list(offset=0, limit=0, search=null) {
+    let self = this
     let domain = [];
 
     if(search) {
-      domain.push('|',['name', 'ilike', search], ['default_code', 'ilike', search]);
+      domain.push('|',['name', 'ilike', '%'+search+'%'], ['default_code', 'ilike', '%'+search+'%']);
     }
 
-    let model = 'product.product';
-    let fields = this.STOCK_FIELDS[model]['tree']
+    let values = {
+      'domain': domain,
+      'model': 'product.product',
+      'offset': offset,
+      'limit': limit
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        console.log(err);
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
   get_product_info(product_id) {
-    let self = this;
+    let self = this
     let domain = [['id', '=', product_id]];
 
-    let model = 'product.product';
-    let fields = this.STOCK_FIELDS[model]['form']
+    let values = {
+      'domain': domain,
+      'model': 'product.product',
+      'offset': 0,
+      'limit': 0,
+      'fields': ['id', 'name', 'default_code', 'list_price', 'standard_price', 'qty_available', 'virtual_available', 'categ_id', 'tracking', 
+      'barcode', 'description_short', 'image_medium', 'stock_quant_ids']
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        console.log(err);
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
   get_location_products(location, offset=0, limit=0, search) {
-    let self = this;
+    let self = this
     let domain = [];
 
     if (location) {
@@ -443,25 +555,35 @@ export class StockService {
       domain.push(['default_code', 'ilike', search]);
     }
 
-    let model = 'product.product';
-    let fields = this.STOCK_FIELDS[model]['location-tree']
+    let values = {
+      'domain': domain,
+      'model': 'product.product',
+      'offset': offset,
+      'limit': limit,
+      'fields': ['id', 'display_name', 'default_code', 'qty_available', 'tracking', 'barcode', 'uom_id']
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        console.log(err);
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
   
   // Location
 
-  get_location_list(location_state, offset=0, limit=0, search) {
-    let self = this;
+  get_location_list(location_state, offset=0, limit=0, search=null) {
+    let self = this
     let domain = [];
+
     if (location_state != 'all') {
       domain = [['usage', '=', location_state]];
     }
@@ -470,42 +592,59 @@ export class StockService {
       domain.push(['name', 'ilike', search]);
     }
 
-    let model = 'stock.location';
-    let fields = this.STOCK_FIELDS[model]['tree']
+    let values = {
+      'domain': domain,
+      'model': 'stock.location',
+      'offset': offset,
+      'limit': limit
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        console.log(err);
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
   get_location_info(location_id) {
-    let self = this;
+    let self = this
     let domain = [['id', '=', location_id]];
 
-    let model = 'stock.location';
-    let fields = this.STOCK_FIELDS[model]['form']
+    let values = {
+      'domain': domain,
+      'model': 'stock.location',
+      'offset': 0,
+      'limit': 0,
+      'fields': ['id', 'display_name', 'usage', 'company_id']
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, 0, 0).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        console.log(err);
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 
   // Quants
 
   get_location_quants(location, offset=0, limit=0, search, ftype=null) {
-    let self = this;
+    let self = this
     let domain = [];
 
     if (location) {
@@ -516,20 +655,28 @@ export class StockService {
       domain.push(['product_id.default_code', 'ilike', search]);
     }
 
-    let model = 'stock.quant';
-    let fields = this.STOCK_FIELDS[model]['tree']
-    if(ftype != null){
-      fields = this.STOCK_FIELDS[model][ftype]  
+    let values = {
+      'domain': domain,
+      'model': 'stock.quant',
+      'offset': offset,
+      'limit': limit
     }
+    if(ftype != null){
+      values['fields'] = ['id', 'product_id', 'reserved_quantity', 'quantity', 'location_id'];
+    }
+    console.log(values);
     let promise = new Promise( (resolve, reject) => {
-      self.odooCon.search_read(model, domain, fields, offset, limit).then((data:any) => {
-        for (let sm_id in data){data[sm_id]['model'] = model}
-          resolve(data)
+      self.odooCon.execute('info.apk', 'get_apk_object', values).then((done) => {
+        console.log(done);
+       resolve(done);
       })
       .catch((err) => {
-        reject(err)
+        console.log(err);
+        reject(false)
+        console.log("Error al realizar la consulta:"+ err['msg']['error_msg']);
     });
     })
+    
     return promise
   }
 

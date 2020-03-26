@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { StockService } from '../../services/stock.service';
 
@@ -14,29 +14,34 @@ export class MoveLineListComponent implements OnInit {
   @Input() move_lines: {}
   @Input() code: string;
   @Input() picking_fields: string;
+  @Input() not_allowed_fields: {};
+  picking: string;
   move_lines_info: {};
 
   constructor(
     public router: Router,
     public alertCtrl: AlertController,
     /* private audio: AudioService, */
+    private route: ActivatedRoute,
     private stock: StockService
   ) { }
 
   ngOnInit() {
     if(this.move_lines) {
-      console.log(this.move_lines)
+      this.move_lines_info = this.move_lines;
+      this.picking = this.route.snapshot.paramMap.get('id');
+    } else {
       this.get_move_lines_list();
     }
   }
 
-  open_link(move_line){
-    this.router.navigateByUrl('/move-line-form/'+move_line);
+  open_link(move){
+    this.router.navigateByUrl('/move-form/'+move);
   }
 
   get_move_lines_list () {
     
-    this.stock.get_move_lines_list(this.move_lines).then((lines_data)=>{
+    this.stock.get_move_lines_list(Number(this.picking)).then((lines_data)=>{
       this.move_lines_info = lines_data;
     })
     .catch((error)=>{

@@ -15,6 +15,7 @@ export class MoveLineDetailsListComponent implements OnInit {
   @Input() code: string;
   @Input() picking_fields: string;
   @Input() hide_product: boolean
+  @Input() not_allowed_fields: {}
   move_line_ids_info: {};
   picking: string;
 
@@ -28,6 +29,9 @@ export class MoveLineDetailsListComponent implements OnInit {
   ngOnInit() {
     if (this.move_line_ids) {
       this.picking = this.route.snapshot.paramMap.get('id');
+      console.log(this.move_line_ids);
+      this.move_line_ids_info = this.move_line_ids;
+    } else {
       this.get_move_lines_details_list();
     }
   }
@@ -45,9 +49,10 @@ export class MoveLineDetailsListComponent implements OnInit {
       });
     }
   }
+
   get_move_lines_details_list () {
     
-    this.stock.get_move_lines_details_list(this.move_line_ids).then((lines_data)=>{
+    this.stock.get_move_lines_details_list(this.picking).then((lines_data)=>{
       this.move_line_ids_info = lines_data;
     })
     .catch((error)=>{
@@ -57,7 +62,9 @@ export class MoveLineDetailsListComponent implements OnInit {
   }
 
   force_set_qty_done(move_id, field){
+    console.log(field);
     this.stock.force_set_qty_done(Number(move_id), field, 'stock.move.line').then((lines_data)=>{
+      console.log(lines_data == true);
       if (lines_data == true) {
         this.get_move_lines_details_list();
       }

@@ -16,7 +16,7 @@
         </ion-toolbar>
       </ion-row>
 
-      <app-picking-list [code]="current_code" [picks]="pickings"></app-picking-list>
+      <app-picking-list [code]="current_code" [not_allowed_fields]="not_allowed_fields" [picks]="pickings"></app-picking-list>
 
       <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
         <ion-infinite-scroll-content

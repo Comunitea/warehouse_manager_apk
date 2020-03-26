@@ -79,7 +79,11 @@ export class ProductPage implements OnInit {
       }
       this.product_data = data[0];  
       this.audio.play('click');
-      this.get_location_quants(this.product_data['default_code']);
+      console.log("QUANTS");
+      console.log(this.product_data);
+      console.log(this.product_data['stock_quant_ids']);
+      this.quants = this.product_data['stock_quant_ids'];
+      /* this.get_location_quants(this.product_data['default_code']); */
     })
     .catch((error)=>{
       this.presentAlert('Error al recuperar el picking:', error);
