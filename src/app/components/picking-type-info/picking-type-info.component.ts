@@ -1,5 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Router } from '@angular/router';
+import { StockService } from '../../services/stock.service';
 
 @Component({
   selector: 'app-picking-type-info',
@@ -10,12 +11,15 @@ export class PickingTypeInfoComponent implements OnInit {
 
   @Input() picking_types: {}
 
-  constructor(public router: Router) { }
+  constructor(public router: Router, public odoostock: StockService) { }
 
   ngOnInit() {}
 
-  open_link(pick_type, view, code){
-    this.router.navigateByUrl('/stock-picking-list/'+pick_type+'/'+view+'/'+code);
+  open_link(pick_type, filter) {
+    
+    const picking_domain = [['picking_type_id', '=', pick_type], this.odoostock.GetDomains('state')]
+    this.odoostock.SetDomains('picking', picking_domain);
+    this.router.navigateByUrl('/stock-picking-list/' + pick_type + '/' + filter);
   }
 
 }

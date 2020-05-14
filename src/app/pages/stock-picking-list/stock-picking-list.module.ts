@@ -6,8 +6,7 @@ import { Routes, RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 
 import { StockPickingListPage } from './stock-picking-list.page';
-import { PickingListComponent } from '../../components/picking-list/picking-list.component';
-
+//import { PickingListComponent } from '../../components/picking-list/picking-list.component';
 import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
@@ -24,8 +23,9 @@ const routes: Routes = [
     FormsModule,
     IonicModule,
     RouterModule.forChild(routes)
-  ],  
-  entryComponents: [ PickingListComponent ],
-  declarations: [ StockPickingListPage, PickingListComponent ]
+  ],
+  // entryComponents: [ PickingListComponent ],
+  // declarations: [ StockPickingListPage, PickingListComponent ]
+  declarations: [ StockPickingListPage]
 })
 export class StockPickingListPageModule {}

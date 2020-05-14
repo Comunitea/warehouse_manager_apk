@@ -1,5 +1,5 @@
 <ion-header>
-    <ion-toolbar>
+    <ion-toolbar class="cmnt-front">
       <ion-buttons slot="start">
         <ion-menu-button></ion-menu-button>
       </ion-buttons>
@@ -9,26 +9,60 @@
   
   <ion-content>
     <ion-card>
-      <ion-row *ngIf="picking_menu">
-        <ion-col col-2 class="ion-align-self-center ion-text-center" 
-          [ngClass]="{'selected': current_selected_type == option.value}" 
-          *ngFor="let option of picking_menu" 
-          (click)="get_picking_types(option.value, search)">
-          <ion-icon class="icon" [name]="option.icon"></ion-icon
-          >
-          <br/>
-          {{option.name}}
+      <ion-row *ngIf="TypeMenu">
+        
+        <ion-col col=2 class="ion-align-self-center ion-text-center" 
+          (click)="GetPickingTypes('all' , null)">
+            <ion-icon class="icon" name="book"></ion-icon>
+          <!--p>{{menu1.code.name}} </p-->
+        </ion-col>  
+        <ion-col size=10> 
+          <ion-row>
+            <ion-col class="ion-text-center product-link" size=4 
+                [ngClass]="{'selected': Code == menu1.barcode}" 
+                *ngFor="let menu1 of TypeMenu; index as i" 
+                (click)="GetPickingTypes(menu1.name, null)">
+                {{menu1.name}}
+            </ion-col>
+          </ion-row>
         </ion-col>
       </ion-row>
 
       <ion-row>
         <ion-toolbar>
-          <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
+          <ion-searchbar type="text" [ngModel]="search" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
         </ion-toolbar>
       </ion-row>
     </ion-card>
+    
     <ion-card>
-      <app-picking-type-info [picking_types]="picking_types"></app-picking-type-info>
+      <ion-grid>
+        <ion-row>
+          <ion-col size-xs="12" size-sm="6" size-lg="4" *ngFor="let picking_type of picking_types">
+            <ion-card>
+              <ion-card-header style="padding-top: 5px; padding-bottom: 5px; min-height: 10px;">
+                <ion-card-title>{{picking_type.name}}</ion-card-title>
+              </ion-card-header>
+
+              <ion-card-content style="padding-top: 5px; padding-bottom: 5px; min-height: 10px;">
+                <ion-row>
+                  <ion-col style="text-align: center" [ngSwitch]="picking_type.code">
+                    <ion-button size="small" class="button-text cmnt-front" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_ready')">{{picking_type.count_picking_ready}} Por hacer</ion-button>
+                  </ion-col>
+                  <ion-col>
+                    <div class="link" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_waiting')">{{picking_type.count_picking_waiting}} en espera</div>
+                    <div class="link" (click)="OpenTypeId(picking_type.barcode,picking_type.id, 'count_picking_late')" *ngIf="picking_type.count_picking_late">{{picking_type.count_picking_late}} retrasados</div>
+                    <ion-progress-bar *ngIf="picking_type.count_picking_late" color="primary" type="determinate" [value]="picking_type.rate_picking_late/100"></ion-progress-bar>
+                    <!--div class="link" (click)="OpenTypeId(picking_type.id, 'count_picking_backorders')" *ngIf="picking_type.count_picking_backorders">{{picking_type.count_picking_backorders}} pendientes</div-->
+                    <!--ion-progress-bar *ngIf="picking_type.count_picking_backorders" color="primary" type="determinate" [value]="picking_type.rate_picking_backorders/100"></ion-progress-bar-->
+                  </ion-col>
+                </ion-row>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+        </ion-grid> 
+      <!--app-picking-type-info [picking_types]="picking_types"></app-picking-type-info-->
     </ion-card>
 
     <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">

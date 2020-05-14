@@ -5,7 +5,7 @@ import { AlertController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
-import { Location } from "@angular/common";
+import { Location } from '@angular/common';
 import { LoadingController } from '@ionic/angular';
 
 
@@ -30,14 +30,13 @@ export class MoveLineFormPage implements OnInit {
     public alertCtrl: AlertController,
     private route: ActivatedRoute,
     private audio: AudioService,
-    private stock: StockService,
+    public stock: StockService,
     private storage: Storage,
     private location: Location,
     public loadingController: LoadingController,
   ) {
     this.moves = ['up', 'down', 'left', 'right'];
   }
-
 
   ngOnInit() {
     this.odoo.isLoggedIn().then((data) => {
@@ -59,6 +58,7 @@ export class MoveLineFormPage implements OnInit {
     });
   }
 
+
   onReadingEmitted(val: string) {
     if (this.moves.includes(val)) {
       this.page_controller(val);
@@ -67,23 +67,27 @@ export class MoveLineFormPage implements OnInit {
     }
   }
 
-  // Navigation 
+  // Navigation
 
+  go_back() {
+    this.audio.play('click');
+    this.location.back();
+  }
   page_controller(direction) {
-    if (direction == 'up') {
+    if (direction === 'up') {
       console.log("up");
-      this.router.navigateByUrl('/stock-picking/'+this.data['picking_id']['id']+'/'+this.data['picking_id']['code']);
-    } else if (direction == 'down') {
+      this.router.navigateByUrl('/stock-picking/' + this.data['picking_id']['id'] + '/' + this.data['picking_id']['code']);
+    } else if (direction === 'down') {
       console.log("down");
       if (this.data['ready_to_validate']){
         this.button_validate(this.data['picking_id']['id']);
       } else {
         this.action_confirm();
       }
-    } else if (direction == 'left') {
+    } else if (direction === 'left') {
       console.log("left");
       this.get_move_line_info(this.data['id'], -1);
-    } else if (direction == 'right') {
+    } else if (direction === 'right') {
       console.log("right");
       this.get_move_line_info(this.data['id'], +1);
     }
@@ -99,20 +103,19 @@ export class MoveLineFormPage implements OnInit {
     await alert.present();
   }
 
-  changeqty(qty){
-    if (qty == 0) {
+  ChangeQty(qty) {
+    if (qty === 0) {
       this.data['qty_done'] = this.data['product_uom_qty'];
-    }
-    else{
+      }
+    else {
       this.data['qty_done'] += qty;
     }
-      
   }
 
   get_move_line_info(move, index=0) {
     this.stock.get_move_line_info(move, index).then((data) => {
       console.log(data);
-      if (data['image'] == false) {
+      if (data['image'] === false) {
         data['base64'] = false;
         data['image'] = this.placeholder;
       } else {
@@ -128,29 +131,29 @@ export class MoveLineFormPage implements OnInit {
   }
 
   action_confirm(){
-    this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((lines_data)=>{
+    this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((lines_data) => {
       console.log(lines_data);
       this.get_move_line_info(this.data['id']);
     })
-    .catch((error)=>{
+    .catch((error) => {
       this.presentAlert('Error al validar el albarán:', error);
     });
   }
 
-  button_validate(picking_id){
+  button_validate(PickingId) {
     this.presentLoading();
-    this.stock.button_validate(Number(picking_id)).then((lines_data)=>{
-      if (lines_data && lines_data['err'] == false) {
-        console.log("Reloading");
-        this.loading.dismiss()
+    this.stock.button_validate(Number(PickingId)).then((lines_data) => {
+      if (lines_data && lines_data['err'] === false) {
+        console.log('Reloading');
+        this.loading.dismiss();
         this.location.back();
-      } else if (lines_data['err'] != false) {
-        this.loading.dismiss()
+      } else if (lines_data['err'] !== false) {
+        this.loading.dismiss();
         this.presentAlert('Error al validar el albarán:', lines_data['err']);
       }
     })
-    .catch((error)=>{
-      this.loading.dismiss()
+    .catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error al validar el albarán:', error);
     });
   }

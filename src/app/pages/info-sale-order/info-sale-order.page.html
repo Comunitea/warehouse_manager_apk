@@ -1,0 +1,32 @@
+<ion-header>
+  <ion-toolbar class="cmnt-front">
+    <button class="cmnt-button" slot="end" ion-button icon-only item-end (click)="goBack()">
+      <ion-icon style="font-size: 2em;" name="arrow-undo-outline" class="cmnt-front"></ion-icon>
+    </button> 
+  <ion-title>{{SaleOrder && SaleOrder['name']}}</ion-title>
+  </ion-toolbar> 
+  
+</ion-header>
+
+<ion-content *ngIf="SaleOrder">
+<ion-list >  
+<ion-item>
+      <ion-label>
+        <h2>{{SaleOrder['partner_id']['name']}}</h2>
+      </ion-label>
+  </ion-item>
+  <ion-item>
+      <ion-label>
+        <h2>Fecha de pedido</h2>
+        <p>{{SaleOrder['date_order']}}</p>
+      </ion-label>
+  </ion-item>
+  <ion-item>
+      <ion-label>
+        <h2>Importe</h2>
+        <p>{{SaleOrder['amount_untaxed']}} €</p>
+      </ion-label>
+  </ion-item>
+  </ion-list>
+  
+</ion-content>

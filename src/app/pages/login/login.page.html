@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="cmnt-front">
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
@@ -9,6 +9,11 @@
 </ion-header>
 
 <ion-content>
+  <div><hr style="
+    height: 25px;
+    background-color: #12a19a;
+    width: 320px;"/>
+  </div>
   <div class="login-logo">
     <img src="assets/imgs/logo.png" alt="Company logo">
   </div>
@@ -87,7 +92,7 @@
         </ion-text>
 
     </ion-list>
-
+    
     <ion-row>
       <ion-col>
         <ion-button (click)="onLogin(loginForm)" type="submit" expand="block">Login</ion-button>

@@ -15,7 +15,7 @@ export class OdooService {
   CONEXION_local = { username: '', password: '', url: '', port: null, db: '', uid: 0, context: {}, user: {}, logged_in: false};
     
 
-  constructor(private storage: Storage, public router: Router) {
+  constructor(public storage: Storage, public router: Router) {
     this.context = {'lang': 'es_ES', 'from_pda': true}
     this.uid = 0
   }
@@ -31,7 +31,7 @@ export class OdooService {
             if (con_data == null) {
                 var err = {'title': 'Error!', 'msg': 'No hay datos para establecer la conexión'}
                 reject(err);
-            } else { 
+            } else {
                 odoo.login(con_data.username, con_data.password).then((uid) => {
                     if (uid['error']){
                         reject(uid['error_msg'])

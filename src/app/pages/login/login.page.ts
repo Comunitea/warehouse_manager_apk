@@ -98,10 +98,12 @@ export class LoginPage implements OnInit {
         })
     }
   }
-
+  NavigateNext(){
+    this.router.navigateByUrl('/stock-picking-type-list');
+  }
   log_in() {
     this.odoo.login(this.CONEXION.username, this.CONEXION.password).then((data)=> {
-      this.router.navigateByUrl('/stock-picking-type-list');
+      this.NavigateNext();
     }).catch((error)=>{
       this.presentAlert('Error al hacer login:', error);
     });
@@ -111,7 +113,7 @@ export class LoginPage implements OnInit {
   ngOnInit() {
     this.odoo.isLoggedIn().then((data)=>{
       if (data==true) {
-        this.router.navigateByUrl('/stock-picking-type-list');
+        this.NavigateNext();
       }
     })
     .catch((error)=>{

@@ -1,87 +1,89 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="cmnt-front">
     <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
+      <ion-menu-button  class="cmnt-front"></ion-menu-button>
     </ion-buttons>
-    <app-scanner-header slot="end"></app-scanner-header>
-    <ion-title>Detalles de la operación</ion-title>
+    <app-scanner-header class="cmnt-back" slot="end">
+    </app-scanner-header>
+    <ion-title class="cmnt-button" 
+      style="padding-inline-end: 0px; padding-inline-start: 0px;">{{data && data['picking_type_id']['name']}}</ion-title>
+    
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <ion-card *ngIf="picking_data && not_allowed_fields">
-
+<ion-content *ngIf="data">
+  <ion-card >
     <ion-card-header>
       <ion-row>
-        <ion-col>
-          <ion-card-title *ngIf="not_allowed_fields.indexOf('display_name') == -1">{{picking_data.display_name}}</ion-card-title>
-          <ion-card-subtitle *ngIf="not_allowed_fields.indexOf('picking_type_id') == -1">{{picking_data.picking_type_id[1]}}</ion-card-subtitle>
+         <ion-col class="product-link" (click)="Navigate(0)">Anterior
         </ion-col>
-        <ion-col>
-          <ion-button size="small" class="button-text" (click)="presentActionSheet()">Opciones</ion-button>
+        
+        <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="button_validate(data.picking_id.id)">Validar
+        </ion-col> -->
+        <ion-col class="ion-text-center">
+          <span *ngIf="data && data.active_location_id">{{data.active_location_id.name}}</span>
+        </ion-col>
+        <ion-col class="product-link ion-text-right" (click)="Navigate(1)">Siguiente
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-col size="8">
+          <ion-card-title >{{data.apk_name}}</ion-card-title>
+          <ion-card-subtitle class="ion-text-right {{'state_'+ data.state.value}}" >
+              <ion-badge style="margin-right: 15px" class="ion-text-left {{'back_state_'+ data.state.value}}"># {{ data['move_line_count']}} </ion-badge>
+               <ion-badge class="ion-text-right {{'back_state_'+ data.state.value}}">{{data.state.name}}</ion-badge>
+          </ion-card-subtitle>
+        </ion-col>
+        <!-- BOTONES ALBARAN -->
+        <ion-col size="4" style="text-align-last: end">
+          <ion-button class="em3" (click)="presentActionSheet()">
+          <ion-icon slot="icon-only" name="apps-outline"></ion-icon>
+          </ion-button>
+
+          <ion-button class="em3" (click)="NavigatePickingList()">
+          <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
+          </ion-button>
+
+          <!--ion-button size="small" (click)="ValidatePick()">
+            <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
+          </ion-button-->
         </ion-col>
       </ion-row>
     </ion-card-header>
-
     <ion-card-content>
-      <div *ngIf="not_allowed_fields.indexOf('scheduled_date') == -1">{{picking_data.scheduled_date}}</div>
-      <div *ngIf="not_allowed_fields.indexOf('location_id') == -1"><span class="location" (click)="open_link(picking_data.location_id[0])">{{picking_data.location_id[1]}}</span></div>
-      <div *ngIf="not_allowed_fields.indexOf('location_dest_id') == -1"><span class="location" (click)="open_link(picking_data.location_dest_id[0])">{{picking_data.location_dest_id[1]}}</span></div>
-      <div *ngIf="not_allowed_fields.indexOf('priority') == -1" [ngSwitch]="picking_data.priority">
-        <ion-text *ngSwitchCase="0">No Urgente</ion-text>
-        <ion-text *ngSwitchCase="1">Normal</ion-text>
-        <ion-text *ngSwitchCase="2">Urgente</ion-text>
-        <ion-text *ngSwitchCase="3">Muy Urgente</ion-text>
+      <div>
+        <span *ngIf="data['scheduled_date']"><strong>Fecha: </strong></span>
+        <span *ngIf="data['scheduled_date']">{{data.scheduled_date}}</span>
+        <span *ngIf="data['priority']" style="margin-left: 10px"><strong>{{data.priority['name'] + " "}}</strong></span>
+        <span *ngIf="data.sale_id" style="margin-left: 10px" class="product-link" (click) = "OpenModal('sale.order', data.sale_id.id)"><strong>{{data.sale_id.name}}</strong></span>
       </div>
-      <div *ngIf="picking_data.note && not_allowed_fields.indexOf('scheduled_date') == -1">{{picking_data.note}}</div>
+      <div>
+        De <span class="product-link" *ngIf="data['location_id']" color="primary" (click)="open_link(data.location_id['id'])">{{data.location_id['name']}} </span> para
+        <span class="product-link" *ngIf="data['location_dest_id']" color="primary" (click)="open_link(data.location_dest_id['id'])">{{data.location_dest_id['name']}} </span>
+        <!--span *ngIf="data['location_id']" class="location" (click)="open_link(data.location_id['id'])"> De {{data.location_id['name']}}</span>
+        <span *ngIf="data['location_dest_id']" class="location" (click)="open_link(data.location_dest_id['id'])">Para {{data.location_dest_id['name']}}</span-->
+      </div>
+      <div *ngIf="data['note']">
+        {{data.note}}
+      </div>
     </ion-card-content>
 
   </ion-card>
-
   <div>
-
-    <ion-card *ngIf="move_lines && move_line_ids">
+    <ion-card *ngIf="data['move_lines']">
       <ion-card-header>
-        <ion-row>
+        <!--ion-row>
           <ion-col>
-            <ion-card-title *ngIf="!active_operation; else detailed_title">Operaciones</ion-card-title>
+            <ion-card-title>Movimientos: <span>{{ data['move_line_count']}}</span> </ion-card-title>
           </ion-col>
-          <!-- <ion-col class="ion-text-right">
-            <ion-item>
-              <ion-label>Detalles:</ion-label>
-              <ion-toggle [(ngModel)]="active_operation" color="primary"></ion-toggle>
-            </ion-item>
-          </ion-col> -->
-        </ion-row>
+        </ion-row-->
       </ion-card-header>
-
-      <ng-template #detailed_title>
-        <ion-card-title>Operaciones detalladas</ion-card-title>
-      </ng-template>
-
-      <ion-card-content *ngIf="move_lines || move_line_ids">
-        <app-move-line-list *ngIf="!active_operation && move_lines; else detailed_grid" [not_allowed_fields]="not_allowed_ml_fields" [scanner_reading]="scanner_reading" [code]="picking_code" [move_lines]="move_lines"></app-move-line-list>
-
-        <ion-grid *ngIf="!active_operation">          
-          <ion-row>
-            <ion-col>
-              
-            </ion-col>
-            
-            <ion-col size="2">
-                <strong>Total:</strong>
-            </ion-col>
-          
-            <ion-col size="4">
-              <div>{{picking_data.quantity_done}} // {{picking_data.product_uom_qty}}</div>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
-
-        <ng-template #detailed_grid>
-          <app-move-line-details-list *ngIf="move_line_ids" [not_allowed_fields]="not_allowed_m_fields" [code]="picking_code" [scanner_reading]="scanner_reading"  [move_line_ids]="move_line_ids"></app-move-line-details-list>
-        </ng-template>
-
+      <ion-card-content *ngIf="data['move_lines']">
+        <app-move-line-list 
+          [scanner_reading]="scanner_reading" 
+          [code]="picking_code" 
+          [move_lines]="data['move_lines']">
+        </app-move-line-list>
       </ion-card-content>
     </ion-card>
 

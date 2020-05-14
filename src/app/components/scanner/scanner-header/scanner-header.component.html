@@ -1,22 +1,23 @@
 <ion-buttons end>
+  <!--ion-back-button class="cmnt-front" [name]="arrow-undo-circle-outline" ></ion-back-button-->
   <!-- Commented voice function -->
-  <button ion-button icon-only item-end (click)="change_volume()">
-    <ion-icon *ngIf="audio.active_audio" name="megaphone"></ion-icon>
-    <ion-icon *ngIf="!audio.active_audio" name="volume-off"></ion-icon>
+  <button icon-only item-end class="cmnt-button" (click)="change_volume()">
+    <ion-icon *ngIf="audio.active_audio"  class="cmnt-front" name="megaphone"></ion-icon>
+    <ion-icon *ngIf="!audio.active_audio"  class="cmnt-front" name="volume-off"></ion-icon>
   </button>
-  <button *ngIf="voice.available" ion-button icon-only item-end (click)="change_escuchando()">
-    <ion-icon *ngIf="voice.active_voice" name="mic"></ion-icon>
-    <ion-icon *ngIf="!voice.active_voice" name="mic-off"></ion-icon>
+  <button *ngIf="voice.available" class="cmnt-button" icon-only item-end (click)="change_escuchando()">
+    <ion-icon *ngIf="voice.active_voice" class="cmnt-front" name="mic"></ion-icon>
+    <ion-icon *ngIf="!voice.active_voice" class="cmnt-front" name="mic-off"></ion-icon>
   </button>
 
-  <button *ngIf="!voice.available" disabled="disabled" class="disabled" ion-button icon-only item-end>
-    <ion-icon name="mic"></ion-icon>
-  </button>
+  <!--button *ngIf="!voice.available" class="disabled cmnt-back" ion-button icon-only item-end>
+    <ion-icon name="mic" class="cmnt-front"></ion-icon>
+  </button-->
     
-  <button *ngIf="!disabled_reader" ion-button icon-only item-end (click)="change_hide_scan_form()">
-    <ion-icon name="barcode"></ion-icon>
+  <button *ngIf="!disabled_reader" class="cmnt-button" ion-button icon-only item-end (click)="change_hide_scan_form()">
+    <ion-icon name="barcode" class="cmnt-front"></ion-icon>
   </button>
-  <button *ngIf="disabled_reader" disabled="disabled" class="disabled" ion-button icon-only item-end>
-    <ion-icon name="barcode"></ion-icon>
+  <button *ngIf="disabled_reader" disabled="disabled" class="disabled cmnt-button" ion-button icon-only item-end>
+    <ion-icon name="barcode" class="cmnt-front"></ion-icon>
   </button>
 </ion-buttons>

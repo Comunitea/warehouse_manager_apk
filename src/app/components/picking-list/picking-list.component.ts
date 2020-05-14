@@ -15,9 +15,12 @@ export class PickingListComponent implements OnInit {
 
   constructor(public router: Router) { }
 
-  ngOnInit() {}
+  ngOnInit() {
+
+  }
 
   open_link(pick_id, code){
+    console.log(this.picks)
     this.router.navigateByUrl('/stock-picking/'+pick_id+'/'+code);
   }
 

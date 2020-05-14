@@ -4,15 +4,16 @@
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
     <app-scanner-header slot="end"></app-scanner-header>
-    <ion-title>Movimiento</ion-title>
+
+     <ion-title class="cmnt-button" style="padding-inline-end: 0px; padding-inline-start: 0px;">
+      {{data.picking_id['id'] && data.picking_id['display_name']}}: {{data['product_id'] && data['product_id']['apk_name']}}
+      </ion-title>
   </ion-toolbar>
 </ion-header>
-
 <ion-content>
 <ion-card *ngIf="data">
-
     <ion-card-header>
-      <ion-card-title class="ion-text-center">{{data.display_name}}</ion-card-title>
+      <ion-card-title class="ion-text-center">{{data.apk_name}}</ion-card-title>
     </ion-card-header>
   
     <ion-card-content class="ion-text-center">
@@ -20,19 +21,19 @@
         <ion-img *ngIf="data.base64" src="data:image/jpeg;base64,{{ data['image'] }}" ></ion-img>
         <ion-img *ngIf="!data.base64" src="{{ data['image'] }}"></ion-img>
       </div>
-      <ion-label>
+      <!--ion-label>
         <strong>  {{data.display_name}} </strong>
-      </ion-label>
-      <div><strong>Pick: </strong>{{data.picking_id['id'] && data.picking_id['display_name']}}</div>
+      </ion-label-->
+      <div><strong>Albarán: </strong>{{data.picking_id['id'] && data.picking_id['display_name']}}</div>
       <div><strong>Referencia: </strong>{{data.default_code}}</div>
       <div><strong>{{data.location_id['display_name']}} >> {{data.location_dest_id['display_name']}}</strong></div>
       <ion-row>
-         <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'"><ion-badge class="link" (click)="changeqty(-1)"> - </ion-badge>
+         <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'"><ion-badge class="link" (click)="ChangeQty(-1)"> - </ion-badge>
         </ion-col>
-        <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'" class="link" (click)="changeqty(0)"><strong>Cantidad: </strong><br/>
+        <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'" class="link" (click)="ChangeQty(0)"><strong>Cantidad: </strong><br/>
           <ion-badge class="primary"> {{data.qty_done}} de {{data.product_uom_qty}} </ion-badge> 
         </ion-col>
-        <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'"><ion-badge class="link" (click)="changeqty(+1)"> + </ion-badge>
+        <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'"><ion-badge class="link" (click)="ChangeQty(+1)"> + </ion-badge>
         </ion-col>
       </ion-row>
 

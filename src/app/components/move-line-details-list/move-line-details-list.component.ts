@@ -21,7 +21,7 @@ export class MoveLineDetailsListComponent implements OnInit {
 
   constructor(
     public router: Router,
-    private stock: StockService,
+    public stock: StockService,
     public alertCtrl: AlertController,
     private route: ActivatedRoute
   ) { }

@@ -4,6 +4,7 @@ import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
+import {} from '../stock-picking-type-list/stock-picking-type-list.page'
 
 @Component({
   selector: 'app-stock-picking-list',
@@ -17,16 +18,21 @@ export class StockPickingListPage implements OnInit {
   offset: number;
   limit: number;
   limit_reached: boolean;
-  pickings: {};
+  pickings: Array<{}>;
   picking_state: string;
   picking_types: {};
   current_type_id: string;
   view_domain: {};
-  view_selector: string;
+  filter: string;
   search: string;
   current_code: string;
   scanner_reading: string;
   not_allowed_fields: {};
+  StateIcon: {};
+  States: Array<{}>;
+  State: {};
+  StateValue: string;
+  MaxNumber: number;
 
   constructor(
     private odoo: OdooService,
@@ -36,30 +42,32 @@ export class StockPickingListPage implements OnInit {
     private audio: AudioService,
     private stock: StockService
   ) {
-    let options = {day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h24'}
-    this.view_domain = {
-        'ready' : [['state', '=', 'assigned']],
-        'waiting': [['state', 'in', ['waiting', 'confirmed']]],
-        'late': [['state', 'in', ['assigned', 'waiting', 'confirmed']], ['scheduled_date', '<', new Date().toLocaleString('es-ES', options)]],
-        'backorders': [['state', 'in', ['waiting', 'confirmed', 'assigned']], ['backorder_id', '!=', false]]
-    }
+    // this.offset = 0;
+    // this.limit = 5;
+    // this.limit_reached = false;
+  }
+
+  ionViewDidEnter(){
     this.offset = 0;
-    this.limit = 25;
+    this.limit = this.MaxNumber = 25;
     this.limit_reached = false;
+    this.GetPickingList(null, this.offset, this.limit);
   }
 
   ngOnInit() {
-    this.odoo.isLoggedIn().then((data)=>{
-      if (data==false) {
+    this.odoo.isLoggedIn().then((data) => {
+      if (data === false) {
         this.router.navigateByUrl('/login');
       } else {
-        this.current_type_id = this.route.snapshot.paramMap.get('id');
-        this.view_selector = this.route.snapshot.paramMap.get('view');
-        this.current_code = this.route.snapshot.paramMap.get('code');
-        this.get_picking_list();
+        // Lo voy a cambiar por
+        this.StateValue = '';
+        this.StateIcon = this.stock.getStateIcon('stock.move');
+        this.States = this.stock.GetModelInfo('stock.picking', 'filter_state');
+        const All = {name: 'Todos', value: 'all'};
+        this.States.push(All);
       }
     })
-    .catch((error)=>{
+    .catch((error) => {
       this.presentAlert('Error al comprobar tu sesión:', error);
     });
   }
@@ -67,8 +75,13 @@ export class StockPickingListPage implements OnInit {
   onReadingEmitted(val: string) {
     this.scanner_reading = val;
     this.search = val;
-    this.get_picking_list(this.search);
+    this.offset = 0;
+    this.GetPickingList(this.search, this.offset, this.limit);
   }
+
+  Navigate(Url){
+    return this.router.navigateByUrl('/' + Url );
+    }
 
   async presentAlert(titulo, texto) {
     this.audio.play('error');
@@ -79,33 +92,63 @@ export class StockPickingListPage implements OnInit {
     });
     await alert.present();
   }
-  
-  get_picking_list(search=null){
+  OpenLink(PickId){
+    this.router.navigateByUrl('/stock-picking/' + PickId + '/1');
+  }
+
+  ChangeStateFilter(){
+    if (this.StateValue === '') {
+      this.State = null; }
+    else{
+      this.State = this.States.filter(x => x['value'] === this.StateValue)[0]; }
+    this.offset = 0;
+    this.GetPickingList(this.search, this.offset, this.limit);
+
+  }
+
+  GetPickingList(search= null, offset, limit){
+    this.limit_reached = false;
+    this.stock.GetPickingList(search, offset, limit, this.State).then((data: Array<{}>) => {
+      this.pickings = data;
+      if (data.length < this.MaxNumber){
+        this.limit_reached = true;
+      }
+
+      // if (Object.keys(this.pickings).length === 1){
+      //  this.stock.SetModelInfo('stock.picking', 'ActiveId', data[0]['id']);
+      //  this.router.navigateByUrl('/stock-picking/' + data[0]['id']);
+      // }
+    });
+  }
+  /*
+  get_picking_list(search = null){
     this.offset = 0;
     this.limit_reached = false;
-    this.stock.get_picking_list(this.view_domain[this.view_selector], this.current_type_id, this.offset, this.limit, search).then((picking_list:Array<{}>)=> {
+    this.stock.GetPicking(this.compute_domain(search), null, 'tree', this.offset, this.limit, search).then((picking_list: Array<{}>) => {
       this.pickings = picking_list;
-      if (this.pickings[0] && this.pickings[0]['picking_fields']) {
-        this.not_allowed_fields = this.pickings[0]['picking_fields'].split(',');
-        console.log(this.not_allowed_fields);
-      }
-      if(Object.keys(picking_list).length < 25){
+      // if (this.pickings[0] && this.pickings[0]['picking_fields']) {
+      //  this.not_allowed_fields = this.pickings[0]['picking_fields'].split(',');
+      //  console.log(this.not_allowed_fields);
+      // }
+      if (Object.keys(picking_list).length < 25){
         this.limit_reached = true;
       }
       if (Object.keys(this.pickings).length == 1){
-        this.router.navigateByUrl('/stock-picking/'+this.pickings[0]['id']+'/'+this.current_code);
+        this.router.navigateByUrl('/stock-picking/'+this.pickings[0]['id']);
       }
+
       this.audio.play('click');
     })
     .catch((error) => {
       console.log(error);
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
     });
-  }
+  } */
 
-  get_search_results(ev:any){
+  get_search_results(ev: any){
     this.search = ev.target.value;
-    this.get_picking_list(this.search);
+    this.offset = 0;
+    this.GetPickingList(this.search, this.offset, this.limit);
   }
 
   // Infinitescroll
@@ -115,7 +158,6 @@ export class StockPickingListPage implements OnInit {
       console.log('Loading more locations');
       event.target.complete();
       this.picking_list_infinite_scroll_add();
-
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
       if (this.limit_reached) {
@@ -124,14 +166,14 @@ export class StockPickingListPage implements OnInit {
     }, 500);
   }
 
-  picking_list_infinite_scroll_add(){
+  picking_list_infinite_scroll_add() {
     this.offset += this.limit;
-    this.stock.get_picking_list(this.view_domain[this.view_selector], this.current_type_id, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
-      let current_length = Object.keys(this.pickings).length;
-      if(Object.keys(data).length < 25){
+    this.stock.GetPickingList(this.search, this.offset, this.limit, this.State).then((data: Array <{}>) => {
+      if (data.length < this.MaxNumber){
         this.limit_reached = true;
       }
-      for(var k in data) this.pickings[current_length+Number(k)]=data[k];
+      for (const pick of data) {this.pickings.push(pick); }
+
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
@@ -141,5 +183,4 @@ export class StockPickingListPage implements OnInit {
   toggleInfiniteScroll() {
     this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
   }
-
 }

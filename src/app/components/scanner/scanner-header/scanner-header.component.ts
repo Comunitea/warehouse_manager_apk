@@ -11,7 +11,7 @@ import { AlertController } from '@ionic/angular';
   templateUrl: './scanner-header.component.html',
   styleUrls: ['./scanner-header.component.scss'],
 })
-export class ScannerHeaderComponent implements OnInit {  
+export class ScannerHeaderComponent implements OnInit {
 
   scanner_options: ScannerOptions = { reader: true, microphone: false, sound: false };
 
@@ -33,14 +33,14 @@ export class ScannerHeaderComponent implements OnInit {
       } else {
         this.save_scanner_options();
       }
-      if(this.voice.available == null){
-        this.voice.isAvailable(); 
+      if (this.voice.available == null){
+        this.voice.isAvailable();
       }
     })
-    .catch((error)=>{
+    .catch((error) => {
       this.presentAlert('Error al acceder a las opciones del scanner:', error);
     });
-    if(this.voice.available){
+    if (this.voice.available){
       this.check_escuchando();
     }
   }
@@ -56,8 +56,8 @@ export class ScannerHeaderComponent implements OnInit {
   }
 
   change_volume() {
-    this.audio.active_audio = !this.audio.active_audio
-    this.scanner_options['sound'] = this.audio.active_audio;
+    this.audio.ActiveAudio = !this.audio.ActiveAudio;
+    this.scanner_options['sound'] = this.audio.ActiveAudio;
     this.save_scanner_options();
   }
 
@@ -84,11 +84,11 @@ export class ScannerHeaderComponent implements OnInit {
 
   save_scanner_options() {
     this.storage.set('SCANNER', this.scanner_options).then(() => {
-    })
+    });
   }
 
   update_show_vals() {
-    this.audio.active_audio = this.scanner_options['sound'];
+    this.audio.ActiveAudio = this.scanner_options['sound'];
     this.voice.active_voice = this.scanner_options['microphone'];
     this.scanner.active_scanner = this.scanner_options['reader'];
   }

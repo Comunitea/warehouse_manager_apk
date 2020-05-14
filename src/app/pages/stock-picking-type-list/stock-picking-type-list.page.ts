@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
-import { AudioService } from '../../services/audio.service'; 
+import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 
 
@@ -13,76 +13,57 @@ import { StockService } from '../../services/stock.service';
 })
 export class StockPickingTypeListPage implements OnInit {
 
-  @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
+  @ViewChild(IonInfiniteScroll, {static: false}) infiniteScroll: IonInfiniteScroll;
 
   offset: number;
   limit: number;
   limit_reached: boolean;
-  picking_types: {};
+  picking_types: Array<{}>;
   picking_codes: {};
-  picking_menu: {};
-  current_selected_type: string;
+  TypeMenu: Array<{}>;
+  Id: BigInteger;
   search: string;
+  Code: {};
 
   constructor(
-    private odoo: OdooService,
+    public odoo: OdooService,
     public router: Router,
     public alertCtrl: AlertController,
-    public audio: AudioService, 
-    private stock: StockService
+    public audio: AudioService,
+    public stock: StockService
   ) {
-    this.picking_menu = [
-      {
-        'value': 'all',
-        'name': 'Todos',
-        'icon': 'book',
-        'size': 3
-      },
-      {
-        'value': 'incoming',
-        'name': 'Por recibir',
-        'icon': 'log-in',
-        'size': 3
-      },
-      {
-        'value': 'internal',
-        'name': 'Traspasos',
-        'icon': 'sync',
-        'size': 3
-      },
-      {
-        'value': 'outgoing',
-        'name': 'Por hacer',
-        'icon': 'log-out',
-        'size': 3
-      }
-    ]
+    this.TypeMenu = [];
 
     this.offset = 0;
-    this.limit = 25;
+    this.limit = 10;
     this.limit_reached = false;
     this.picking_codes = [
       'incoming',
       'outgoing',
       'internal'
-    ]
+    ];
+  }
+  ionViewDidEnter(){
+    this.FillMenuTypes();
   }
 
   ngOnInit() {
-    this.odoo.isLoggedIn().then((data)=>{
-      if (data==false) {
-        this.router.navigateByUrl('/login');
+    this.stock.GetStates('stock.picking', 'state');
+    const self = this;
+    this.odoo.isLoggedIn().then((data) => {
+      if (data === false) {
+        self.router.navigateByUrl('/login');
       } else {
-        this.get_picking_types();
+
       }
     })
-    .catch((error)=>{
-      this.presentAlert('Error al comprobar tu sesión:', error);
+    .catch((error) => {
+      self.presentAlert('Error al comprobar tu sesión:', error);
     });
   }
 
   async presentAlert(titulo, texto) {
-    this.audio.play('error'); 
+    this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
         subHeader: texto,
@@ -90,32 +71,57 @@ export class StockPickingTypeListPage implements OnInit {
     });
     await alert.present();
   }
-  
-  get_picking_types(picking_state = null, search = null) {
-    if (picking_state && picking_state != 'all') {
-      this.current_selected_type = picking_state;
-      picking_state = [picking_state];
-    } else {
-      this.current_selected_type = 'all';
-      picking_state = this.picking_codes;
-    }
-    this.offset = 0;
-    this.limit_reached = false;
-    this.stock.get_picking_types(picking_state, this.offset, this.limit, search).then((picking_type_list:Array<{}>)=> {
-      this.picking_types = picking_type_list;
-      if(Object.keys(picking_type_list).length < 25){
-        this.limit_reached = true;
+
+  FillMenuTypes(){
+    this.TypeMenu = [];
+    const self = this;
+    this.stock.GetPickingTypesMenu().then((data: Array<{}>) => {
+      for (const menu of data){
+        const NewMenu = {code: menu['code'],
+                         name: menu['apk_name'],
+                         icon: menu['icon'] || 'sync',
+                         id: menu['id'],
+                         size: 2 };
+        self.TypeMenu.push(NewMenu);
+
+        }
+
+      self.Code = self.stock.GetModelInfo('stock.picking.type', 'Code');
+
+      if (!self.Code) {self.GetPickingTypes('all'); }
+      else { self.GetPickingTypes(self.Code); }
       }
-      this.audio.play('click');
-    })
+    )
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
     });
+
   }
 
-  get_search_results(ev:any){
+  GetPickingTypes(Code = null, search= null) {
+    this.audio.play('click');
+    this.limit_reached = false;
+    if (Code) {
+      this.search = null;
+      this.stock.SetModelInfo('stock.picking.type', 'Code', Code);
+    }
+    const self = this;
+    this.stock.GetPickingTypes(Code, search, this.offset, this.limit).then((TypeIds: Array <{}>) => {
+      self.picking_types = TypeIds;
+      if (TypeIds.length < 10){
+        this.limit_reached = true;
+      }
+
+    })
+    .catch((error) => {
+      self.presentAlert('Error al recuperador el listado de operaciones:', error);
+    });
+  }
+
+  get_search_results(ev: any){
+    if (ev.target.value.length > 3){
     this.search = ev.target.value;
-    this.get_picking_types(this.current_selected_type, this.search);
+    this.GetPickingTypes(null, this.search); }
   }
 
   // Infinitescroll
@@ -136,18 +142,12 @@ export class StockPickingTypeListPage implements OnInit {
 
   picking_list_infinite_scroll_add(){
     this.offset += this.limit;
-    let picking_state;
-    if (this.current_selected_type == 'all') {
-      picking_state = this.picking_codes;
-    } else {
-      picking_state = [this.current_selected_type];
-    }
-    this.stock.get_picking_types(picking_state, this.offset, this.limit, this.search).then((picking_type_list:Array<{}>)=> {
-      let current_length = Object.keys(this.picking_types).length;
-      if(Object.keys(picking_type_list).length < 25){
+    this.stock.GetPickingTypes(this.Code, this.search, this.offset, this.limit).then((data: Array<{}>) => {
+      if (data.length < 10){
         this.limit_reached = true;
       }
-      for(var k in picking_type_list) this.picking_types[current_length+Number(k)]=picking_type_list[k];
+      // if (data) {this.picking_types.push(data)};
+      for (const type of data) {this.picking_types.push(type); }
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
@@ -156,6 +156,13 @@ export class StockPickingTypeListPage implements OnInit {
 
   toggleInfiniteScroll() {
     this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
+  }
+  OpenTypeId(Code, PickingTypeId, DomainName) {
+    this.audio.play('click');
+    this.stock.SetModelInfo('stock.picking.type', 'Code', Code);
+    this.stock.SetModelInfo('stock.picking.type', 'PickingTypeId', PickingTypeId);
+    this.stock.SetModelInfo('stock.picking.type', 'DomainName', DomainName);
+    this.router.navigateByUrl('/stock-picking-list');
   }
 
 }

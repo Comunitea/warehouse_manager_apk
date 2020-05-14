@@ -32,7 +32,7 @@ export class StockLocationListPage implements OnInit {
     public router: Router,
     public alertCtrl: AlertController,
     private audio: AudioService,
-    private stock: StockService,
+    public stock: StockService,
   ) {
     this.location_types = [
       //{

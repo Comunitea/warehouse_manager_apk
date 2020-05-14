@@ -14,6 +14,8 @@ import { TextToSpeech } from '@ionic-native/text-to-speech/ngx';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
+
+
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],
@@ -29,7 +31,7 @@ import { AppRoutingModule } from './app-routing.module';
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     NativeAudio,
     SpeechRecognition,
-    TextToSpeech
+
   ],
   bootstrap: [AppComponent]
 })

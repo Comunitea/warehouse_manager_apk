@@ -31,7 +31,10 @@
         ]
       }
     ],
-    "no-consecutive-blank-lines": false,
+    "no-string-literal": false,
+    "no-consecutive-blank-lines": false, 
+    "one-line": [false, "check-catch", "check-finally", "check-else"],
+
     "no-console": [
       true,
       "debug",
@@ -54,6 +57,8 @@
       true,
       "as-needed"
     ],
+    "no-eval": false,
+    "radix": false,
     "object-literal-sort-keys": false,
     "ordered-imports": false,
     "quotemark": [

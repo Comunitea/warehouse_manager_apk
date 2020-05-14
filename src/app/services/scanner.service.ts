@@ -52,10 +52,10 @@ export class ScannerService {
 
     }
     else{
-      //este 250 es el tiempo en resetear sin pulsaciones
-      if (this.timeStamp + 400 < new Date().getTime()){
-          this.code = ""
-          this.is_order = false
+      //este 50 es el tiempo en resetear sin pulsaciones
+      if (this.timeStamp + 350 < new Date().getTime()) {
+          this.code = '';
+          this.is_order = false;
       }
       this.timeStamp = new Date().getTime();
       //this.odootools.presentToast(st)

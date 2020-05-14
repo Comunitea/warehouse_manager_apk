@@ -9,18 +9,18 @@ import { AlertController } from '@ionic/angular';
 })
 export class AudioService {
 
-  public active_audio: boolean;
+  public ActiveAudio: boolean;
 
-  audioType: string = 'html5';
+  audioType = 'html5';
   sounds: any = [];
 
   constructor(
-      public nativeAudio: NativeAudio, 
-      public platform: Platform, 
+      public nativeAudio: NativeAudio,
+      public platform: Platform,
       public storage: Storage,
       public alertCtrl: AlertController
     ) {
-    if(platform.is('cordova')){
+    if (platform.is('cordova')){
       this.audioType = 'native';
     }
   }
@@ -35,47 +35,38 @@ export class AudioService {
     await alert.present();
   }
 
-  preload(key, asset) {
-
-    if(this.audioType === 'html5'){
-
-        let audio = {
-            key: key,
-            asset: asset,
+  preload(Key, Asset) {
+    if (this.audioType === 'html5'){
+        const audio = {
+            key: Key,
+            asset: Asset,
             type: 'html5'
         };
 
         this.sounds.push(audio);
 
     } else {
-
-        this.nativeAudio.preloadSimple(key, asset);
-
-        let audio = {
-            key: key,
-            asset: key,
+        this.nativeAudio.preloadSimple(Key, Asset);
+        const audio = {
+            key: Key,
+            asset: Key,
             type: 'native'
         };
-
         this.sounds.push(audio);
-    }       
-
+    }
   }
 
   play(key){
-
-    if (this.active_audio == true) {
-      let audio = this.sounds.find((sound) => {
+    if (this.ActiveAudio === true) {
+      const audio = this.sounds.find((sound) => {
           return sound.key === key;
       });
+      if (audio.type === 'html5'){
 
-      if(audio.type === 'html5'){
-
-          let audioAsset = new Audio(audio.asset);
+          const audioAsset = new Audio(audio.asset);
           audioAsset.play();
 
       } else {
-
         this.nativeAudio.play(audio.asset).then((res) => {
             console.log(res);
         }, (err) => {
@@ -84,6 +75,6 @@ export class AudioService {
 
       }
 
-    } 
+    }
   }
 }

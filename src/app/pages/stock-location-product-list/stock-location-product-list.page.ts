@@ -32,7 +32,7 @@ export class StockLocationProductListPage implements OnInit {
     public alertCtrl: AlertController,
     private route: ActivatedRoute,
     private audio: AudioService,
-    private stock: StockService,
+    public stock: StockService,
     private storage: Storage
   ) {
     this.offset = 0;

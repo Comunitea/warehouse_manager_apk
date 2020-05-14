@@ -14,10 +14,19 @@ const routes: Routes = [
   { path: 'logout',
     loadChildren: () => import('./pages/logout/logout.module').then(m => m.LogoutPageModule)
   },
+  { path: 'stock-picking/:id',
+    loadChildren: () => import('./pages/stock-picking/stock-picking.module').then(m => m.StockPickingPageModule)
+  },
+  { path: 'stock-picking',
+  loadChildren: () => import('./pages/stock-picking/stock-picking.module').then(m => m.StockPickingPageModule)
+  },
   { path: 'stock-picking/:id/:code',
     loadChildren: () => import('./pages/stock-picking/stock-picking.module').then(m => m.StockPickingPageModule)
   },
-  { path: 'stock-picking-list/:id/:view/:code',
+  { path: 'stock-picking-list',
+    loadChildren: () => import('./pages/stock-picking-list/stock-picking-list.module').then(m => m.StockPickingListPageModule)
+  },
+  { path: 'stock-picking-list/:id/:filter',
     loadChildren: () => import('./pages/stock-picking-list/stock-picking-list.module').then(m => m.StockPickingListPageModule)
   },
   { path: 'product/:id',
@@ -44,12 +53,15 @@ const routes: Routes = [
   { path: 'stock-move-location',
     loadChildren: () => import('./pages/stock-move-location/stock-move-location.module').then(m => m.StockMoveLocationPageModule)
    },
-  { path: 'move-line-form/:id', 
-    loadChildren: () => import ('./pages/move-line-form/move-line-form.module').then(m => m.MoveLineFormPageModule) 
+  { path: 'move-line-form/:id',
+    loadChildren: () => import ('./pages/move-line-form/move-line-form.module').then(m => m.MoveLineFormPageModule)
   },
-  { path: 'move-form/:id', 
-    loadChildren: () => import ('./pages/move-form/move-form.module').then(m => m.MoveFormPageModule) 
-  } 
+  { path: 'move-form/:id',
+    loadChildren: () => import ('./pages/move-form/move-form.module').then(m => m.MoveFormPageModule)
+  },
+  { path: 'info-sale-order/:id',
+  loadChildren: () => import ('./pages/info-sale-order/info-sale-order.module').then(m => m.InfoSaleOrderPageModule)
+  },
 ];
 
 @NgModule({
