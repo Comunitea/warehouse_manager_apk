@@ -77,8 +77,8 @@ export class ScannerHeaderComponent implements OnInit {
   }
 
   change_hide_scan_form() {
-    this.scanner.active_scanner = !this.scanner.active_scanner;
-    this.scanner_options['reader'] = this.scanner.active_scanner;
+    this.scanner.ActiveScanner = !this.scanner.ActiveScanner;
+    this.scanner_options['reader'] = this.scanner.ActiveScanner;
     this.save_scanner_options();
   }
 
@@ -90,7 +90,7 @@ export class ScannerHeaderComponent implements OnInit {
   update_show_vals() {
     this.audio.ActiveAudio = this.scanner_options['sound'];
     this.voice.active_voice = this.scanner_options['microphone'];
-    this.scanner.active_scanner = this.scanner_options['reader'];
+    this.scanner.ActiveScanner = this.scanner_options['reader'];
   }
 
 }

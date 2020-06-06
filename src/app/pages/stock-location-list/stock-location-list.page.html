@@ -1,22 +1,22 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="cmnt-front">
     <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
+      <ion-menu-button  class="cmnt-front"></ion-menu-button>
     </ion-buttons>
-    <app-scanner-header slot="end"></app-scanner-header>
-    <ion-title>Listado de ubicaciones</ion-title>
+    <app-scanner-header class="cmnt-back" slot="end"></app-scanner-header>
+    <ion-title class="cmnt-button" >Ubicaciones</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <ion-card>
+  <!--ion-card>
     <ion-row *ngIf="location_types">
       <ion-col col-2 class="ion-align-self-center ion-text-center" [ngClass]="{'selected': current_selected_type == option.value}" *ngFor="let option of location_types" (click)="get_location_list(option.value, search)">
         <ion-icon class="icon" [name]="option.icon"></ion-icon><br/>
         {{option.name}}
       </ion-col>
     </ion-row>
-  </ion-card>
+  </ion-card-->
   <ion-card>
     <ion-card-content>
       <ion-row>

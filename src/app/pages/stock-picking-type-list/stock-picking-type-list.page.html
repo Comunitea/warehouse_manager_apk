@@ -51,7 +51,7 @@
                   </ion-col>
                   <ion-col>
                     <div class="link" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_waiting')">{{picking_type.count_picking_waiting}} en espera</div>
-                    <div class="link" (click)="OpenTypeId(picking_type.barcode,picking_type.id, 'count_picking_late')" *ngIf="picking_type.count_picking_late">{{picking_type.count_picking_late}} retrasados</div>
+                    <div class="link" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_late')" *ngIf="picking_type.count_picking_late">{{picking_type.count_picking_late}} retrasados</div>
                     <ion-progress-bar *ngIf="picking_type.count_picking_late" color="primary" type="determinate" [value]="picking_type.rate_picking_late/100"></ion-progress-bar>
                     <!--div class="link" (click)="OpenTypeId(picking_type.id, 'count_picking_backorders')" *ngIf="picking_type.count_picking_backorders">{{picking_type.count_picking_backorders}} pendientes</div-->
                     <!--ion-progress-bar *ngIf="picking_type.count_picking_backorders" color="primary" type="determinate" [value]="picking_type.rate_picking_backorders/100"></ion-progress-bar-->

@@ -45,10 +45,11 @@ export class StockPickingTypeListPage implements OnInit {
   }
   ionViewDidEnter(){
     this.FillMenuTypes();
+    this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
   }
 
   ngOnInit() {
-    this.stock.GetStates('stock.picking', 'state');
+    this.stock.GetStates('stock.picking.batch', 'state');
     const self = this;
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {

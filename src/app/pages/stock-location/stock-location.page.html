@@ -1,42 +1,199 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar class="cmnt-front">
     <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
+      <ion-menu-button class="cmnt-front"></ion-menu-button>
     </ion-buttons>
-    <app-scanner-header [disabled_reader]="true" slot="end"></app-scanner-header>
-    <ion-title>Detalles de la ubicación</ion-title>
+    <app-scanner-header [disabled_reader]="true" class="cmnt-back" slot="end"></app-scanner-header>
+    <ion-title class="cmnt-button">{{location_data && location_data.name}}</ion-title>
   </ion-toolbar>
 </ion-header>
+<ion-content *ngIf="location_data">
 
-<ion-content>
-  <ion-card *ngIf="location_data">
-
+  <ion-card >
     <ion-card-header>
-      <ion-card-title>{{location_data.display_name}}</ion-card-title>
+      <ion-card-title (click)='OpenLocation(location_data.location_id.id)' >{{location_data.location_id.name}}</ion-card-title>
     </ion-card-header>
-  
-    <ion-card-content>
-      <div *ngIf="location_data.company_id[1]"><strong>Compañía: </strong>{{location_data.company_id[1]}}</div>
-      <div [ngSwitch]="location_data.usage">
-        <strong>Tipo: </strong>
-        <!-- <ion-text *ngSwitchCase="'supplier'">Ubicación de proveedor</ion-text> -->
-        <ion-text *ngSwitchCase="'view'">Ver</ion-text>
-        <ion-text *ngSwitchCase="'internal'">Ubicación interna</ion-text>
-        <!-- <ion-text *ngSwitchCase="'customer'">Ubicación de cliente</ion-text>
-        <ion-text *ngSwitchCase="'inventory'">Ubicación de inventario</ion-text>
-        <ion-text *ngSwitchCase="'procurement'">Abastecimiento</ion-text> -->
-        <ion-text *ngSwitchCase="'production'">Producción</ion-text>
-        <ion-text *ngSwitchCase="'transit'">Ubicación de tránsito</ion-text>
-      </div>
-      <ion-row>
-        <ion-col>
-          <ion-button (click)="open_link('stock', location_data.id)" expand="block">Stock actual</ion-button>
-        </ion-col>
-        <ion-col>
-          <ion-button (click)="open_link('product', location_data.id)" expand="block">Productos</ion-button>
-          </ion-col>
-      </ion-row>
+      <ion-card-content style="text-align-last: center;">          
+          <ion-badge [ngClass]="ShowInfo === true?'badge-back':'badge-front'" (click)="SetShow('ShowInfo')" style="width: 25%; margin-right: 15px"> Info </ion-badge> 
+          <ion-badge [ngClass]="ShowStock === true?'badge-back':'badge-front'" (click)="SetShow('ShowStock')" style="width: 25%; marging-left: 15px; margin-right: 15px"> Stock </ion-badge> 
+          <ion-badge [ngClass]="ShowInventory === true?'badge-back':'badge-front'" (click)="SetShow('ShowInventory')"  style="width: 25%; marging-left: 15px;"> Inventario </ion-badge> 
     </ion-card-content>
-  
+  </ion-card>
+
+  <ion-card *ngIf="ShowInventory">
+    <ion-card-content *ngIf="location_data.inventory_id === 0" style="text-align-last: center;">
+      <ion-card-subtitle> Nuevo Inventario </ion-card-subtitle>
+      <ion-badge (click)="NewInventory('none')" style="width: 40%; margin-right: 15px"> Completo </ion-badge> 
+      <ion-badge (click)="NewInventory('partial')" style="width: 40%; margin-right: 15px"> Productos </ion-badge> 
+    </ion-card-content>
+    <ion-card-content *ngIf="location_data.inventory_id > 0">
+      <ion-list>
+        
+        <ion-item-divider class ="inventory-item">
+            {{location_data.inventory_name}}
+            <ion-icon style="margin: 3px" slot="end" name="flash-off-outline" (click)="GetLocationInfo(location_data.id, true)"></ion-icon>
+            <ion-icon style="margin: 3px" slot="end" name="checkmark-done-circle-outline" (click)="ValidateInventory()"></ion-icon>
+        </ion-item-divider>
+        <ion-item-group >
+          <div *ngFor="let loc of location_data['inventory_location_ids']; let LocationIndex = index" id="Div{{loc['barcode']}}">
+            <div [ngClass]="ActiveLocation === loc['LocationIndex']?'Show-Ok':'Show-No'">
+              <ion-item-divider [ngClass]="ActiveLocation === loc.id?'cmnt-front':''">
+                <ion-icon slot="start" name="trash-outline" (click)="DeleteLocation(location_data.inventory_id, loc.id, 'unlink')"></ion-icon>
+                <ion-label (click) = "OnClickLocation (loc.id)">{{loc.name}}</ion-label>
+                <ion-icon slot="end" name="reload-circle-outline" (click)="DeleteLocation(location_data.inventory_id, loc.id, 'reset')"></ion-icon>
+              </ion-item-divider>
+              <div *ngFor="let product of loc['product_ids']; let ProductIndex = index">
+                <div >
+                  <!--ion-item lines="none" style="--min-height: 0px">
+                    <ion-label style="margin: 3px">{{product.default_code}}</ion-label>
+                    <ion-note slot="end" color="danger" style="padding: 0px; font-size: 1em">
+                      <ion-badge class="link" (click)="RemoveItem(product.id)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="trash-outline"></ion-icon> </ion-badge>
+                      <ion-badge color="primary" (click)="RemoveItem(product.id)" style="padding: 3px; margin-right: 10px"> {{product.theoretical_qty}}</ion-badge>
+                      <ion-badge class="link" (click)="RemoveItem(product.id)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="trash-outline"></ion-icon> </ion-badge>
+                    </ion-note>
+                  </ion-item-->
+                  <div [ngSwitch]="product.tracking">
+                    <div *ngSwitchCase="'none'">
+                      <ion-item *ngFor="let line of product['line_ids']; let LineIndex = index" 
+                                              class ="back-gray-10 inventory-item" 
+                                              [ngClass]="ActiveProduct === product.id?'cmnt-front':''">
+                        <ion-col size=9 (click) = "OnClickProduct (LocationIndex, ProductIndex)">
+                                        <span style="font-size: 0.7em">{{product.default_code}}</span>
+                        </ion-col>
+                        <ion-col size=3 class="ion-text-right" style="padding: 0px">
+                          <!--ion-badge class="link" (click)="ChangeQty(product['line_ids'][0].id, -1)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge-->
+                          <ion-badge class="qty-badge" [ngClass]="{'qty-badge-dirty': line.qty_dirty === true}" 
+                                (click)="InputQty(LocationIndex, ProductIndex, LineIndex, 'Cantidad')"> {{line.product_qty}}
+                          </ion-badge>
+                          <!--ion-badge class="link" (click)="ChangeQty(product['line_ids'][0].id, +1)" style="padding: 3px; margin-left: 10px"> <ion-icon class="primary" name="add-circle-outline"></ion-icon> </ion-badge-->
+                        </ion-col>
+                      </ion-item>
+                    </div>
+                    <div *ngSwitchCase="'serial'">
+                      <ion-item class ="back-gray-10 inventory-item" [ngClass]="ActiveProduct === product.id?'cmnt-front':''">
+                        <ion-col size=9 (click) = "OnClickProduct (LocationIndex, ProductIndex)"> 
+                          <span style="font-size: 0.7em">{{product.default_code}}</span>
+                        </ion-col>
+                        <ion-col size=3 class="ion-text-right" style="padding: 0px">
+                          <!--ion-badge class="link" (click)="ChangeQty(product['line_ids'][0].id, -1)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge-->
+                          <ion-badge class="qty-badge-group"> {{product.product_qty}}</ion-badge>
+                          <!--ion-badge class="link" (click)="ChangeQty(product['line_ids'][0].id, +1)" style="padding: 3px; margin-left: 10px"> <ion-icon class="primary" name="add-circle-outline"></ion-icon> </ion-badge-->
+                        </ion-col>
+                      </ion-item>
+                      <ion-item *ngFor="let line of product['line_ids']; let LineIndex = index" class ="back-gray-30 inventory-item" >
+                        <ion-col size=1></ion-col>
+                        <ion-col size=8 (click) = "OnClickLot (LocationIndex, ProductIndex, LineIndex)" ><span style="font-size: 0.7em">{{line.lot_id.name}}</span></ion-col>
+                        <ion-col size=3 class="ion-text-right">
+                          <ion-badge class="qty-badge" [ngClass]="{'qty-badge-dirty': line.qty_dirty === true}"> 
+                            <ion-icon class="primary" name="trash-outline"></ion-icon> 
+                          </ion-badge>
+                        </ion-col>
+                      </ion-item>
+                    </div>
+                    <div *ngSwitchCase="'lot'">
+                      <ion-item class ="back-gray-10 inventory-item" [ngClass]="ActiveProduct === product.id?'cmnt-front':''">
+                        <ion-col size=9 (click) = "OnClickProduct (LocationIndex, ProductIndex)">
+                          <span style="font-size: 0.7em">{{product.default_code}}</span>
+                        </ion-col>
+                        <ion-col size=3 class="ion-text-right" style="padding: 0px">
+                          <!--ion-badge class="link" (click)="ChangeQty(product['line_ids'][0].id, -1)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge-->
+                          <ion-badge class="qty-badge-group"> {{product.product_qty}}</ion-badge>
+                          <!--ion-badge class="link" (click)="ChangeQty(product['line_ids'][0].id, +1)" style="padding: 3px; margin-left: 10px"> <ion-icon class="primary" name="add-circle-outline"></ion-icon> </ion-badge-->
+                        </ion-col>
+                      </ion-item>
+                      <ion-item *ngFor="let line of product['line_ids']; let LineIndex = index" class ="back-gray-30 inventory-item">
+                        <ion-col size=1></ion-col>
+                        <ion-col size=8 (click) = "OnClickLot (LocationIndex, ProductIndex, LineIndex)"><span style="font-size: 0.7em">{{line.lot_id.name}}</span></ion-col>
+                        <ion-col size=3 class="ion-text-right">
+                          <ion-badge class="qty-badge" [ngClass]="{'qty-badge-dirty': line.qty_dirty === true}" (click)="InputQty(LocationIndex, ProductIndex, LineIndex, 'Cantidad')">
+                            {{line.product_qty}}
+                          </ion-badge>
+                        </ion-col>
+                      </ion-item>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ion-item-group>
+      </ion-list>
+          <!--ion-row *ngIf="(index < 1) || (index>1 && location_data['inventory_lines'][index-1].product_id.id === line['product_id']['default_code'])" >
+            <ion-col size=10><span><strong>{{line['product_id']['default_code']}}</strong></span></ion-col>
+            <ion-col size=1>{{line.product_id.id}}</ion-col>
+            <ion-col size=1>{{index>1 && location_data['inventory_lines'][index-1].product_id.id}}</ion-col>
+          </ion-row-->
+          <!--ion-row >
+            <ion-col size=10><span><strong>{{line['product_id']['default_code']}}</strong></span></ion-col>
+            <ion-col><span>{{line['theoretical_qty']}}</span></ion-col>
+          </ion-row>
+          <ion-row *ngIf="line['tracking'] != 'none'">
+            <ion-col size=2></ion-col>
+            <ion-col><span>{{line['lot_id']['name']}}</span></ion-col>
+          </ion-row>
+          <ion-row *ngIf="line['tracking'] == 'none'">
+            <ion-col size=2></ion-col>
+            <ion-col><span>{{line['theoretical_qty']}}</span></ion-col>
+          </ion-row-->
+            <!--div [ngSwitch]="line.tracking.value.country">
+              <div *ngSwitchCase="'none'">
+                <ion-row>
+
+                </ion-row>
+              </div>
+              <div *ngSwitchCase="'serial'">
+              
+              </div>
+              <div *ngSwitchCase="'lot'">
+              
+              </div>
+
+            </div-->
+     
+    </ion-card-content>
+  </ion-card>
+  <ion-card *ngIf="ShowInfo">
+    <ion-card-content>
+      <ion-card-subtitle>Información de la Ubicación</ion-card-subtitle>
+    </ion-card-content>
+  </ion-card>
+  <ion-card *ngIf="ShowStock">
+    <ion-card-content *ngIf="location_data.empty" style="text-align-last: center;">
+      <ion-card-subtitle>Estantería Vacía</ion-card-subtitle>
+      <ion-badge (click)="NewInventory('none')" style="width: 40%; margin-right: 15px"> Completo </ion-badge> 
+    </ion-card-content>
+    <ion-card-content>
+      <div *ngFor="let quant of location_data['quants']">
+        <ion-row>
+          <ion-col (click)="folded(quant)"><span><strong>{{quant['default_code']}}</strong></span></ion-col>
+          <ion-col size=3 class="align-right"><strong>{{quant.quantity}} ({{quant.reserved_quantity}}) </strong></ion-col>
+        </ion-row>
+        <div *ngIf="quant.folded">
+          <div *ngFor="let location of quant['location_ids']">
+            <ion-row *ngIf="location.show_location">
+              <ion-col size=1></ion-col>
+              <ion-col (click)='OpenLocation(location.id)'><span>{{location['name']}}</span></ion-col>
+              <ion-col size=3><strong>{{location.quantity}} ({{location.reserved_quantity}}) </strong></ion-col>
+            </ion-row>
+            <div *ngIf="quant['tracking'] != 'none'">
+              <div *ngFor="let lot of location['lot_ids']">
+                <ion-row>
+                  <ion-col size=2></ion-col>
+                  <ion-col [ngClass]="{'danger': lot.reserved_quantity &gt;0}"><span>{{lot['name']}}</span></ion-col>
+                  <ion-col *ngIf="quant['tracking'] == lot" size=3>{{lot.quantity}} ({{lot.reserved_quantity}}) </ion-col>
+                </ion-row>                                                                                                        
+              </div>
+            </div>
+            <!--div *ngIf="quant['tracking'] == 'none'">
+                <ion-row>
+                  <ion-col size=9></ion-col>
+                  <ion-col size=3>{{location.quantity}} ({{location.reserved_quantity}}) </ion-col>
+                </ion-row>
+            </div-->
+          </div>
+        </div>
+      </div>
+    </ion-card-content>
   </ion-card>
 </ion-content>
+<app-scanner-footer *ngIf="ShowInventory" (scanner_reading_changed)="onReadingEmitted($event)" [scanner_reading]="scanner_reading"></app-scanner-footer>

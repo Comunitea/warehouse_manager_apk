@@ -11,7 +11,7 @@
           
   </ion-toolbar>
 </ion-header>
-<ion-content *ngIf="data">
+<ion-content *ngIf="data" [scrollEvents]="true" (ionScroll)="onScroll($event)">
   <ion-card >
 
     <ion-card-header>
@@ -19,7 +19,7 @@
         <ion-col class="link" (click)="GetMoveInfo(data.id, -1)">Anterior
         </ion-col>
         
-        <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="button_validate(data.picking_id.id)">Validar
+        <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="ButtonValidate(data.picking_id.id)">Validar
         </ion-col> -->
         <ion-col class="ion-text-center">
           <span *ngIf="data && data.active_location_id">{{data.active_location_id.name}}</span>
@@ -35,12 +35,11 @@
     </ion-card-header>
   
     <ion-card-content class="ion-text-center">
-
       <div class="product_img" class="ion-text-center" *ngIf="data.image">
         <ion-img *ngIf="data.base64" src="data:image/jpeg;base64,{{ data.product_id.image}}" ></ion-img>
         <!--ion-img *ngIf="!data.base64" src="{{ data.product_id.image }}"></ion-img-->
       </div>
-      <!--div><strong>{{data.sale_id && (data.sale_id['name'] + ": ")}}</strong>{{data.picking_id['id'] && data.picking_id['display_name']}}</div-->
+      <!--div><strong>{{data.sale_id && (data.sale_id['name'] + ": ")}}</strong>{{data.picking_id['id'] && data.picking_id['apk_name']}}</div-->
       <!--div><strong>{{data.location_id.name}} >> {{data.location_dest_id.name}}</strong></div-->
       <!-- <div [ngSwitch]="data.tracking">
         <strong *ngSwitchCase="'none'">Sin tracking</strong>
@@ -77,17 +76,18 @@
         <!--BOTON OPCIONES AVANZADAS-->
         <ion-col class="action-button"><ion-button (click)="PresentMenuOptions()"><ion-icon class="primary" name="ellipsis-vertical-outline" ></ion-icon></ion-button></ion-col>
         <!--BOTON MOSTRASR LINEAS/LOTES-->
-        <ion-col *ngIf="data.tracking.value != 'none'" class="action-button"><ion-button (click)= "AlternateShowLots()"><ion-icon class="primary" name="eye-outline" ></ion-icon></ion-button></ion-col>
+        <ion-col *ngIf="data.tracking.value != 'none' &&  ShowLots" class="action-button"><ion-button (click)= "AlternateShowLots()"><ion-icon class="primary" name="list-outline" ></ion-icon></ion-button></ion-col>
+        <ion-col *ngIf="data.tracking.value != 'none' && !ShowLots" class="action-button"><ion-button (click)= "AlternateShowLots()"><ion-icon class="primary" name="barcode-outline" ></ion-icon></ion-button></ion-col>
         <!--BOTON VOLVER BORRAR LOTES ????-->
         <ion-col *ngIf="data.move_line_count ==1 && data.tracking.value == 'none'" class="action-button">
           <ion-button><ion-icon class="primary" name="remove-circle-outline" (click)="GetMoveInfo(data.id, -1)"></ion-icon></ion-button>
         </ion-col>
         <!--BOTON VALIDAR-->
-        <ion-col>
+        <!--ion-col>
           <ion-button *ngIf="data.picking_field_status && ['partially_available', 'assigned'].indexOf(data.state.value) != -1" (click)="DoMoveValidate()">
             <ion-icon class="primary {{'state_'+ data.state.value}}" name="checkmark-done-circle-outline" ></ion-icon>
           </ion-button>
-        </ion-col>
+        </ion-col-->
         <!--BOTON SIGUIENTE-->
         <ion-col class="action-button" *ngIf="data.move_line_count ==1 && data.tracking.value == 'none'">
           <ion-button><ion-icon class="primary" name="add-circle-outline" (click)="GetMoveInfo(data.id, +1)"></ion-icon></ion-button>
@@ -160,20 +160,22 @@
   <div *ngIf="data.state.value != 'done' && data && ShowLots">
     <ion-card >
       <ion-card-header>
-        <ion-card-title *ngIf="ChangeLotNames && LotNames.length > 0" class="ion-text-center">
-          <ion-button (click)="ActionApplyLotNames()">
-            <ion-icon class="primary" name="checkmark-done-circle-outline" ></ion-icon></ion-button>
+        <!--*ngIf="data.state.value != 'done' && LotNames.length == 0"-->
+        <ion-card-title class="ion-text-center">
+          Esperando Serial/Lote: {{LotNames.length}}
+          <ion-button (click)="ActionApplyLotNames()" *ngIf="ChangeLotNames && LotNames.length > 0">
+            <ion-icon class="primary" name="checkmark-done-circle-outline" ></ion-icon>{{LotNames.length}}</ion-button>
           </ion-card-title>
       </ion-card-header>
       <ion-card-content>
         <ion-row>
-            <ion-col size="12" *ngFor="let lot of LotNames">
+            <ion-col size="12" *ngFor="let lot of LotNames; let NameIndex = index; ">
               <ion-row>
                 <ion-col size="10" class="ion-text-center" >
                   <span class="product-link" style="font-size: large"><strong>{{lot}}</strong></span>
                 </ion-col>
                 <ion-col size="2" class="ion-text-center" >
-                  <ion-icon (click) = "ChangeLineLotId(data['id'], false, lot, false)" 
+                  <ion-icon (click) = "DeleteLotName(NameIndex)" 
                   *ngIf="data.state.value != done" size="small" color = "danger" 
                   style="vertical-align: bottom state_icon" name="trash-outline"></ion-icon>
                 </ion-col>
@@ -187,34 +189,42 @@
 
    
 
-    <ion-card *ngIf="data.state.value != 'done' && LotNames.length == 0">
-      <ion-card-header>
-        <ion-card-title class="ion-text-center">
-          Esperando Serial/Lote
-        </ion-card-title>
-      </ion-card-header>
+    <ion-card>
+      
+      
     </ion-card>
   </div>
   <div *ngIf="data && ShowMoves">
+  <ion-infinite-scroll *ngIf="NeedScroll" threshold="5px" position="top"  (ionInfinite)="EventLoadMoveLines($event, -1)" >
+
+      <ion-infinite-scroll-content style="min-height: 15px"
+      
+        loadingSpinner="bubbles"
+        loadingText="Cargando más líneas...">
+        {{SmlIndex}} / {{offset}} de {{data.move_line_ids.length}}
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+         
     <ion-card *ngFor="let sml of data.move_line_ids">
-      <!--ion-card-header>
-        <ion-card-title class="ion-text-center">{{sml.field_status_apk}} / {{data.tracking.value}} // </ion-card-title>
-      </ion-card-header-->
+      <ion-card-header>
+        <!--ion-card-title class="ion-text-center">{{sml.field_status_apk}} // {{data.tracking.value}} // {{sml.state.value}} // {{AdvanceOptions}}</ion-card-title-->
+      </ion-card-header>
       <ion-card-content class="sml_not_done">
-          <ion-row [ngClass]="{'success': sml.state.value=='done'}"> 
+        <ion-row [ngClass]="{'success': sml.state.value=='done'}"> 
             <!-- BORRAR LINEA -->
-            <ion-col size="1" class="ion-text-right state_icon" *ngIf="AdvanceOptions && data.state.value != done">
+            <ion-col size="1" class="ion-text-right state_icon" *ngIf="AdvanceOptions && data.state.value != 'done'">
               <ion-icon (click) = "RemoveMoveLineId(sml.id)" size="small" color = "danger" style="vertical-align: bottom state_icon" name="trash-outline"></ion-icon>
-              <!--ion-icon  size="small" style="vertical-align: bottom state_icon" class="{{'state_'+ sml.state.value}}" name="{{StateIcon[sml.state.value]}}"></ion-icon-->
+            </ion-col>
+            <ion-col size="1" class="ion-text-right state_icon" *ngIf="not AdvanceOptions">
             </ion-col>
             <!-- ORIGEN --> 
             <ion-col 
             (click) ="ChangeLineLocationId(sml)"
-            *ngIf="read_status(sml.field_status_apk, 'location_id', 'view')"
+              *ngIf="read_status(sml.field_status_apk, 'location_id', 'view')"
               [ngClass]="{'sml_done': read_status(sml.field_status_apk, 'location_id', 'done')}"
               size-xs="3" size-sm="2" size-md="2">
-              <div>{{sml.location_id.name}}</div>
-              <div *ngIf="read_status(sml.field_status_apk, 'package_id', 'view')">P:{{sml.package_id && sml.package_id.name}} </div>
+              <div>{{sml.location_id.name}} </div>
+              <div *ngIf="read_status(sml.field_status_apk, 'package_id', 'view')">{{sml.package_id && sml.package_id.name}} </div>
             </ion-col>
             <!-- DESTINO-->
             <ion-col 
@@ -222,8 +232,9 @@
               *ngIf="read_status(sml.field_status_apk, 'location_dest_id', 'view')"
               [ngClass]="{'sml_done': read_status(sml.field_status_apk, 'location_dest_id', 'done')}" size-xs="3" size-sm="2" size-md="2">
               <div>{{sml.location_dest_id.name}}</div>
-              <div *ngIf="read_status(sml.field_status_apk, 'result_package_id', 'view')">P:{{sml.result_package_id && sml.result_package_id.name}}</div>
+              <div *ngIf="read_status(sml.field_status_apk, 'result_package_id', 'view')">{{sml.result_package_id && sml.result_package_id.name}}</div>
             </ion-col>
+
             <!-- LOTE -->
             <ion-col  style="text-align: center"
              (click) ="ChangeLineLotId(data['id'],sml.id, sml.lot_id && sml.lot_id.name, false)"
@@ -232,18 +243,30 @@
               size-xs="5" size-sm="4" size-md="4">
               {{sml.lot_id && sml.lot_id.name || 'Lote' }}
             </ion-col>
+            <ion-col style="text-align: center"
+             *ngIf="data.tracking.value == 'none'"
+              size-xs="5" size-sm="4" size-md="4">
+              
+            </ion-col>
+
 
             <!--CANTIDAD -->
-            <ion-col  size-xs="2" size-sm="1" size-md="1" *ngIf="data.tracking.value != 'serial' && read_status(sml.field_status_apk, 'qty_done', 'view')" class="ion-text-center">
-                <ion-badge class="link" (click)="ChangeQty(sml, -1)" style="padding: 3px; margin-right: 15px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge>
+            <ion-col  size-xs="4" size-sm="4" size-md="4" *ngIf="data.tracking.value != 'serial' && read_status(sml.field_status_apk, 'qty_done', 'view')" class="ion-text-center" style="padding: 0px">
+                <ion-badge class="link" (click)="ChangeQty(sml, -1)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge>
                 <ion-badge [ngClass]="{'back_state_draft': QtyDirty === true}" (click)="InputQty('Cantidad', sml)" > {{sml.qty_done}} de  {{sml.product_uom_qty}}</ion-badge>
-                <ion-badge class="link" (click)="ChangeQty(sml, +1)" style="padding: 3px; margin-left: 15px"> <ion-icon class="primary" name="add-circle-outline"></ion-icon> </ion-badge>
+                <ion-badge class="link" (click)="ChangeQty(sml, +1)" style="padding: 3px; margin-left: 10px"> <ion-icon class="primary" name="add-circle-outline"></ion-icon> </ion-badge>
             </ion-col>
             <!--BOTONES-->
           </ion-row>
           
       </ion-card-content>
     </ion-card>
+     <ion-infinite-scroll *ngIf="NeedScroll" threshold="20px" (ionInfinite)="EventLoadMoveLines($event, 1)" >
+      <ion-infinite-scroll-content style="min-height: 1px"
+        loadingSpinner="bubbles"
+        loadingText="Cargando más líneas...">
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
   </div>
   <!--div *ngIf="data && data.tracking.value=='none'">
     <ion-card *ngFor="let sml of data.move_line_ids">
@@ -265,9 +288,3 @@
 </ion-content>
 
 <app-scanner-footer (scanner_reading_changed)="onReadingEmitted($event)" [scanner_reading]="scanner_reading"></app-scanner-footer>
-
-<ng-template #lineDoneTemplate>
-  <ion-col><strong>Cantidad: </strong><br/>
-    <ion-badge class="secondary"> {{data.quantity_done}} de {{data.product_uom_qty}} </ion-badge>
-  </ion-col>
-</ng-template>

@@ -5,19 +5,19 @@
     <ion-icon *ngIf="audio.active_audio"  class="cmnt-front" name="megaphone"></ion-icon>
     <ion-icon *ngIf="!audio.active_audio"  class="cmnt-front" name="volume-off"></ion-icon>
   </button>
-  <button *ngIf="voice.available" class="cmnt-button" icon-only item-end (click)="change_escuchando()">
+  <!--button *ngIf="voice.available" class="cmnt-button" icon-only item-end (click)="change_escuchando()">
     <ion-icon *ngIf="voice.active_voice" class="cmnt-front" name="mic"></ion-icon>
     <ion-icon *ngIf="!voice.active_voice" class="cmnt-front" name="mic-off"></ion-icon>
-  </button>
+  </button-->
 
   <!--button *ngIf="!voice.available" class="disabled cmnt-back" ion-button icon-only item-end>
     <ion-icon name="mic" class="cmnt-front"></ion-icon>
   </button-->
     
-  <button *ngIf="!disabled_reader" class="cmnt-button" ion-button icon-only item-end (click)="change_hide_scan_form()">
+  <!--button *ngIf="!disabled_reader" class="cmnt-button" ion-button icon-only item-end (click)="change_hide_scan_form()">
     <ion-icon name="barcode" class="cmnt-front"></ion-icon>
   </button>
   <button *ngIf="disabled_reader" disabled="disabled" class="disabled cmnt-button" ion-button icon-only item-end>
     <ion-icon name="barcode" class="cmnt-front"></ion-icon>
-  </button>
+  </button-->
 </ion-buttons>

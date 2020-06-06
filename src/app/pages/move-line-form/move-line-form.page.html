@@ -6,7 +6,7 @@
     <app-scanner-header slot="end"></app-scanner-header>
 
      <ion-title class="cmnt-button" style="padding-inline-end: 0px; padding-inline-start: 0px;">
-      {{data.picking_id['id'] && data.picking_id['display_name']}}: {{data['product_id'] && data['product_id']['apk_name']}}
+      {{data.picking_id['id'] && data.picking_id['apk_name']}}: {{data['product_id'] && data['product_id']['apk_name']}}
       </ion-title>
   </ion-toolbar>
 </ion-header>
@@ -22,11 +22,11 @@
         <ion-img *ngIf="!data.base64" src="{{ data['image'] }}"></ion-img>
       </div>
       <!--ion-label>
-        <strong>  {{data.display_name}} </strong>
+        <strong>  {{data.apk_name}} </strong>
       </ion-label-->
-      <div><strong>Albarán: </strong>{{data.picking_id['id'] && data.picking_id['display_name']}}</div>
+      <div><strong>Albarán: </strong>{{data.picking_id['id'] && data.picking_id['apk_name']}}</div>
       <div><strong>Referencia: </strong>{{data.default_code}}</div>
-      <div><strong>{{data.location_id['display_name']}} >> {{data.location_dest_id['display_name']}}</strong></div>
+      <div><strong>{{data.location_id['apk_name']}} >> {{data.location_dest_id['apk_name']}}</strong></div>
       <ion-row>
          <ion-col *ngIf="data.state != 'cancel' && data.state != 'done'"><ion-badge class="link" (click)="ChangeQty(-1)"> - </ion-badge>
         </ion-col>
@@ -40,7 +40,7 @@
       <ion-row>
         <ion-col class="link" (click)="get_move_line_info(data.id, -1)">Anterior
         </ion-col>
-        <ion-col *ngIf="data.ready_to_validate" class="link" (click)="button_validate(data.picking_id.id)">Validar
+        <ion-col *ngIf="data.ready_to_validate" class="link" (click)="ButtonValidate(data.picking_id.id)">Validar
         </ion-col>
         <ion-col *ngIf="!data.ready_to_validate" class="link" (click)="action_confirm(data.id)">Confirmar
         </ion-col>

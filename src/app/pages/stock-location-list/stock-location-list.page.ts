@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, IonInfiniteScroll } from '@ionic/angular';
+import { LoadingController, AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
@@ -26,6 +26,7 @@ export class StockLocationListPage implements OnInit {
   current_selected_type: string;
   search: string;
   scanner_reading: string;
+  loading: any;
 
   constructor(
     private odoo: OdooService,
@@ -33,6 +34,7 @@ export class StockLocationListPage implements OnInit {
     public alertCtrl: AlertController,
     private audio: AudioService,
     public stock: StockService,
+    public loadingController: LoadingController,
   ) {
     this.location_types = [
       //{
@@ -125,6 +127,7 @@ export class StockLocationListPage implements OnInit {
   }
   
   get_location_list(location_state='internal', search=null){
+    this.presentLoading();
     this.offset = 0;
     this.limit_reached = false;
     this.current_selected_type = location_state;
@@ -137,8 +140,10 @@ export class StockLocationListPage implements OnInit {
         this.router.navigateByUrl('/stock-location/'+this.locations[0]['id']);
       }
       this.audio.play('click');
+      this.loading.dismiss();
     })
     .catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
     });
   }
@@ -180,6 +185,15 @@ export class StockLocationListPage implements OnInit {
 
   toggleInfiniteScroll() {
     this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
+  }
+
+  async presentLoading() {
+    this.loading = await this.loadingController.create({
+      message: 'Validando...',
+      translucent: true,
+      cssClass: 'custom-class custom-loading'
+    });
+    await this.loading.present();
   }
 
 }

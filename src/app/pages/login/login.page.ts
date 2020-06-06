@@ -6,6 +6,7 @@ import { OdooService } from '../../services/odoo.service';
 import { AlertController } from '@ionic/angular';
 import { Storage } from '@ionic/storage';
 import { AudioService } from '../../services/audio.service';
+import { StockService } from '../../services/stock.service';
 
 @Component({
   selector: 'app-login',
@@ -22,10 +23,12 @@ export class LoginPage implements OnInit {
   constructor(
     private audio: AudioService,
     private odoo: OdooService,
+    public stock: StockService,
     public router: Router,
     public alertCtrl: AlertController,
     private storage: Storage,
     private route: ActivatedRoute,
+
   ) {
     if (this.route.snapshot.paramMap.get('login')){
       this.CONEXION.username = this.route.snapshot.paramMap.get('login')
@@ -121,6 +124,9 @@ export class LoginPage implements OnInit {
     });
   }
 
+  ionViewDidEnter(){
+    this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
+  }
   onLogin(form: NgForm) {
     this.submitted = true;
 

@@ -19,7 +19,7 @@
            <ion-col size="11" (click)="open_link(line.id)"> <ion-icon  size="normal" name="{{TrackingIcon[line.tracking.value]}}">
             </ion-icon>
             <span class="product-link"
-            style="font-size: small; "> {{line.product_id['name']}}</span>
+            style="font-size: small; "> {{line.product_id['default_code']}}</span>
           </ion-col>  
           <!--ion-col size="2" *ngIf="line['reserved_availability'] != null">
           {{line.state.value}}
@@ -54,7 +54,7 @@
         </div--> 
       </ion-col>
       <ion-col size=3 class="min80" *ngIf="line.state.value == 'done'">
-      <ion-button         
+        <ion-button         
                       size="small"
                       class="min80"
                       (click)="line.set_as_qty_done()">

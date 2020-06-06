@@ -1,3 +1,35 @@
+<ion-card  *ngFor="let product of products">
+  <ion-card-header color="light">
+    <ion-card-subtitle class="sub-info">{{product.apk_name}}</ion-card-subtitle>
+    <ion-card-subtitle class="sub-info">{{product.wh_code}}</ion-card-subtitle>
+  </ion-card-header>
+
+  <ion-card-content style="padding: 0px">
+    <ion-item style="--min-height: 25px; margin-bottom:5px" lines="none"> 
+      <span color="light" class="info-span" slot="end">
+        {{product.list_price}} €
+      </span>
+      <span color="light" class="info-span" slot="end" (click)="NewInventory(product.id)">
+        Stock: {{product.qty_available}} <span *ngIf="product.virtual_available !== product.qty_available" >({{product.virtual_available}})</span>
+      </span>
+    </ion-item>
+    <span style="font-size: 0.8em">
+      {{product.display_name}}
+    </span>
+    
+  </ion-card-content>
+</ion-card>
+
+
+<!--ion-list>
+  <ion-item *ngFor="let product of products" (click)="open_link(location.id)">
+    <ion-icon slot="end" name="logo-ionic"></ion-icon>
+    <ion-label>{{product.name}}</ion-label>
+  </ion-item>
+</ion-list>
+
+
+
 <ion-grid>
   <ion-row class="ion-align-items-center">
     <ion-col size="7">
@@ -22,7 +54,7 @@
 
   <ion-row *ngFor="let product of products">
       <ion-col size-xs="12" size-sm="7" size-md="7">
-          <div class="product_link" (click)="open_link(product.id)">{{product.display_name}}</div>
+          <div class="product_link" (click)="open_link(product.id)">{{product.apk_name}}</div>
       </ion-col>
       
       <ion-col size-xs="6" size-sm="2" size-md="2">
@@ -47,4 +79,4 @@
           </div>
       </ion-col>
     </ion-row>
-</ion-grid>
+</ion-grid-->

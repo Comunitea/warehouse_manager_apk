@@ -1,38 +1,6 @@
-<ion-grid>
-  <ion-row>
-    <ion-col size="12">
-        <div><strong>Nombre</strong></div>
-    </ion-col>
-    
-    <!--ion-col size="4">
-        <div><strong>Tipo de ubicación</strong></div>
-    </ion-col>
-  
-    <ion-col size="4">
-      <div><strong>Compañía</strong></div>
-    </ion-col-->
-  </ion-row>
-  
-  <ion-row *ngFor="let location of locations" (click)="open_link(location.id)">
-    <ion-col size-xs="12" size-sm="4" size-md="4">
-      <div>{{location.display_name}}</div>
-    </ion-col>
-  
-    <ion-col size-xs="6" size-sm="4" size-md="4" [ngSwitch]="location.usage" class="ion-align-self-center ion-text-center">
-      <div *ngSwitchCase="'supplier'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de proveedor</div>
-      <div *ngSwitchCase="'view'"><strong class="ion-hide-sm-up">Tipo: </strong>Ver</div>
-      <div *ngSwitchCase="'internal'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación interna</div>
-      <div *ngSwitchCase="'customer'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de cliente</div>
-      <div *ngSwitchCase="'inventory'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de inventario</div>
-      <div *ngSwitchCase="'procurement'"><strong class="ion-hide-sm-up">Tipo: </strong>Abastecimiento</div>
-      <div *ngSwitchCase="'production'"><strong class="ion-hide-sm-up">Tipo: </strong>Producción</div>
-      <div *ngSwitchCase="'transit'"><strong class="ion-hide-sm-up">Tipo: </strong>Ubicación de tránsito</div>
-    </ion-col>
-    
-    <ion-col size-xs="6" size-sm="4" size-md="4">
-      <div>
-        <strong class="ion-hide-sm-up">Compañía: </strong>{{location.company_id[1]}}
-      </div>
-    </ion-col>
-  </ion-row>
-</ion-grid>
+<ion-list>
+  <ion-item *ngFor="let location of locations" (click)="open_link(location.id)">
+          <ion-icon slot="end" name="logo-ionic"></ion-icon>
+          <ion-label>{{location.name}}</ion-label>
+        </ion-item>
+</ion-list>

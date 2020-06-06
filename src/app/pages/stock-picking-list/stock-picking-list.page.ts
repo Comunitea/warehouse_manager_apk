@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, IonInfiniteScroll } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
@@ -40,7 +40,8 @@ export class StockPickingListPage implements OnInit {
     private route: ActivatedRoute,
     public alertCtrl: AlertController,
     private audio: AudioService,
-    private stock: StockService
+    private stock: StockService,
+    
   ) {
     // this.offset = 0;
     // this.limit = 5;
@@ -62,7 +63,7 @@ export class StockPickingListPage implements OnInit {
         // Lo voy a cambiar por
         this.StateValue = '';
         this.StateIcon = this.stock.getStateIcon('stock.move');
-        this.States = this.stock.GetModelInfo('stock.picking', 'filter_state');
+        this.States = this.stock.GetModelInfo('stock.picking.batch', 'filter_state');
         const All = {name: 'Todos', value: 'all'};
         this.States.push(All);
       }

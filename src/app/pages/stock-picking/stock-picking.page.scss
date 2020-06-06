@@ -1,0 +1,24 @@
+ion-row {
+    &.success {
+        color: var(--ion-color-success);
+    }
+    &.product_link {
+        cursor: pointer;
+    }
+}
+div.product_link {
+    color: blue;
+    text-decoration: underline;
+    text-decoration-color: blue;
+    cursor: pointer;
+}
+
+/* Medias */
+@media screen and (max-width: 576px) {
+    ion-grid > ion-row:first-child {
+        display: none;
+    }
+    ion-grid > ion-row {
+        border: 1px black solid;
+    }
+}

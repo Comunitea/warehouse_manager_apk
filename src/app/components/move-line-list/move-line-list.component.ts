@@ -26,7 +26,8 @@ export class MoveLineListComponent implements OnInit {
     private audio: AudioService,
     /* private audio: AudioService, */
     private route: ActivatedRoute,
-    private stock: StockService
+    private stock: StockService,
+    
   ) { }
 
   ngOnInit() {

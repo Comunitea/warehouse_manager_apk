@@ -3,6 +3,7 @@ import { AlertController } from '@ionic/angular';
 import { Storage } from '@ionic/storage';
 import { OdooService } from './odoo.service';
 import { format } from 'url';
+import { CLIENT_RENEG_LIMIT } from 'tls';
 
 
 @Injectable({
@@ -13,6 +14,15 @@ export class StockService {
   Domains: {};
 
   STOCK_FIELDS = {
+
+
+    'stock.bapicking': {
+      tree: ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state', 'picking_fields'],
+      form: ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state', 'group_code',
+      'picking_type_id', 'priority', 'note', 'move_lines', 'move_line_ids', 'quantity_done', 'picking_fields',
+      'reserved_availability', 'product_uom_qty', 'show_check_availability',
+      'show_validate']
+    },
 
     'stock.picking': {
       tree: ['id', 'name', 'location_id', 'location_dest_id', 'scheduled_date', 'state', 'picking_fields'],
@@ -43,8 +53,8 @@ export class StockService {
     },
 
     'stock.location': {
-      tree: ['id', 'display_name', 'usage', 'company_id'],
-      form: ['id', 'display_name', 'usage', 'company_id', 'picking_type_id']
+      tree: ['id', 'apk_name', 'usage', 'company_id'],
+      form: ['id', 'apk_name', 'usage', 'company_id', 'picking_type_id']
     },
 
     'stock.quant': {
@@ -102,7 +112,7 @@ export class StockService {
   }
   InitVars(){
     this.ModelInfo = {};
-    for (const model of ['stock.picking.type', 'stock.location', 'stock.move', 'stock.picking']){
+    for (const model of ['stock.picking.type', 'stock.location', 'stock.move', 'stock.picking', 'stock.batch.picking']){
       this.SetModelInfo(model, 'name', model);
     }
   }
@@ -303,54 +313,21 @@ export class StockService {
         resolve(done);
       })
       .catch((err) => {
-        reject(false);
+        reject(err);
         console.log('Error al realizar la consulta: ' + err.msg.error_msg);
     });
     });
     return promise;
   }
-
+  // Pickings
   GetPicking(domain = [], id= null, view= 'tree', offset= 0, limit= 0, search= null) {
     const values = {
       domain,
       id,
-      model: 'stock.picking',
+      model: 'stock.picking.batch',
       offset,
       limit,
       search
-    };
-    return this.get_apk_object(values);
-  }
-  // Pickings
-  get_picking_list_no_usar(view_domain= null, type_id= null, offset= 0, limit= 0, search= null) {
-    const self = this;
-    const domain = [];
-    if (view_domain) {
-      view_domain.forEach(lit_domain => {
-        domain.push(lit_domain);
-      });
-    }
-    if (type_id) {
-      domain.push(['picking_type_id', '=', Number(type_id)]);
-    }
-    if (search) {
-      domain.push(['name', 'ilike', '%' + search + '%']);
-    }
-    const values = {
-        domain,
-        model: 'stock.picking',
-        offset,
-        limit };
-    return this.get_apk_object(values);
- }
-
-  get_picking_info(picking_id, view= 'tree', offset= 0, limit= 0, search= null) {
-    const values = {
-      fields_type: view,
-      domain: [['id', '=', picking_id]],
-      model: 'stock.picking',
-      offset: 0,
-      limit: 1
     };
     return this.get_apk_object(values);
   }
@@ -427,7 +404,7 @@ export class StockService {
     if (State && State['value'] === 'all'){State = null; }
     const TypeId = this.GetModelInfo('stock.picking.type', 'PickingTypeId');
     const DomainName = this.GetModelInfo ('stock.picking.type', 'DomainName');
-    const ActiveIds = this.GetModelInfo('stock.picking', 'ActiveIds') || [];
+    const ActiveIds = this.GetModelInfo('stock.picking.batch', 'ActiveIds') || [];
     const values = {picking_type_id: TypeId,
                     domain_name: DomainName,
                     active_ids: ActiveIds,
@@ -436,12 +413,12 @@ export class StockService {
                     limit: Limit,
                     offset: Offset};
     const promise = new Promise( (resolve, reject) => {
-    self.odooCon.execute('stock.picking', 'get_picking_list', values).then((done: Array <{}>) => {
+    self.odooCon.execute('stock.picking.batch', 'get_picking_list', values).then((done: Array <{}>) => {
         const ActiveIds = [];
         for (const pick of done) {
           ActiveIds.push(pick['id']);
         }
-        this.SetModelInfo('stock.picking', 'ActiveIds', ActiveIds);
+        this.SetModelInfo('stock.picking.batch', 'ActiveIds', ActiveIds);
         resolve(done);
 
       })
@@ -452,16 +429,36 @@ export class StockService {
     });
     return promise;
   }
-  action_assign(pick_id) {
+
+  DoUnreservePick(PickId){
     const self = this;
     let model;
     const values = {
-      id: pick_id
+      id: PickId
+    };
+    model = 'stock.picking.batch';
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(model, 'do_unreserve_apk', values).then((done) => {
+        resolve(done);
+      })
+      .catch((err) => {
+        reject(false);
+        console.log('Error al validar');
+    });
+    });
+    return promise;
+  }
+
+  ActionAssignPick(PickId) {
+    const self = this;
+    let model;
+    const values = {
+      id: PickId
     };
 
-    model = 'stock.picking';
+    model = 'stock.picking.batch';
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute(model, 'action_assign_pick', values).then((done) => {
+      self.odooCon.execute(model, 'action_assign_apk', values).then((done) => {
        resolve(done);
       })
       .catch((err) => {
@@ -473,18 +470,31 @@ export class StockService {
     return promise;
   }
 
-  button_validate(pick_id) {
+  ChangeFieldValue(values){
+    const promise = new Promise( (resolve, reject) => {
+    this.odooCon.execute('info.apk', 'change_field_value', values).then((done) => {
+       resolve(done);
+      })
+      .catch((err) => {
+        reject(false);
+        console.log('Error al actualizar');
+    });
+    });
+
+    return promise;
+  }
+
+  ButtonValidate(PickId) {
     const self = this;
     let model;
     const values = {
-      id: pick_id
+      id: PickId
     };
-
-    model = 'stock.picking';
+    model = 'stock.picking.batch';
     const promise = new Promise( (resolve, reject) => {
       console.log('button validate pick');
-      console.log(pick_id);
-      self.odooCon.execute(model, 'button_validate_pick', values).then((done) => {
+      console.log(PickId);
+      self.odooCon.execute(model, 'button_validate_apk', values).then((done) => {
         resolve(done);
       })
       .catch((err) => {
@@ -499,7 +509,7 @@ export class StockService {
 
   GetPickingInfo(PickId, index= 0) {
     const self = this;
-    const values = {id: PickId, index, model: 'stock.picking', view: 'form'};
+    const values = {id: PickId, index, model: 'stock.picking.batch', view: 'form'};
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('info.apk', 'get_apk_object', values).then((data) => {
           resolve(data);
@@ -511,11 +521,11 @@ export class StockService {
     return promise;
   }
 
-  GetMoveInfo(MoveId, index= 0) {
+  GetMoveInfo(MoveId, index= 0, limit= 25, offset = 0) {
     const self = this;
-    const values = {id: MoveId, index, model: 'stock.move', view: 'form'};
+    const values = {id: MoveId, index, model: 'stock.move', view: 'form', sml_limit: limit, sml_offset: offset};
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('info.apk', 'get_apk_object', values).then((data) => {
+      self.odooCon.execute('stock.move', 'get_apk_object', values).then((data) => {
           resolve(data);
       })
       .catch((err) => {
@@ -528,7 +538,7 @@ export class StockService {
     const self = this;
     const values = {id: PickId, move_id: SmId};
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.picking', 'action_done_apk', values).then((data) => {
+      self.odooCon.execute('stock.picking.batch', 'button_validate_apk', values).then((data) => {
           resolve(data);
       })
       .catch((err) => {
@@ -577,6 +587,18 @@ export class StockService {
     const model = 'stock.move';
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'create_move_lots', values).then((data) => {
+          resolve(data);
+      })
+      .catch((err) => {
+        reject(err);
+    });
+    });
+    return promise;
+  }
+  FindSerialForMove(LotId, PickingId, Remove){
+    const values = {lot_id: LotId, picking_id: PickingId, remove: Remove};
+    const promise = new Promise( (resolve, reject) => {
+    this.odooCon.execute('stock.picking.batch', 'find_serial_for_move', values).then((data) => {
           resolve(data);
       })
       .catch((err) => {
@@ -661,6 +683,7 @@ export class StockService {
     });
     return promise;
   }
+  /*
   get_move_line_info(move_id, index= 0) {
     const self = this;
     const values = {id: move_id, index};
@@ -675,7 +698,7 @@ export class StockService {
     });
     return promise;
   }
-
+  */
   get_move_lines_list_search(line_ids) {
     const self = this;
     const domain = [['id', 'in', line_ids]];
@@ -845,7 +868,7 @@ export class StockService {
     return promise;
   }
 
-  force_reset_qties(pick_id, model= 'stock.picking') {
+  force_reset_qties(pick_id, model= 'stock.picking.batch') {
     const self = this;
     const values = {
       id: pick_id
@@ -942,7 +965,7 @@ export class StockService {
       model: 'product.product',
       offset,
       limit,
-      fields: ['id', 'display_name', 'default_code', 'qty_available', 'tracking', 'barcode', 'uom_id']
+      fields: ['id', 'apk_name', 'default_code', 'qty_available', 'tracking', 'barcode', 'uom_id']
     };
     console.log(values);
     const promise = new Promise( (resolve, reject) => {
@@ -988,7 +1011,7 @@ export class StockService {
       })
       .catch((err) => {
         console.log(err);
-        reject(false);
+        reject(err);
         console.log('Error al realizar la consulta:' + err.msg.error_msg);
     });
     });
@@ -996,16 +1019,91 @@ export class StockService {
     return promise;
   }
 
-  get_location_info(location_id) {
+  NewInventory(values){
+    // values['stock_info'] = true;
+    // values['stock_inventory'] = true;
     const self = this;
-    const domain = [['id', '=', location_id]];
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.location', 'new_inventory', values).then((done) => {
+        resolve(done);
+      })
+      .catch((err) => {
+        reject(err);
+        console.log('Error al realizar la consulta:' + err.msg.error_msg);
+    });
+    });
+    return promise;
+  }
 
+  ChangeInventoryLineQty(values) {
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+    self.odooCon.execute('stock.location', 'change_inventory_line_qty', values).then((done) => {
+      console.log(done);
+      resolve(done);
+    })
+    .catch((err) => {
+      console.log(err);
+      reject(err);
+      console.log('Error al realizar la consulta:' + err.msg.error_msg);
+    });
+    });
+    return promise;
+}
+
+  DeleteLocation(values){
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.location', 'delete_inventory_location', values).then((done) => {
+        console.log(done);
+        resolve(done);
+      })
+      .catch((err) => {
+        console.log(err);
+        reject(err);
+        console.log('Error al realizar la consulta:' + err.msg.error_msg);
+    });
+    });
+    return promise;
+  }
+  GetInventoryId(values){
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.location', 'get_apk_inventory', values).then((done) => {
+        console.log(done);
+        resolve(done);
+      })
+      .catch((err) => {
+        console.log(err);
+        reject(err);
+        console.log('Error al realizar la consulta:' + err.msg.error_msg);
+    });
+    });
+    return promise;
+  }
+  ValidateInventory(values){
+    const promise = new Promise( (resolve, reject) => {
+      this.odooCon.execute('stock.inventory', 'action_validate_apk', values).then((done) => {
+        console.log(done);
+        resolve(done);
+      })
+      .catch((err) => {
+        console.log(err);
+        reject(err);
+        console.log('Error al realizar la consulta:' + err.msg.error_msg);
+    });
+    });
+
+    return promise;
+
+  }
+  GetLocationInfo(LocationId, inventory = false, filter={}) {
+    const self = this;
     const values = {
-      domain,
+      id: LocationId,
+      stock_inventory: inventory,
+      filter_inventory: filter,
       model: 'stock.location',
-      offset: 0,
-      limit: 0,
-      fields: ['id', 'display_name', 'usage', 'company_id']
     };
     console.log(values);
     const promise = new Promise( (resolve, reject) => {
@@ -1015,7 +1113,7 @@ export class StockService {
       })
       .catch((err) => {
         console.log(err);
-        reject(false);
+        reject(err);
         console.log('Error al realizar la consulta:' + err.msg.error_msg);
     });
     });
@@ -1054,7 +1152,7 @@ export class StockService {
       })
       .catch((err) => {
         console.log(err);
-        reject(false);
+        reject(err);
         console.log('Error al realizar la consulta:' + err.msg.error_msg);
     });
     });
@@ -1116,6 +1214,68 @@ export class StockService {
 
     return promise;
   }
+
+  UpdateMoveLineQty(MoveId, QtyDone, LotId) {
+    const self = this;
+    const Model = 'stock.move.line';
+    const values = {
+      move_line_id: MoveId,
+      qty_done: QtyDone,
+      lot_id: LotId,
+    };
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(Model, 'set_qty_done_from_apk', values).then((done) => {
+        if (done['error'] === true) {
+          reject(done['error']);
+        }
+        resolve(done);
+      })
+      .catch((err) => {
+        reject(false);
+        console.log('Error al validar:' + err);
+    });
+    });
+    return promise;
+  }
+  FindPickingByName(Name){
+
+    const promise = new Promise( (resolve, reject) => {
+    this.odooCon.execute('stock.picking.batch', 'find_pick_by_name', {name : Name}).then((done) => {
+      resolve(done);
+      })
+      .catch((err) => {
+        reject(false);
+        console.log('Error al validar:' + err);
+    });
+    });
+    return promise;
+  }
+
+  UpdateMoveQty(MoveId, LotId, LocationId, QtyDone, IncQty) {
+    const self = this;
+    const Model = 'stock.move';
+    const values = {
+      move_id: MoveId,
+      location_id: LocationId,
+      quantity_done: QtyDone,
+      lot_id: LotId,
+      inc: IncQty
+    };
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute(Model, 'set_qty_done_from_apk', values).then((done) => {
+        if (done['error'] === true) {
+          reject(done['error']);
+        }
+        resolve(done);
+      })
+      .catch((err) => {
+        reject(false);
+        console.log('Error al validar:' + err);
+    });
+    });
+    return promise;
+  }
+
 
   change_qty(line_id, qty) {
     const self = this;
@@ -1236,12 +1396,11 @@ export class StockService {
     const self = this;
     let model;
     let values;
-
     values = {
       qr_codes
     };
 
-    model = 'stock.picking';
+    model = 'stock.picking.batch';
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'process_qr_lines', values).then((done) => {
         if (done['error'] === true) {

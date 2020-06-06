@@ -73,6 +73,7 @@ export class MoveLineFormPage implements OnInit {
     this.audio.play('click');
     this.location.back();
   }
+
   page_controller(direction) {
     if (direction === 'up') {
       console.log("up");
@@ -80,9 +81,9 @@ export class MoveLineFormPage implements OnInit {
     } else if (direction === 'down') {
       console.log("down");
       if (this.data['ready_to_validate']){
-        this.button_validate(this.data['picking_id']['id']);
+        this.ButtonValidate(this.data['picking_id']['id']);
       } else {
-        this.action_confirm();
+        // this.action_confirm();
       }
     } else if (direction === 'left') {
       console.log("left");
@@ -112,8 +113,8 @@ export class MoveLineFormPage implements OnInit {
     }
   }
 
-  get_move_line_info(move, index=0) {
-    this.stock.get_move_line_info(move, index).then((data) => {
+  get_move_line_info(move, index= 0) {
+   /* this.stock.get_move_line_info(move, index).then((data) => {
       console.log(data);
       if (data['image'] === false) {
         data['base64'] = false;
@@ -128,8 +129,10 @@ export class MoveLineFormPage implements OnInit {
     .catch((error) => {
       this.presentAlert('Error al recuperar el movimiento:', error);
     });
-  }
+    */
 
+  }
+  /*
   action_confirm(){
     this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((lines_data) => {
       console.log(lines_data);
@@ -139,10 +142,10 @@ export class MoveLineFormPage implements OnInit {
       this.presentAlert('Error al validar el albarán:', error);
     });
   }
-
-  button_validate(PickingId) {
+  */
+  ButtonValidate(PickingId) {
     this.presentLoading();
-    this.stock.button_validate(Number(PickingId)).then((lines_data) => {
+    this.stock.ButtonValidate(Number(PickingId)).then((lines_data) => {
       if (lines_data && lines_data['err'] === false) {
         console.log('Reloading');
         this.loading.dismiss();

@@ -18,7 +18,7 @@
          <ion-col class="product-link" (click)="Navigate(0)">Anterior
         </ion-col>
         
-        <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="button_validate(data.picking_id.id)">Validar
+        <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="ButtonValidate(data.picking_id.id)">Validar
         </ion-col> -->
         <ion-col class="ion-text-center">
           <span *ngIf="data && data.active_location_id">{{data.active_location_id.name}}</span>
@@ -29,9 +29,10 @@
       <ion-row>
         <ion-col size="8">
           <ion-card-title >{{data.apk_name}}</ion-card-title>
-          <ion-card-subtitle class="ion-text-right {{'state_'+ data.state.value}}" >
-              <ion-badge style="margin-right: 15px" class="ion-text-left {{'back_state_'+ data.state.value}}"># {{ data['move_line_count']}} </ion-badge>
-               <ion-badge class="ion-text-right {{'back_state_'+ data.state.value}}">{{data.state.name}}</ion-badge>
+          <ion-card-subtitle class="ion-text-right {{'state_'+ data.pick_state.value}}" >
+              <ion-badge *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()" style="marging-left: 15px; margin-right: 15px"> Validar </ion-badge> 
+              <ion-badge style="marging-left: 15px; margin-right: 15px" class="ion-text-left {{'back_state_'+ data.pick_state.value}}"># {{ data['move_line_count']}} </ion-badge>
+              <ion-badge class="ion-text-right {{'back_state_'+ data.pick_state.value}}">{{data.pick_state.name}}</ion-badge>
           </ion-card-subtitle>
         </ion-col>
         <!-- BOTONES ALBARAN -->
@@ -51,25 +52,41 @@
       </ion-row>
     </ion-card-header>
     <ion-card-content>
-      <div>
+      <!--div>
         <span *ngIf="data['scheduled_date']"><strong>Fecha: </strong></span>
         <span *ngIf="data['scheduled_date']">{{data.scheduled_date}}</span>
         <span *ngIf="data['priority']" style="margin-left: 10px"><strong>{{data.priority['name'] + " "}}</strong></span>
         <span *ngIf="data.sale_id" style="margin-left: 10px" class="product-link" (click) = "OpenModal('sale.order', data.sale_id.id)"><strong>{{data.sale_id.name}}</strong></span>
-      </div>
-      <div>
-        De <span class="product-link" *ngIf="data['location_id']" color="primary" (click)="open_link(data.location_id['id'])">{{data.location_id['name']}} </span> para
-        <span class="product-link" *ngIf="data['location_dest_id']" color="primary" (click)="open_link(data.location_dest_id['id'])">{{data.location_dest_id['name']}} </span>
-        <!--span *ngIf="data['location_id']" class="location" (click)="open_link(data.location_id['id'])"> De {{data.location_id['name']}}</span>
-        <span *ngIf="data['location_dest_id']" class="location" (click)="open_link(data.location_dest_id['id'])">Para {{data.location_dest_id['name']}}</span-->
+      </div-->
+      <!--div>
+        De <span class="product-link" *ngIf="data['location_id']" color="primary" (click)="OpenLink(data.location_id['id'], 'stock-location')">{{data.location_id['name']}} </span> para
+        <span class="product-link" *ngIf="data['location_dest_id']" color="primary" (click)="OpenLink(data.location_dest_id['id'], 'stock-location')">{{data.location_dest_id['name']}} </span>
+      </div-->
+      <div class="row-even" style="text-align: center">
+        <ion-row >
+          <ion-col size=3><span *ngIf="data['priority']"><strong>{{data.priority['name'] + " "}}</strong></span></ion-col>
+          <ion-col size=3><span *ngIf="data['scheduled_date']"> <strong>Fecha </strong></span></ion-col>
+          <ion-col size=3><span><strong>Paquetes</strong></span></ion-col>
+          <ion-col size=3><span><strong>Peso</strong></span></ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size=3><span *ngIf="data.sale_id" class="product-link" (click) = "OpenModal('sale.order', data.sale_id.id)"><strong>{{data.sale_id.name}}</strong></span></ion-col>
+          <ion-col size=3><span *ngIf="data['scheduled_date']">{{data.scheduled_date}}</span></ion-col>
+          <ion-col size=3><ion-input [ngModel]="data.carrier_packages" class="padd0 product-link" type="number" 
+          (change) = "ChangePickingValue('carrier_packages', $event.target.value)"></ion-input></ion-col>
+          <ion-col size=3><ion-input [ngModel]="data.carrier_weight" class="padd0 product-link"  type="number" 
+          (change) = "ChangePickingValue('carrier_weight', $event.target.value)"></ion-input></ion-col>
+        </ion-row>
+        
       </div>
       <div *ngIf="data['note']">
         {{data.note}}
       </div>
+
     </ion-card-content>
 
   </ion-card>
-  <div>
+  
     <ion-card *ngIf="data['move_lines']">
       <ion-card-header>
         <!--ion-row>
@@ -78,16 +95,84 @@
           </ion-col>
         </ion-row-->
       </ion-card-header>
-      <ion-card-content *ngIf="data['move_lines']">
+      <!--ion-card-content *ngIf="data['move_lines']">
         <app-move-line-list 
           [scanner_reading]="scanner_reading" 
           [code]="picking_code" 
           [move_lines]="data['move_lines']">
         </app-move-line-list>
       </ion-card-content>
+      </ion-card-->
+      <ion-card-content>
+        <ion-grid>
+          <div *ngFor="let line of data['move_lines']; let index = index; let even = even; let odd = odd" [ngClass]="{'row-odd': odd, 'row-even': even}">
+            <ion-row style="align-items: center">
+              <ion-col size=9>
+                <ion-row  style="padding: 0px">
+                <!-- [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">-->
+                  <ion-col size="9" (click)="OpenLink(line.id)"> 
+                    <ion-icon  size="normal" name="{{TrackingIcon[line.tracking.value]}}"></ion-icon>
+                    <span class="product-link" style="font-size: small; "> {{line.product_id['default_code']}}</span>
+                  </ion-col> 
+                  <ion-col size="2"> 
+                    <span class="product-link" style="font-size: x-small; "> {{line.move_line_location_id['oldname']}}</span>
+                  </ion-col>
+                  <ion-col *ngIf="line['quantity_done'] != null" class="state_icon" style="text-align: right">
+                    <ion-icon  size="normal" style="vertical-align: bottom" class="{{'state_'+ line.state.value}} " name="{{StateIcon[line.state['value']]}}"></ion-icon>
+                  </ion-col>
+                </ion-row>
+              </ion-col>
+              <ion-col size=3 class="min80" *ngIf="line.state.value == 'done'">
+                <ion-button         
+                              size="small"
+                              class="min80"
+                              (click)="InputQty(index)">
+                              <span> {{line.quantity_done}} </span>
+                              <ion-icon slot="end" name="checkmark-done-circle-outline"></ion-icon>
+                              <span style="padding-left: 8px" slot="end">{{line.product_uom_qty}}</span>
+                              </ion-button>
+              </ion-col>
+              <ion-col size=3 class="min80" style="text-align: right" *ngIf="line.state.value!='done'" (click)="InputQty('Cantidad', sml)">
+                <ion-button         
+                          *ngIf="line.quantity_done == 0 && ['assigned', 'partially_available'].indexOf(line.state.value) != -1" 
+                              size="small"
+                              class="min80 {{'move_state_'+ line.field_status}} "
+                              (click)="InputQty(index)">
+                              <span> {{line.quantity_done}} </span>
+                              <ion-icon slot="end" name="cart-outline"></ion-icon>
+                              <span style="padding-left: 8px" slot="end">{{line.product_uom_qty}}</span>
+                              </ion-button>
+                <ion-button         
+                          *ngIf="line.quantity_done == 0 && ['confirmed'].indexOf(line.state.value) != -1" 
+                              size="small"
+                              class="min80 {{'move_state_'+ line.field_status}}"
+                              (click)="InputQty(index)">
+                              <span> {{line.quantity_done}} </span>
+                              <ion-icon slot="end" name="trash-bin-outline"></ion-icon>
+                              <span style="padding-left: 8px" slot="end">{{line.product_uom_qty}}</span>
+                              </ion-button>
+                <ion-button         
+                          *ngIf="line.quantity_done != 0 && ['assigned', 'partially_available'].indexOf(line.state.value) != -1" 
+                              size="small"
+                              class="min80 {{'move_state_'+ line.field_status}}"
+                              (click)="InputQty(index)">
+                              <span> {{line.quantity_done}} </span>
+                              <ion-icon slot="end" name="checkmark-circle-outline"></ion-icon>
+                              <span style="padding-left: 8px" slot="end">{{line.product_uom_qty}}</span>
+                              </ion-button>
+                <ion-button         
+                          *ngIf="['done'].indexOf(line.state.value) != -1" 
+                              size="small"
+                              class="min80 {{'move_state_'+ line.field_status}}">
+                              <span> {{line.quantity_done}} </span>
+                              <ion-icon slot="end" name="checkmark-done-circle-outline"></ion-icon>
+                              <span style="padding-left: 8px" slot="end">{{line.product_uom_qty}}</span>
+                              </ion-button>
+              </ion-col>
+            </ion-row>
+          </div>
+      </ion-grid>
+      </ion-card-content>
     </ion-card>
-
-  </div>
 </ion-content>
-
 <app-scanner-footer (scanner_reading_changed)="onReadingEmitted($event)" [scanner_reading]="scanner_reading"></app-scanner-footer>
