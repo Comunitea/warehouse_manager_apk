@@ -38,7 +38,7 @@ export class StockMoveLocationPage implements OnInit {
 
   ngOnInit() {
     this.odoo.isLoggedIn().then((data)=>{
-      if (data==false) {
+      if (data===false) {
         this.router.navigateByUrl('/login');
       }
     })

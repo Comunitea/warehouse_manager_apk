@@ -1,7 +1,7 @@
 import { OdooService } from '../../services/odoo.service';
 import { Component, OnInit, ViewChild, Input, HostListener} from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { AlertController, ActionSheetController, ModalController } from '@ionic/angular';
+import { AlertController, ActionSheetController, ModalController , ToastController} from '@ionic/angular';
 import { StockService } from '../../services/stock.service';
 import { AudioService } from '../../services/audio.service';
 import { VoiceService } from '../../services/voice.service';
@@ -32,7 +32,8 @@ export class StockPickingPage implements OnInit {
   LastReading: string;
   StateIcon: {};
   TrackingIcon: {};
-
+  FilterMoves: string;
+  FilterMovesArray: Array<string>;
   @ViewChild(ScannerFooterComponent) ScannerFooter: ScannerFooterComponent;
 
   @Input() ScannerReading: string;
@@ -43,9 +44,10 @@ export class StockPickingPage implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if (this.stock.GetModelInfo('App', 'ActivePage') === 'StockPickingPage') {
-    this.scanner.key_press(event);
-    this.scanner.timeout.then((val) => {
+    if (this.stock.GetModelInfo('App', 'ActivePage') === 'StockPickingPage' && event.which !== 0) {
+      console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
+      this.scanner.key_press(event);
+      this.scanner.timeout.then((val) => {
       this.onReadingEmitted(val);
     });
   }
@@ -61,6 +63,7 @@ export class StockPickingPage implements OnInit {
     private voice: VoiceService,
     public stock: StockService,
     private route: ActivatedRoute,
+    public toastController: ToastController,
     private location: Location,
     public loadingController: LoadingController,
     public actionSheetController: ActionSheetController,
@@ -69,8 +72,8 @@ export class StockPickingPage implements OnInit {
   }
 
 
-  OpenModal(ModelO, Id) {
-    this.router.navigateByUrl('/info-sale-order/' + Id);
+  OpenModal(Model, Id) {
+    this.router.navigateByUrl('/info-sale-order/' + Model + '/' + Id);
     // return this.presentModal({Model: ModelO, Id: IdO});
   }
 
@@ -88,6 +91,7 @@ export class StockPickingPage implements OnInit {
     this.stock.SetModelInfo('App', 'ActivePage', 'StockPickingPage');
     this.ActiveOperation = false;
     this.picking = parseInt(this.route.snapshot.paramMap.get('id'));
+    this.presentLoading('Cargando ...');
     this.GetPickingInfo(this.picking);
     this.voice.voice_command_refresh$.subscribe(VoiceData => {
     console.log(VoiceData);
@@ -95,9 +99,20 @@ export class StockPickingPage implements OnInit {
     });
     this.audio.play('click');
   }
+
+  GetFilteredMoves(){
+    if (this.stock.GetFilterMoves() === 'Todos'){this.stock.SetFilterMoves('Pendientes'); }
+    else if (this.stock.GetFilterMoves() === 'Pendientes'){this.stock.SetFilterMoves('Hechos'); }
+    else if (this.stock.GetFilterMoves() === 'Hechos'){this.stock.SetFilterMoves('Todos'); }
+    this.FilterMoves = this.stock.GetFilterMoves() ;
+    this.presentLoading('Cargando ...');
+    this.GetPickingInfo(this.picking);
+  }
+
   ngOnInit() {
     this.StateIcon = this.stock.getStateIcon('stock.move');
     this.TrackingIcon = this.stock.getTrackingIcon('stock.move');
+    this.FilterMoves = this.stock.GetFilterMoves();
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
@@ -124,17 +139,34 @@ CheckOpenLocation(val){
   }
   return false;
 }
+QtyError(){
+  this.audio.play('error');
+  return this.presentToast('No puedes realizar más cantidad de la reservada para el movimiento');
+}
+async presentToast(str) {
+  const toast = await this.toastController.create({
+    header: 'Aviso...',
+    message: str,
+    duration: 2000,
+  });
+  toast.present();
+}
+
 async InputQty(Index)
   {
+    if (this.data['pick_state'].value === 'done') {
+      this.audio.play('error');
+      return; }
+
     const Move = this.data['move_lines'][Index];
-    if (Move.reserved_availability == 0){
+    if (Move['tracking']['value'] !== 'none'){
+      this.audio.play('error');
+      return;
+    }
+    if (Move.reserved_availability === 0){
       return this.presentAlert('Aviso', 'No tienes ninguna cantidad reservada. Regulariza inventario')
     }
     this.audio.play('click');
-    if (this.data['pick_state'].value === 'done') {return; }
-    if (Move['tracking']['value'] !== 'none'){
-      return;
-    }
     const alert = await this.alertCtrl.create({
       header: 'Cantidad',
       subHeader: '',
@@ -161,13 +193,20 @@ async InputQty(Index)
               // }
               // Similar a check product pero con cantidad en vez de increment0
               let self = this;
-              this.stock.UpdateMoveQty( Move['id'], false, false, data['qty_done'], false).then((res) => {
+              this.presentLoading('Actualizando ...');
+              const QuantityDone = data['qty_done'];
+              if (QuantityDone > Move['product_uom_qty']) {
+                return this.QtyError();
+              }
+              this.stock.UpdateMoveQty( Move['id'], false, false, data['qty_done'], false, this.FilterMoves).then((res) => {
+                this.loading.dismiss();
                 if (res !== false){
-                  self.data['move_lines'][Index] = res[0];
-                  return true;
+                  return self.CheckMoveIsFilter(res[0], Index);
                 }
-              }).catch((error) => {
 
+              }).catch((error) => {
+                this.loading.dismiss();
+                this.presentAlert(error.tittle, error.msg.error_msg);
               });
             }
           }
@@ -176,24 +215,41 @@ async InputQty(Index)
     await alert.present();
   }
 
+CheckMoveIsFilter(Move, Index){
+  let action = 'Update';
+  if (this.FilterMoves === 'Pendientes' && Move.quantity_done === Move.reserved_availability){
+    action = 'Unlink';
+  }
+  if (this.FilterMoves === 'Hechos' && Move.quantity_done !== Move.reserved_availability){
+    action = 'Unlink';
+  }
+  if (action === 'Update'){
+    this.data['move_lines'][Index] = Move; }
+  else if (action === 'Unlink') {
+    this.data['move_lines'].splice(Index, 1);
+  }
+  return true;
+}
+
 CheckProduct(val){
-  let index = 0;
+  let Index = 0;
   for (const move of this.data['move_lines']){
     if (move.product_id.wh_code === val) {
       if (move.tracking.value === 'none') {
         let self = this;
+        const QuantityDone = move['quantity_done'] + 1;
+        if (QuantityDone > move['product_uom_qty']) {
+          return this.QtyError();
+        }
         // Si leo un producto, y no tiene seguimiento: +1 en la cantidad. Si es por lotes igual
-        this.stock.UpdateMoveQty(move['id'], false, false, false, 1).then((res) => {
+        this.presentLoading('Actualizando ...');
+        this.stock.UpdateMoveQty(move['id'], false, false, false, 1, this.FilterMoves).then((res) => {
           if (res !== false){
-            self.data['move_lines'][index] = res[0];
-            // ThisMove = res[0];
-            // const UpMove = res[0];
-            // for (const move in self.data['move_lines']){
-            //  if (self.data['move_lines'][move]['id'] === UpMove['id']) {self.data['move_lines'][move] = UpMove; }
-            // }
-            return true;
+            this.loading.dismiss();
+            return self.CheckMoveIsFilter(res[0], Index);
           }
         }).catch((error) => {
+          this.loading.dismiss();
 
         });
         return true;
@@ -207,21 +263,10 @@ CheckProduct(val){
         this.router.navigateByUrl('/move-form/' + move['id']);
       }
     }
-    index += 1;
+    Index += 1;
   }
 }
-CheckAddQty(val){
-  for (const move of this.data['move_lines']){
-    if (move.tracking.value === 'none' && move.product_id.wh_code === val){
-      if (move.tracking.value === 'none') {
-        move.quantity_done += 1;
-        // actualizo en el servidor el movimiento ya no me hace falta esperar ya que puede ser asycrono
-        this.stock.UpdateMoveQty(move['id'], false, false, move['quantity_done'], false).then((res) => {}).catch((error) => {});
-        return true;
-      }
-    }
-  }
-}
+
 CheckOpenPicking(val){
   this.stock.FindPickingByName(val).then((res) => {
     if (res !== false){
@@ -234,41 +279,103 @@ CheckOpenPicking(val){
 CheckSerial(val){
   const self = this;
   const remove = this.LastReading === val;
+  this.presentLoading('Buscando ...');
   this.stock.FindSerialForMove(val, this.picking, remove).then ((res) => {
-    if (res !== false){
+    if (res  !== false){
       const UpMove = res[0];
       for (const move in self.data['move_lines']){
-        if (self.data['move_lines'][move]['id'] === UpMove['id']) {self.data['move_lines'][move] = UpMove; }
+        if (self.data['move_lines'][move]['id'] === UpMove['id']) {
+          this.loading.dismiss();
+          return self.CheckMoveIsFilter(UpMove, move);
+        }
       }
-      return true;
+
     }
+
+
   }) .catch((error) => {
+    this.loading.dismiss();
     this.presentAlert(error.tittle, error.msg.error_msg);
   });
   return false;
 }
 
-do_local_search(val) {
-  if (this.CheckAddQty(val)){return true; }
-  if (val.length === 12){
-    if (this.CheckOpenPicking(val)){return true; }
-  }
-  return false;
-}
 reset_scanner() {
   this.LastReading = this.ScannerReading;
   this.ScannerFooter.ScanReader.controls.scan.setValue('');
   // this.scanner.reset_scan();
   // this.ScanReader.controls.scan.setValue =''
 }
+CheckOrder(order){
+  // ActionAssign();
+  // DoUnreserve();
+  // GetFilteredMoves();
+  // ResetQties(this.data['id']);
+
+  if (order === '39'){
+    this.Navigate(1);
+    return true;
+  }
+  if (order === '37'){
+    this.Navigate(0);
+    return true;
+  }
+  if (order === '112'){
+    // F1
+    let str = '<p>Atajos de teclado</p>';
+    str += 'Cursor Dcha: Siguiente</br>';
+    str += 'Cursor Izqda: Anterior</br>';
+    str += 'F1: Esta pantalla</br>';
+    str += 'F2: Reservar</br>';
+    str += 'F3: Anular reserva</br>';
+    str += 'F4: Poner a 0</br>';
+    str += 'F5: Validar</br>';
+    str += 'TAB: Alternar filtro</br>';
+    this.presentAlert('TECLAS', str);
+
+    return true;
+  }
+  if (order === '113'){
+    // F2
+    this.ActionAssign();
+    return true;
+  }
+  if (order === '114'){
+    // F3
+    this.DoUnreserve();
+    return true;
+  }
+  if (order === '115'){
+    // F4
+    this.ResetQties();
+    return true;
+  }
+  if (order === '116'){
+    // F5
+    this.ButtonValidate();
+    return true;
+  }
+  if (order === '9'){
+    // F5
+    this.GetFilteredMoves();
+    return true;
+  }
+  this.audio.play('error');
+  return false;
+}
 CheckScanner(val) {
   if (val === ''){
     this.reset_scanner();
   }
+  const execreg = /\d+/.exec(val);
+  if (execreg && val[0]  === '*' && val[val.length - 1] === '*'){
+    this.audio.play('click');
+    const order = this.CheckOrder(execreg[0]);
+    if (order){return; }
+  }
   // ESCANEO DE ALBARAN. SUPONGO SIEMPRE QUE NO HAY UBICACIONES REQUERIDAS
   // CASO 1: EAN O DEFAULT CODE: SUMO UNA CANTIDAD
   // CASO 2: NUMERO DE SERIE: ESCRIBO SERIE Y CANTIDAD 1 EN LA LINEA
-
   // compruebo si hay un lote y ven algún movimiento
   // al ser asycrono tengo que hacer las busquedas anidadas
   else if (eval(this.data['barcode_re']).exec(val) ) {
@@ -286,42 +393,24 @@ CheckScanner(val) {
   }
   this.reset_scanner();
   return;
-
-
-  const model = 'stock.move';
-  // tslint:disable-next-line:prefer-const
-  let ids = [];
-  for (const move of this.data['move_lines']) {
-    ids.push(move['id']);
-  }
-
-  const domain = [];
-  this.stock.get_obj_by_scanreader(model, val, ids, domain).then ((MoveToNavigate) => {
-    if (MoveToNavigate !== false) {
-      // Comprobar casod e que devuelva varios ids
-      this.router.navigateByUrl('/move-form/' + MoveToNavigate[0]);
-    }
-  })
-  .catch((error) => {
-    this.presentAlert('error al buscar en ' + val + 'en ' + model, error);
-  });
-  this.LastReading = val;
-}
+ }
 
   onReadingEmitted(val: string) {
-    if (this.moves.includes(val)) {
-      this.page_controller(val);
-    } else {
-      this.ScannerReading = val;
-      return this.CheckScanner(val);
+    for (const scan of val){
+      if (scan !== ''){
+        this.audio.play('click'),
+        this.ScannerReading = scan;
+        this.CheckScanner(scan);
+      }
     }
+    return;
   }
 
   async presentAlert(titulo, texto) {
     this.audio.play('error');
     const alert = await this.alertCtrl.create({
         header: titulo,
-        subHeader: texto,
+        message: texto,
         buttons: ['Ok']
     });
     await alert.present();
@@ -346,6 +435,7 @@ CheckScanner(val) {
   }
 
   ActionAssign(){
+    this.presentLoading('Reserrvando ...')
     // Las funciones debería devolver ya la  recarga para ahorrar una llamada
     this.stock.ActionAssignPick(this.picking).then((data) => {
       if (data === true) {
@@ -354,11 +444,13 @@ CheckScanner(val) {
       }
     })
     .catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error al asignar cantidades:', error);
     });
   }
   DoUnreserve(){
     // Las funciones debería devolver ya la  recarga para ahorrar una llamada
+    this.presentLoading('Anulando reserva ...');
     this.stock.DoUnreservePick(this.picking).then((data) => {
       if (data === true) {
         console.log('Reloading');
@@ -366,37 +458,44 @@ CheckScanner(val) {
       }
     })
     .catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error al asignar cantidades:', error);
     });
   }
   ChangePickingValue(Field, Value){
     let self = this;
+    this.presentLoading('Actualizando ...');
     const values = {model: 'stock.picking.batch', id: this.picking, field: Field, value: Value};
     this.stock.ChangeFieldValue(values).then((OK: Array<{}>) => {
+
       for (const Item of OK){
         self.data[Item['field']] = Item['value'];
       }
+      this.loading.dismiss();
     }).catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error', error);
     });
   }
   ButtonValidate(){
+    let self = this;
     if (this.data['current_packages'] * this.data['current_height'] === 0) {
       this.presentAlert('Aviso!', 'Rellena correctamente los campos de paquetes y peso');
       return;
     }
     this.presentLoading();
-    this.stock.ButtonValidate(Number(this.picking)).then((data) => {
-      this.loading.dismiss();
-      this.router.navigateByUrl('/stock-picking-list');
+    this.stock.ButtonValidate(this.data['id']).then((data) => {
+      self.loading.dismiss();
+      self.router.navigateByUrl('/stock-picking-list');
     })
     .catch((error) => {
-      this.loading.dismiss();
-      this.presentAlert('Error al validar el albarán:', error);
+      self.loading.dismiss();
+      self.presentAlert('Error al validar el albarán:', error);
     });
   }
 
   async force_set_qty_done(MoveId, field, model = 'stock.picking.batch'){
+    this.presentLoading('Actualizando ...');
     await this.stock.force_set_qty_done(Number(MoveId), field, model).then((data) => {
       if (data === true) {
         console.log('Reloading');
@@ -404,12 +503,14 @@ CheckScanner(val) {
       }
     })
     .catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error al forzar la cantidad:', error);
     });
   }
 
-  async force_reset_qties(PickId){
-    await this.stock.force_reset_qties(Number(PickId), 'stock.picking.batch').then((data) => {
+  async ResetQties(){
+    this.presentLoading('Reseteeando ...');
+    await this.stock.force_reset_qties(Number(this.data['id']), 'stock.picking.batch').then((data) => {
       console.log(data);
       if (data === true) {
         console.log('Reloading');
@@ -417,13 +518,14 @@ CheckScanner(val) {
       }
     })
     .catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error al forzar la cantidad:', error);
     });
   }
 
-  async presentLoading() {
+  async presentLoading(Message= 'Validando...') {
     this.loading = await this.loadingController.create({
-      message: 'Validando...',
+      message: Message,
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
@@ -436,15 +538,17 @@ CheckScanner(val) {
     this.router.navigateByUrl('/stock-picking-list');
   }
   ApplyPickData(data){
+    this.loading.dismiss();
     this.data = data;
     this.NextPrev = this.stock.GetNextPrev('stock.picking.batch', data['id']);
 
   }
   GetPickingInfo(PickId, index = 0) {
-    this.stock.GetPickingInfo(PickId, index).then((data) => {
+    this.stock.GetPickingInfo(PickId, index, this.FilterMoves).then((data) => {
       this.ApplyPickData(data);
     })
     .catch((error) => {
+      this.loading.dismiss();
       this.presentAlert('Error al recuperar el movimiento:', error);
     });
   }
@@ -489,11 +593,10 @@ CheckScanner(val) {
               (['confirmed', 'assigned'].indexOf(this.data['pick_state'].value) >= -1  &&
               this.check_if_value_in_responses('reiniciar', VoiceCommandRegister))) {
               console.log('entra al reset');
-              this.force_reset_qties(this.data['id']);
+              this.ResetQties();
       }
     }
   }
-
   check_if_value_in_responses(value, dict) {
     if (value === dict[0] || value === dict[1] || value === dict[2]) {
       return true;
@@ -535,12 +638,21 @@ CheckScanner(val) {
         };
         buttons.push(button);
       }
+      const button = {
+        text: this.FilterMoves,
+        icon: '',
+        role: '',
+        handler: () => {
+          this.GetFilteredMoves();
+        }
+      };
+      buttons.push(button);
       const buttonReset = {
           text: 'Reset',
           icon: '',
           role: '',
           handler: () => {
-            this.force_reset_qties(this.data['id']);
+            this.ResetQties();
           }
         };
       // buttons.push(button);

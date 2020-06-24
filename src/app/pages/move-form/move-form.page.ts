@@ -1,17 +1,16 @@
 import { Component, OnInit, Input, ViewChild, HostListener } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Storage } from '@ionic/storage';
-import { AlertController, ActionSheetController, IonInfiniteScroll } from '@ionic/angular';
+import { AlertController, ActionSheetController, IonInfiniteScroll, ToastController} from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 import { Location } from '@angular/common';
 import { LoadingController } from '@ionic/angular';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
-import { identifierModuleUrl } from '@angular/compiler';
 // import { setMaxListeners } from 'cluster';
 import { ScannerService } from '../../services/scanner.service';
-import { appendFile } from 'fs';
+
 
 
 @Component({
@@ -57,15 +56,18 @@ export class MoveFormPage implements OnInit {
   limit: number;
   limit_reached: boolean;
   LoadingPrevMoves: boolean;
-  loading: boolean;
-  SmlIndex: 0;
+  SmlIndex: number;
   NeedScroll: boolean;
+  LoadingMoves: boolean;
+  Ready: boolean;
+  BarcodeLenght: number;
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if ( this.stock.GetModelInfo('App', 'ActivePage') === 'MoveFormPage') {
-    this.scanner.key_press(event);
-    this.scanner.timeout.then((val) => {
+    if ( this.stock.GetModelInfo('App', 'ActivePage') === 'MoveFormPage' && event.which !== 0 && this.Ready) {
+      console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
+      this.scanner.key_press(event);
+      this.scanner.timeout.then((val) => {
       this.onReadingEmitted(val);
     });
   }
@@ -82,6 +84,7 @@ export class MoveFormPage implements OnInit {
     private storage: Storage,
     private location: Location,
     public loadingController: LoadingController,
+    public toastController: ToastController,
     public actionSheetController: ActionSheetController
   ) {
     this.moves = ['up', 'down', 'left', 'right'];
@@ -109,7 +112,7 @@ export class MoveFormPage implements OnInit {
       handler: () => {
       }
     };
-    buttons.push(advise);
+    // buttons.push(advise);
 
     if (this.data) {
       if (['partially_available', 'confirmed'].indexOf(State) !== -1) {
@@ -134,7 +137,19 @@ export class MoveFormPage implements OnInit {
         };
         buttons.push(button);
       }
+      //ActionApplyLotNames()" *ngIf="ChangeLotNames && LotNames.length > 0
+      if (this.ChangeLotNames && this.LotNames){
+        const button = {
+          text: 'Actualizar lotes',
+          icon: 'checkmark-done-circle-outline',
+          role: '',
+          handler: () => {
+            this.ActionApplyLotNames();
+          }
+        };
+        buttons.push(button);
 
+      }
       if (this.LotNames && 'done' !== State && Tracking !== 'none'){
         const button = {
           text: 'Borrar lotes',
@@ -146,6 +161,19 @@ export class MoveFormPage implements OnInit {
         };
         buttons.push(button);
       }
+      if (this.BarcodeLenght != 0){
+        const button = {
+          text: 'Anular chequeo de nº serie',
+          icon: '',
+          role: '',
+          handler: () => {
+            this.BarcodeLenght = 0;
+          }
+        };
+        buttons.push(button);
+      }
+      
+
       if (this.LotNames && 'done' !== State && Tracking !== 'none'){
         const button = {
             text: 'Nuevo',
@@ -173,10 +201,14 @@ export class MoveFormPage implements OnInit {
     await actionSheet.present();
   }
   ionViewDidEnter(){
+    console.log('ionViewDidEnter');
     this.offset = 0;
-    this.limit = 25;
+    this.limit = this.stock.TreeLimit;
     this.limit_reached = false;
-    this.loading=false;
+    this.LoadingMoves = false;
+    this.FirstLoad = true;
+    this.ShowLots = true;
+    this.ShowMoves = !this.ShowLots;
     this.stock.SetModelInfo('App', 'ActivePage', 'MoveFormPage');
     this.InitVars();
     const move = this.route.snapshot.paramMap.get('id');
@@ -198,18 +230,21 @@ export class MoveFormPage implements OnInit {
       }
     })
     .catch((error) => {
-      this.presentAlert('Error al comprobar tu sesión:', error);
+      this.presentAlert('Error al comprobar tu sesión:', error.msg.error_msg);
     });
   }
   InitVars() {
     this.StateIcon = this.stock.getStateIcon('stock.move');
     this.FirstLoad = true;
+    this.Ready = true;
     this.QtyDirty = false;
     this.InitData();
   }
   InitData() {
     this.ChangeLotNames = false;
     this.LotNames = [];
+    this.BarcodeLenght = 0;
+    this.FirstLoad = true;
   }
   read_status(field, campo, propiedad) {
     return this.stock.read_status(field, campo, propiedad);
@@ -227,7 +262,8 @@ export class MoveFormPage implements OnInit {
   }
   go_back() {
     this.audio.play('click');
-    this.location.back();
+    this.router.navigateByUrl('/stock-picking/' + this.data['batch_id']['id'] + '/1');
+    // this.location.back();
   }
 
   GetMovesDone(moves, value= true) {
@@ -235,40 +271,23 @@ export class MoveFormPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
-    if (this.moves.includes(val)) {
-      this.page_controller(val);
-    } else {
-      this.scanner_reading = val;
-      this.process_reading();
-    }
-  }
 
-  // Navigation
-
-  page_controller(direction) {
-    if (direction === 'up') {
-      console.log('up');
-      this.router.navigateByUrl('/stock-picking/' + this.data['picking_id']['id'] + '/' + this.data['picking_id']['code']) ;
-    } else if (direction === 'down') {
-      console.log('down');
-      if (this.data['ready_to_validate']){
-        this.ButtonValidate(this.data['picking_id']['id']);
-      } else {
-        // this.action_confirm();
+    for (const scan of val){
+      if (scan !== '') {
+        this.scanner_reading = scan;
+        this.audio.play('click');
+        console.log('CheckScanner ' + scan + ' de ' + val);
+        this.CheckScanner(scan);
       }
-    } else if (direction === 'left') {
-      console.log('left');
-      this.GetMoveInfo(this.data['id'], -1);
-    } else if (direction === 'right') {
-      console.log('right');
-      this.GetMoveInfo(this.data['id'], +1);
     }
+    return;
   }
 
   async presentAlert(titulo, texto) {
+    this.audio.play('click');
     const alert = await this.alertCtrl.create({
         header: titulo,
-        subHeader: texto,
+        message: texto,
         buttons: ['Ok'],
 
     });
@@ -280,34 +299,22 @@ export class MoveFormPage implements OnInit {
     setTimeout(() => {
       console.log('Loading more locations');
       event.target.complete();
-      // this.offset += 25;
+      // this.offset += this.stock.TreeLimit;
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
       this.LoadMoveLines(dir);
         // event.target.disabled = true;
     }, 500);
   }
-  onPageScroll(event) {
-    console.log(event.target.scrollTop);
-  }
-
-  onScroll(event) {
-    return;
-    if (event.detail.currentY < 1){
-      this.LoadingPrevMoves = true;
-      // event.target.complete();
-      this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - 25);
-      this.LoadMoveLines(1);
-    }
-  }
   LoadMoveLines(Dir){
+    console.log('LoadMoveLines');
     if (Dir === 1 && this.limit_reached) {return; }
     if (Dir === -1){
-      if (this.offset <= 25) {return; }
-      this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - 25);
+      if (this.offset <= this.stock.TreeLimit) {return; }
+      this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - this.stock.TreeLimit);
     }
-    this.loading = true;
-    // this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - 25);
+    this.LoadingMoves = true;
+    // this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - this.stock.TreeLimit);
 
     const SmlDomain = [['move_id', '=', this.data['id']]];
     const values = {model: 'stock.move.line', domain: SmlDomain, offset: this.offset, limit: this.limit};
@@ -317,7 +324,7 @@ export class MoveFormPage implements OnInit {
       this.data['move_line_ids'] = SmlIds;
       this.SmlIndex = this.offset; 
       this.offset += this.data['move_line_ids'].length;
-      this.loading = false;
+      this.LoadingMoves = false;
       // this.LoadingPrevMoves = false;
     })
     .catch((error) => {
@@ -336,7 +343,7 @@ export class MoveFormPage implements OnInit {
   {
     this.audio.play('click');
     if (this.data['state'].value === 'done') {return; }
-    
+
     if (this.QtyDirty) {
       const values = {qty_done: SmlId['qty_done']};
       this.UpdateSmlIdField(SmlId['id'], values);
@@ -363,6 +370,10 @@ export class MoveFormPage implements OnInit {
           text: 'Aplicar',
           handler: (data) => {
             if (SmlId['qty_done'] !== data['qty_done']) {
+              const QuantityDone = this.data['quantity_done'] - SmlId['qty_done'] + data['qty_done']
+              if (QuantityDone > this.data['product_uom_qty']) {
+                return this.QtyError();
+              }
               const values = {qty_done: data['qty_done']};
               this.UpdateSmlIdField(SmlId['id'], values);
             }
@@ -373,6 +384,7 @@ export class MoveFormPage implements OnInit {
   }
 
   UpdateSmlIdField(SmlId, values){
+    console.log('Update SMLIdField');
     if (this.data['state'].value === 'done') {return; }
     this.stock.UpdateSmlIdField(this.data['id'], SmlId, values).then((data) => {
       if (data) {
@@ -380,7 +392,7 @@ export class MoveFormPage implements OnInit {
       }
       })
     .catch((error) => {
-      this.presentAlert('Error al escribor en el movimiento:', error);
+      this.presentAlert('Error al escribor en el movimiento:', error.msg.error_msg);
     });
   }
 
@@ -406,6 +418,7 @@ export class MoveFormPage implements OnInit {
 
   apply_move_data(data) {
     this.InitData();
+    console.log("Entro en Apply move data")
     console.log(data);
     if (data['image'] === false) {
       data['base64'] = false;
@@ -414,50 +427,93 @@ export class MoveFormPage implements OnInit {
       data['base64'] = true;
     }
     this.data = data;
-
-    console.log(this.data);
+    this.BarcodeLenght = 0;
     for (const sml of data['move_line_ids']) {
       if (sml.lot_id.id) {
         this.LotNames.push(sml.lot_id.name);
+        this.BarcodeLenght = sml.lot_id.name.length;
       }
     }
+
     if (this.FirstLoad) {
       if (this.data['state'].value !== 'done') {
         this.ShowLots = this.data['tracking'].value === 'serial';
-        this.ShowMoves = this.data['tracking'].value !== 'serial';
-        this.FirstLoad = false; }
+        this.ShowMoves = !this.ShowLots;
+      }
       else{
         this.ShowLots = false;
-        this.ShowMoves = true;
-        this.FirstLoad = false;
+        this.ShowMoves = !this.ShowLots;
       }
 
     }
     this.offset = this.data['move_line_ids'].length;
-    this.NeedScroll = this.offset >= 25;
+    this.NeedScroll = this.offset >= this.stock.TreeLimit;
+    this.FirstLoad = false;
+    this.cancelLoading();
 
     // this.audio.play('click');
     if (data['message']){this.presentAlert('Odoo', data['message']); }
 
   }
+
+  GetRelativeMoveInfo(MoveId, Index = 0, Filter= this.stock.GetFilterMoves()){
+    const values = {id: MoveId,
+              index: 0,
+              model: 'stock.move',
+              view: 'form',
+              sml_limit: this.limit,
+              sml_offset: this.offset,
+              move_id: MoveId,
+              inc: Index,
+              filter_moves: Filter};
+    console.log('Recupero MOVIMIENTO RELATIVO');
+    const self = this;
+    this.presentLoading("Buscando ...");
+    this.stock.GetRelativeMoveInfo(values).then((data) => {
+      if (data !== MoveId){
+        this.offset = 0;
+        this.limit = this.stock.TreeLimit;
+        this.limit_reached = false;
+        this.LoadingMoves = false;
+        this.FirstLoad = true;
+        this.ShowLots = true;
+        this.ShowMoves = !this.ShowLots;
+        self.apply_move_data(data);
+
+
+        // this.ionViewDidEnter();
+        // this.router.navigateByUrl('/move-form/' + data);
+      }
+      else {this.cancelLoading(); }
+    })
+    .catch((error) => {
+      this.cancelLoading(true);
+      this.presentAlert('Error al recuperar el movimiento:', error.msg.error_msg);
+    });
+  }
+
   GetMoveInfo(move, index = 0) {
+    console.log('Recupero MOVIMIENTO');
+    this.presentLoading();
     const self = this;
     this.stock.GetMoveInfo(move, index, this.limit, this.offset).then((data) => {
       self.apply_move_data(data);
-      
     })
     .catch((error) => {
-      this.presentAlert('Error al recuperar el movimiento:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al recuperar el movimiento:', error.msg.error_msg);
     });
   }
 
   DoMoveValidate(){
+    this.presentLoading();
     if (this.data['state'].value === 'done') {return; }
     this.stock.DoMoveValidate(this.data['picking_id'].id, this.data['id'] ).then((data) => {
       if (data){this.apply_move_data(data); }
     })
     .catch((error) => {
-      this.presentAlert('Error al validar el albarán:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al validar el albarán:', error.msg.error_msg);
     });
   }
 
@@ -478,27 +534,40 @@ export class MoveFormPage implements OnInit {
   }
   */
   ButtonValidate(PickingId) {
-    this.audio.play('click');
     this.presentLoading();
     this.stock.ButtonValidate(Number(PickingId)).then((LinesData) => {
+      this.cancelLoading()
       if (LinesData && LinesData['err'] === false) {
+
         console.log('Reloading');
         this.loading.dismiss();
         this.location.back();
       } else if (LinesData['err'] !== false) {
-        this.loading.dismiss();
         this.presentAlert('Error al validar el albarán:', LinesData['err']);
       }
     })
     .catch((error) => {
-      this.loading.dismiss();
-      this.presentAlert('Error al validar el albarán:', error);
+      this.cancelLoading(true)
+      this.presentAlert('Error al validar el albarán:', error.msg.error_msg);
     });
   }
 
-  async presentLoading() {
+  cancelLoading(error= false){
+    this.loading.dismiss();
+    if (error){
+      this.audio.play('error');
+    }
+    else {
+      this.audio.play('click');
+    }
+    this.Ready = true;
+  }
+
+  async presentLoading(Message = "Trabajando ...") {
+    this.audio.play('click');
+    this.Ready = false;
     this.loading = await this.loadingController.create({
-      message: 'Validando...',
+      message: Message,
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
@@ -520,7 +589,9 @@ export class MoveFormPage implements OnInit {
   */
   CreateNewSmlId(SmId){
     if (this.data['state'].value === 'done') {return; }
+    this.presentLoading();
     this.stock.CreateNewSmlId(SmId).then((data) => {
+      this.cancelLoading();
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data);
@@ -528,42 +599,52 @@ export class MoveFormPage implements OnInit {
       }
       })
     .catch((error) => {
-      this.presentAlert('Error al borrar el movieminto:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al crear el movieminto:', error.msg.error_msg);
     });
   }
 
   RemoveMoveLineId(SmlId) {
-
+    console.log('RemoveMoveLineId: ' + SmlId)
     if (this.data['state'].value === 'done') {return; }
+    this.presentLoading();
     this.stock.RemoveMoveLineId(this.data['id'], SmlId).then((data) => {
+      this.cancelLoading();
       if (data) {
         this.reset_scanner() ;
-        this.apply_move_data(data);
         if (data['warning']) {this.presentAlert('Odoo', data['warning']); }
       }
       })
     .catch((error) => {
-      this.presentAlert('Error al borrar el movieminto:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al borrar el movieminto:', error.msg.error_msg);
     });
   }
 
   ProcessProductId() {
+    console.log('ProcessProductId');
     if (this.data['state'].value === 'done') {return; }
-    this.audio.play('click');
+    this.presentLoading();
     const SmlId = this.data['move_line_ids'].filter(
       move => (this.data['active_location_id'].id === move[this.data['default_location'].value].id))[0];
     if (SmlId){
       // Si hay un sml_id
-      // entonces
+      // entonces miro a ver si  superamos la cantidad
+      const QuantityDone = this.data['quantity_done'] + 1;
+      if (QuantityDone > this.data['product_uom_qty']) {
+
+        return this.QtyError();
+      }
       // Escribo el producto y l aubicación con ok. y ademas le sumo una a la cantidad
       SmlId['field_status_apk'] = this.stock.write_status(SmlId['field_status_apk'], 'product_id', 'done');
       SmlId['field_status_apk'] = this.stock.write_status(SmlId['field_status_apk'], this.data['default_location'], 'done');
       this.ChangeQty(SmlId, 1);
     }
     this.reset_scanner() ;
-
+    this.cancelLoading();
   }
   GetMovesToChangeLoc(moves, confirm=false) {
+    console.log('GetMovesToChangeLoc');
     const loc = this.data['default_location'].value;
     // Si confirmar:
     // filtro los movimientos que ya tienen esa ubicación y no hechos
@@ -582,6 +663,7 @@ export class MoveFormPage implements OnInit {
 
   ProcessLocation(barcode) {
     if (this.data['state'].value === 'done') {return; }
+    this.presentLoading();
     const field = this.data['default_location'].value;
     // Miro si coincide con algún ubicación necesaria de los movimientos
     const confirm = this.LastReading === this.scanner_reading;
@@ -604,8 +686,10 @@ export class MoveFormPage implements OnInit {
           this.apply_move_data(data);
           if (data['warning']) {this.presentAlert('Odoo', data['warning']); }
         }
+        else {this.cancelLoading(); }
         })
       .catch((error) => {
+        this.cancelLoading(true);
         this.presentAlert(error.tittle, error.msg.error_msg);
       });
 
@@ -613,13 +697,16 @@ export class MoveFormPage implements OnInit {
   }
   AssignLocationId(MoveId, LocationId, LocationField) {
     if (this.data['state'].value === 'done') {return; }
+    this.presentLoading();
     this.stock.AssignLocationId(MoveId, LocationId, LocationField).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
+      else {this.cancelLoading(); }
     })
     .catch((error) => {
-      this.presentAlert('Error al asignar las ubicaciones de origen del movimiento:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al asignar las ubicaciones de origen del movimiento:', error.msg.error_msg);
     });
   }
 
@@ -638,46 +725,57 @@ export class MoveFormPage implements OnInit {
   }
 
   ActionAssign(MoveId) {
+
     if (this.data['state'].value === 'done') {return; }
+    this.presentLoading();
     this.audio.play('click');
     this.stock.ActionAssign(MoveId).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
+      else {this.cancelLoading(); }
     })
     .catch((error) => {
-      this.presentAlert('Error al quitar la reserva del movimiento:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al quitar la reserva del movimiento:', error.msg.error_msg);
     });
   }
 
   CleanLots(MoveId) {
+    console.log('Clena lots');
     if (this.data['state'].value === 'done') {return; }
+    this.presentLoading();
     this.audio.play('click');
     this.stock.CleanLots(MoveId).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
+      else {this.cancelLoading(); }
     })
     .catch((error) => {
-      this.presentAlert('Error al quitar los lotes del movimiento:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al quitar los lotes del movimiento:', error.msg.error_msg);
     });
   }
 
   ActionUnReserve(MoveId) {
     if (this.data['state'].value === 'done') {return; }
+    this.presentLoading();
     this.audio.play('click');
+
     this.stock.MoveUnReserve(MoveId).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
+      else {this.cancelLoading(); }
     })
     .catch((error) => {
-      this.presentAlert('Error al quitar la reserva del movimiento:', error);
+      this.cancelLoading(true);
+      this.presentAlert('Error al quitar la reserva del movimiento:', error.msg.error_msg);
     });
   }
 
   async ChangeLineLocationId(SmlId){
-    if (this.data['state'].value === 'done') {return; }
     if (this.data['state'].value === 'done') {return; }
     const alert = await this.alertCtrl.create({
       header: 'Ubicación',
@@ -703,6 +801,7 @@ export class MoveFormPage implements OnInit {
   }
 
   ChangeLineLotId(MoveId= false, SmlId= false, OldLotName= false, NewLotId= false) {
+
     if (this.data['state'].value === 'done') {return; }
     this.audio.play('click');
     if (!MoveId){MoveId = this.data['id'];}
@@ -713,7 +812,7 @@ export class MoveFormPage implements OnInit {
           this.apply_move_data(data); }
       })
       .catch((error) => {
-        this.presentAlert('Error al actualizar el lote del movimeinto:', error);
+        this.presentAlert('Error al actualizar el lote del movimeinto:', error.msg.error_msg);
       });
 
     }
@@ -739,9 +838,14 @@ export class MoveFormPage implements OnInit {
       }
     }
   }
+
   ProcessSerialId() {
+    if (this.data['quantity_done'] >= this.data['product_uom_qty'] || this.LotNames.length >= this.data['product_uom_qty']) {
+      return this.QtyError();
+    }
     if (this.data['state'].value === 'done') {return; }
-    const LotsToAdd = this.scanner_reading.split(',');
+    let LotsToAdd = [];
+    LotsToAdd.push(this.scanner_reading);
     if (!this.ShowLots){
       if (LotsToAdd.length > 0){
         this.ActionApplyLotNames(LotsToAdd);
@@ -750,37 +854,76 @@ export class MoveFormPage implements OnInit {
     else {
       const LotsToCheck = [];
       for (const lot of LotsToAdd) {
-        if (this.LotNames.indexOf(lot) === -1) {
-          this.LotNames.push(lot);
-          this.ChangeLotNames = true; }
+        if (this.BarcodeLenght === 0) {this.BarcodeLenght = lot.length; }
+        if (lot.length === this.BarcodeLenght){
+          if (this.LotNames.indexOf(lot) === -1) {
+            this.LotNames.unshift(lot);
+            this.ChangeLotNames = true; }
+          else {
+            LotsToCheck.unshift(lot);
+            }
+        }
         else {
-          LotsToCheck.push(lot);
-          }
+          this.audio.play('error');
+          this.presentToast('El código ' + lot + ' no cumple la validación')
+        }
       }
       if (LotsToCheck.length > 0){
-        this.ActionApplyLotNames(LotsToCheck);
+        // this.ActionApplyLotNames(LotsToCheck);
       }
     }
   }
+  QtyError(){
+    this.cancelLoading(true);
+    return this.presentToast('No puedes realizar más cantidad de la reservada para el movimiento');
+  }
+  async presentToast(str) {
+    const toast = await this.toastController.create({
+      header: 'Aviso...',
+      message: str,
+      duration: 2000,
+    });
+    toast.present();
+  }
+
   SetWaitingQty(SmlId){
     this.ActiveLine = SmlId;
     this.WaitingQty = true;
   }
-  ActionApplyLotNames(LotNames) {
+  ActionApplyLotNames(LotNames = []) {
+    console.log('ActionApplyLotNames');
     if (this.data['state'].value === 'done') {return; }
-    const LotIds = LotNames || this.LotNames;
+    for (const lot of this.LotNames){
+      if (this.BarcodeLenght === 0) {
+        this.BarcodeLenght = lot.length;
+      }
+      if (lot.length === this.BarcodeLenght){
+        LotNames.push(lot);
+      }
+      else {
+        this.audio.play('error');
+        this.presentToast('El código ' + lot + ' no cumple la validación')
+      }
+    }
     // Saco la lista de lotes que no están los movimientos
     // Las lita de lotes siempre es la original más los que añado, por lo que tengo que quitar los de los movmientos
-    if (LotIds.length > 0) {
-      this.stock.CreateMoveLots(this.data['id'], LotIds, this.data['location_dest_id'].id).then((data) => {
+    if (LotNames.length > 0) {
+      this.presentLoading();
+      this.stock.CreateMoveLots(this.data['id'], LotNames, this.data['location_dest_id'].id).then((data) => {
         if (data) {
           this.reset_scanner() ;
           this.apply_move_data(data); }
+        else {
+          this.cancelLoading();
+        }
       })
       .catch((error) => {
-        this.presentAlert('Error al añadir los lotes el albarán:', error);
+        this.audio.play('error');
+        this.cancelLoading();
+        this.presentAlert('Error al añadir los lotes el albarán:', error.msg.error_msg);
       });
     }
+    
     return;
     /* PRUEBO enviando todo y actualizando
 
@@ -805,6 +948,7 @@ export class MoveFormPage implements OnInit {
   }
 
   SearchOtherMoveByScanner(){}
+
   reset_scanner() {
     this.WaitingQty = false;
     this.ActiveLine = {};
@@ -813,32 +957,39 @@ export class MoveFormPage implements OnInit {
     // this.scanner.reset_scan();
     // this.ScanReader.controls.scan.setValue =''
   }
-  process_reading() {
+  CheckScanner(val) {
+    if (val === ''){
+      this.reset_scanner();
+    }
     // Primero buscon en el formulario si coincide con algo y despues decido que hacer
     // Caso 1. EAN 13
     // Busco
+    console.log('ProcessReading: ' + val);
+    const execreg = /\d+/.exec(val);
+    if (execreg && val[0]  === '*' && val[val.length - 1] === '*'){
+      this.audio.play('click');
+      return this.CheckOrder(execreg[0]);
+    }
     this.audio.play('click');
     if (this.data['state'].value === 'done') {this.SearchOtherMoveByScanner(); }
 
-    else if (eval(this.data['barcode_re']).exec(this.scanner_reading) || /[\.]\d{3}[\.]/.exec(this.scanner_reading) ) {
+    else if (eval(this.data['barcode_re']).exec(val) || /[\.]\d{3}[\.]/.exec(val) ) {
       // Leo UBICACION
-      this.ProcessLocation(this.scanner_reading);
-      // if (this.data.default_location.value === 'location_id') {this.ProcessLocationId(this.scanner_reading); }
-      // else if (this.data.default_location.value === 'location_dest_id') {this.ProcessLocationDestId(this.scanner_reading);}
+      this.ProcessLocation(val);
+      // if (this.data.default_location.value === 'location_id') {this.ProcessLocationId(val); }
+      // else if (this.data.default_location.value === 'location_dest_id') {this.ProcessLocationDestId(val);}
     }
-
-
     else if (this.WaitingQty && this.ActiveLine && this.ActiveLine['id']){
-      if (typeof this.scanner_reading) {
-        this.ActiveLine['qty_done'] = this.scanner_reading;
+      if (typeof val) {
+        this.ActiveLine['qty_done'] = val;
         this.reset_scanner();
         return;
       }
-      this.presentAlert('Error en los datos.', 'El valor introducido ' + this.scanner_reading + 'no es válido');
+      this.presentAlert('Error en los datos.', 'El valor introducido ' + val + 'no es válido');
       return;
     }
     else if (this.data['tracking'].value === 'none' &&
-      (this.data['product_id']['wh_code'] === this.scanner_reading || this.data['product_id'].barcode === this.scanner_reading)) {
+      (this.data['product_id']['wh_code'] === val || this.data['product_id'].barcode === val)) {
       this.ProcessProductId();
     }
     else if (this.data['tracking'].value === 'serial') {
@@ -848,17 +999,17 @@ export class MoveFormPage implements OnInit {
       this.ProcessLotId();
     }
     else {
-      this.presentAlert('Aviso', 'No se ha encontrado nada para ' + this.scanner_reading);
+      this.presentAlert('Aviso', 'No se ha encontrado nada para ' + val);
     }
     this.reset_scanner() ;
     /*
-    if (this.data['tracking'] == 'none' && Number(this.scanner_reading)) {
-      this.data['quantity_done'] = Number(this.scanner_reading);
+    if (this.data['tracking'] == 'none' && Number(val)) {
+      this.data['quantity_done'] = Number(val);
     } else if (this.data['tracking'] != 'none') {
       if(!this.new_lots){
         this.new_lots = new Array();
       }
-      this.new_lots.push([this.scanner_reading, 1]); /* Editar más adelante, serial cantidad = 1, lot cantidad = a introducir */
+      this.new_lots.push([val, 1]); /* Editar más adelante, serial cantidad = 1, lot cantidad = a introducir */
       /* Provisional, cuando estén preparada la función para gestionar cantidades en lot_ids editar */
       /* if (this.data['tracking'] == 'serial') {
       if (this.data['tracking'] == 'serial' || this.data['tracking'] == 'lot') {
@@ -868,5 +1019,97 @@ export class MoveFormPage implements OnInit {
   }
   NavigateStockPicking(PickingId){
     this.router.navigateByUrl('/stock-picking/' + PickingId);
+  }
+  CheckOrder(order){
+    // ActionAssign();
+    // DoUnreserve();
+    // GetFilteredMoves();
+    // ResetQties(this.data['id']);
+    const MoveId = this.data['id'];
+    let res = false;
+    if (order === '39'){
+      this.GetRelativeMoveInfo(MoveId, 1);
+      res = true;
+    }
+    if (order === '37'){
+      this.GetRelativeMoveInfo(MoveId, -1);
+      res = true;
+    }
+    if (order === '38'){
+      if (this.data['tracking'].value !== 'serial' && this.data['move_line_ids'].length === 1){
+        const sml = this.data['move_line_ids'][0];
+        if (sml.qty_done < sml.product_uom_qty){
+          this.ChangeQty(sml, +1);
+        }
+      }
+      res = true;
+    }
+    if (order === '40'){
+      if (this.data['tracking'].value !== 'serial' && this.data['move_line_ids'].length === 1){
+        const sml = this.data['move_line_ids'][0];
+        if (sml.qty_done > 0){
+          this.ChangeQty(sml, -1);
+        }
+      }
+      res = true;
+    }
+
+    if (order === '112'){
+      // F1
+      let str = '<p>Atajos de teclado</p>';
+      str += 'Cursor Dcha: Siguiente</br>';
+      str += 'Cursor Izqda: Anterior</br>';
+      str += 'Cursor Arriba: +1 Qty</br>';
+      str += 'Cursor Abajo: -1 Qty</br>';
+      str += 'F1: Esta pantalla</br>';
+      str += 'F2: Reservar</br>';
+      str += 'F3: Anular reserva</br>';
+      str += 'F4: Poner a 0</br>';
+      str += 'F5: Validar</br>';
+      str += 'F8: Aplicar lotes</br>';
+      str += 'F9: Borrar lotes</br>';
+      str += 'TAB: Alternar filtro</br>';
+      this.presentAlert('TECLAS', str);
+      res = true;
+    }
+    if (order === '113'){
+      // F2
+      this.ActionAssign(MoveId);
+      res = true;
+    }
+    if (order === '114'){
+      // F3
+      this.ActionUnReserve(MoveId);
+      res = true;
+    }
+    if (order === '115'){
+      // F4
+      // this.ResetQties();
+      res = true;
+    }
+    if (order === '116'){
+      // F5
+      // this.ButtonValidate();
+      // return true;
+      res = true;
+    }
+    if (order === '119'){
+      // F8
+      this.ActionApplyLotNames();
+      res = true;
+    }
+    if (order === '120'){
+      // F9
+      this.CleanLots(MoveId);
+      res = true;
+    }
+    if (order === '9'){
+      // F5
+      this.AlternateShowLots();
+      res = true;
+    }
+    this.audio.play('error');
+    this.reset_scanner();
+    return res;
   }
 }

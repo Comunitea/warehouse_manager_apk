@@ -1,10 +1,8 @@
-import { Injectable, ɵSWITCH_COMPILE_DIRECTIVE__POST_R3__ } from '@angular/core';
+import { Injectable, ɵSWITCH_COMPILE_DIRECTIVE__POST_R3__, ViewChild } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { Storage } from '@ionic/storage';
 import { OdooService } from './odoo.service';
 import { format } from 'url';
-import { CLIENT_RENEG_LIMIT } from 'tls';
-
 
 @Injectable({
   providedIn: 'root'
@@ -76,6 +74,9 @@ export class StockService {
 
   status: Array<{'model': BigInteger, 'ids': Array<BigInteger>, 'domain': []; filter: 'filter', limit: BigInteger, offset: BigInteger}>;
   ModelInfo: {};
+  TreeLimit: number;
+  FilterMovesValues: {};
+  FilterMoves: string;
 
   constructor(
     public odooCon: OdooService,
@@ -84,9 +85,13 @@ export class StockService {
   ) {
     this.Domains = {};
     this.SetDomainsStates();
-    
   }
-
+  SetFilterMoves(filter){
+    this.FilterMoves = filter;
+  }
+  GetFilterMoves(){
+    return this.FilterMoves || 'Todos';
+  }
   GetModelInfo(model, key){
     if ((Object.keys(this.ModelInfo).indexOf(model) !== -1) && (Object.keys(this.ModelInfo[model]).indexOf(key) !== -1))  {
       return this.ModelInfo[model][key];
@@ -112,6 +117,10 @@ export class StockService {
   }
   InitVars(){
     this.ModelInfo = {};
+    this.TreeLimit = 15;
+    this.FilterMovesValues = [{all: {name: 'Todos', domain: []}},
+                              {done: {name: 'Hechos', domain: [['quantity_done', '>', '0']]}},
+                              {not_done: {name: '0', domain: [['quantity_done', '=', '0']]}}];
     for (const model of ['stock.picking.type', 'stock.location', 'stock.move', 'stock.picking', 'stock.batch.picking']){
       this.SetModelInfo(model, 'name', model);
     }
@@ -134,7 +143,6 @@ export class StockService {
     }
     return status_field;
   }
-  
    // PickinDomain
    GetDomains(key) {
     return this.Domains[key];
@@ -242,7 +250,7 @@ export class StockService {
         resolve(done);
       })
       .catch((err) => {
-        reject(false);
+        reject(err);
         console.log('Error al asignar ubicación a los movimientos pendientes: ' + err.msg.error_msg);
     });
     });
@@ -507,9 +515,9 @@ export class StockService {
 
 
 
-  GetPickingInfo(PickId, index= 0) {
+  GetPickingInfo(PickId, index= 0, FilterMoves) {
     const self = this;
-    const values = {id: PickId, index, model: 'stock.picking.batch', view: 'form'};
+    const values = {id: PickId, index, model: 'stock.picking.batch', view: 'form', filter_moves: FilterMoves};
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('info.apk', 'get_apk_object', values).then((data) => {
           resolve(data);
@@ -521,7 +529,19 @@ export class StockService {
     return promise;
   }
 
-  GetMoveInfo(MoveId, index= 0, limit= 25, offset = 0) {
+  GetRelativeMoveInfo(values){
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.move', 'get_relative_move_info', values).then((data) => {
+          resolve(data);
+      })
+      .catch((err) => {
+        reject(err);
+    });
+    });
+    return promise;
+  }
+  GetMoveInfo(MoveId, index= 0, limit= this.TreeLimit, offset = 0) {
     const self = this;
     const values = {id: MoveId, index, model: 'stock.move', view: 'form', sml_limit: limit, sml_offset: offset};
     const promise = new Promise( (resolve, reject) => {
@@ -623,7 +643,6 @@ export class StockService {
     return promise;
   }
 
-
   UpdateSmlIdField(MoveId, SmlId, DictValues){
       const self = this;
       const values = {
@@ -640,7 +659,6 @@ export class StockService {
           console.log('Error al validar');
       });
       });
-  
       return promise;
   }
 
@@ -1097,9 +1115,10 @@ export class StockService {
     return promise;
 
   }
-  GetLocationInfo(LocationId, inventory = false, filter={}) {
+  GetLocationInfo(LocationId, inventory = false, filter={}, ShowStock=false) {
     const self = this;
     const values = {
+      show_stock: ShowStock,
       id: LocationId,
       stock_inventory: inventory,
       filter_inventory: filter,
@@ -1251,7 +1270,7 @@ export class StockService {
     return promise;
   }
 
-  UpdateMoveQty(MoveId, LotId, LocationId, QtyDone, IncQty) {
+  UpdateMoveQty(MoveId, LotId, LocationId, QtyDone, IncQty, FilterMoves = 'Todos') {
     const self = this;
     const Model = 'stock.move';
     const values = {
@@ -1259,7 +1278,8 @@ export class StockService {
       location_id: LocationId,
       quantity_done: QtyDone,
       lot_id: LotId,
-      inc: IncQty
+      inc: IncQty,
+      filter_moves: FilterMoves
     };
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(Model, 'set_qty_done_from_apk', values).then((done) => {

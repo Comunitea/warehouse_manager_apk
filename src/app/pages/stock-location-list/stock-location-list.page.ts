@@ -93,7 +93,7 @@ export class StockLocationListPage implements OnInit {
       }
     ]
     this.offset = 0;
-    this.limit = 25;
+    this.limit = this.stock.TreeLimit;
     this.limit_reached = false;
   }
 
@@ -111,9 +111,10 @@ export class StockLocationListPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
-    this.scanner_reading = val;
-    this.search = val;
-    this.get_location_list(this.current_selected_type, this.search);
+    const scan = val[val.length - 1];
+    this.scanner_reading = scan;
+    this.search = scan;
+    this.get_location_list(this.current_selected_type, scan);
   }
 
   async presentAlert(titulo, texto) {
@@ -133,7 +134,7 @@ export class StockLocationListPage implements OnInit {
     this.current_selected_type = location_state;
     this.stock.get_location_list(location_state, this.offset, this.limit, search).then((location_list)=> {
       this.locations = location_list;
-      if(Object.keys(location_list).length < 25){
+      if(Object.keys(location_list).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       if (Object.keys(this.locations).length == 1){
@@ -173,7 +174,7 @@ export class StockLocationListPage implements OnInit {
     this.offset += this.limit;
     this.stock.get_location_list(this.current_selected_type, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
       let current_length = Object.keys(this.locations).length;
-      if(Object.keys(data).length < 25){
+      if(Object.keys(data).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       for(var k in data) this.locations[current_length+Number(k)]=data[k];

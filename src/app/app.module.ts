@@ -14,9 +14,6 @@ import { TextToSpeech } from '@ionic-native/text-to-speech/ngx';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
-
-
-
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],

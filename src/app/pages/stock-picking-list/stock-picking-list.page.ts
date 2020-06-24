@@ -41,7 +41,6 @@ export class StockPickingListPage implements OnInit {
     public alertCtrl: AlertController,
     private audio: AudioService,
     private stock: StockService,
-    
   ) {
     // this.offset = 0;
     // this.limit = 5;
@@ -50,7 +49,7 @@ export class StockPickingListPage implements OnInit {
 
   ionViewDidEnter(){
     this.offset = 0;
-    this.limit = this.MaxNumber = 25;
+    this.limit = this.MaxNumber = this.stock.TreeLimit;
     this.limit_reached = false;
     this.GetPickingList(null, this.offset, this.limit);
   }
@@ -106,6 +105,10 @@ export class StockPickingListPage implements OnInit {
     this.GetPickingList(this.search, this.offset, this.limit);
 
   }
+  OpenModal(Model, Id) {
+    this.router.navigateByUrl('/info-sale-order/' + Model + '/' + Id);
+    // return this.presentModal({Model: ModelO, Id: IdO});
+  }
 
   GetPickingList(search= null, offset, limit){
     this.limit_reached = false;
@@ -131,7 +134,7 @@ export class StockPickingListPage implements OnInit {
       //  this.not_allowed_fields = this.pickings[0]['picking_fields'].split(',');
       //  console.log(this.not_allowed_fields);
       // }
-      if (Object.keys(picking_list).length < 25){
+      if (Object.keys(picking_list).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       if (Object.keys(this.pickings).length == 1){

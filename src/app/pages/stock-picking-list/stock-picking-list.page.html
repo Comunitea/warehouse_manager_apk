@@ -34,22 +34,29 @@
       </ion-row>
       <!--app-picking-list *ngIf="pickings" [code]="current_code" [filter]="filter" [picks]="pickings"></app-picking-list-->
 
-      <ion-row *ngFor="let pick of pickings; let even = even; let odd =  odd" (click)="OpenLink(pick.id)" [ngClass]="{'row-odd': odd, 'row-even': even}" style="min-height: 30px">
+      <ion-row *ngFor="let pick of pickings; let even = even; let odd =  odd" [ngClass]="{'row-odd': odd, 'row-even': even}" style="min-height: 30px">
         <ion-col class="ion-align-self-center">
-          <span class="product-link ">{{pick.apk_name}}</span>
+          <span class="product-link" (click)="OpenLink(pick.id)" >{{pick.apk_name}}</span>
+        </ion-col>
+         <ion-col class="ion-align-self-center" >
+            <div *ngIf="pick.sale_id">
+              <span class="product-link" (click) = "OpenModal('sale.order', pick.sale_id.id)"><strong>{{pick.sale_id.name}}</strong></span>
+            </div>
+            <div *ngIf="pick.purchase_id">
+              <span class="product-link" (click) = "OpenModal('purchase.order', pick.purchase_id.id)"><strong>{{pick.purchase_id.name}}</strong></span>
+            </div>
         </ion-col>
         <ion-col class="ion-align-self-center ion-text-center" size="1">
             <span>{{pick.move_line_count}}</span>
         </ion-col>
-        <ion-col class="ion-align-self-center ion-text-left" *ngIf="pick.default_location.value === 'location_id'">
+        <!--ion-col class="ion-align-self-center ion-text-left" *ngIf="pick.default_location.value === 'location_id'">
           <div>{{pick.location_id.name}}</div>
         </ion-col>
         <ion-col class="ion-align-self-center  ion-text-left" *ngIf="pick.default_location.value === 'location_dest_id'">
           <div>{{pick.location_dest_id.name}}</div>
-        </ion-col>
+        </ion-col-->
          
-        <ion-col size="3
-        " class="ion-align-self-center ion-text-center">
+        <ion-col size="3" class="ion-align-self-center ion-text-center">
         {{pick.scheduled_date}}
         <!--/ion-col>
         <ion-col  class="ion-align-self-center"-->

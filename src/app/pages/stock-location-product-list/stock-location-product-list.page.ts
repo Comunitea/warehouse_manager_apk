@@ -36,7 +36,7 @@ export class StockLocationProductListPage implements OnInit {
     private storage: Storage
   ) {
     this.offset = 0;
-    this.limit = 25;
+    this.limit = this.stock.TreeLimit;
     this.limit_reached = false;
   }
 
@@ -75,7 +75,7 @@ export class StockLocationProductListPage implements OnInit {
     this.limit_reached = false;
     this.stock.get_location_products(this.location, this.offset, this.limit, search).then((products_lists:Array<{}>)=> {
       this.products = products_lists;
-      if(Object.keys(products_lists).length < 25){
+      if(Object.keys(products_lists).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       if (Object.keys(this.products).length == 1){
@@ -113,7 +113,7 @@ export class StockLocationProductListPage implements OnInit {
     this.offset += this.limit;
     this.stock.get_location_products(this.location, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
       let current_length = Object.keys(this.products).length;
-      if(Object.keys(data).length < 25){
+      if(Object.keys(data).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       for(var k in data) this.products[current_length+Number(k)]=data[k];

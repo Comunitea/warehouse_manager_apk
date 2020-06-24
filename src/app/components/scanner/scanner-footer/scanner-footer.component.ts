@@ -18,7 +18,7 @@ export class ScannerFooterComponent implements OnInit {
   });
 
   @Input() scanner_reading: string
-  @Output() scanner_reading_changed = new EventEmitter<string>();
+  @Output() scanner_reading_changed = new EventEmitter<any>();
 
   constructor(
     private scanner: ScannerService,
@@ -47,8 +47,9 @@ export class ScannerFooterComponent implements OnInit {
   submitScan(){
     if (this.ScanReader) {
       this.audio.play('barcode_ok');
-      let scanner_reading = this.ScanReader.value['scan'];
+      const scanner_reading = [this.ScanReader.value['scan']];
       this.ScanReader.value['scan'] = '';
+
       this.scanner_reading_changed.emit(scanner_reading);
 
     }

@@ -27,7 +27,8 @@ export class StockLocationPage implements OnInit {
   ActiveLine: number;
   ActiveLocationEl: any;
   loading: any;
-
+  Queue: Array<string>;
+  timeout: any;
   LastReading: string;
   Filter = {location_id: false, product_id: false};
 
@@ -37,9 +38,10 @@ export class StockLocationPage implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if (this.stock.GetModelInfo('App', 'ActivePage') === 'StockLocationPage') {
-    this.scanner.key_press(event);
-    this.scanner.timeout.then((val) => {
+    if (this.stock.GetModelInfo('App', 'ActivePage') === 'StockLocationPage' && event.which !== 0) {
+      console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
+      this.scanner.key_press(event);
+      this.scanner.timeout.then((val) => {
       this.onReadingEmitted(val);
     });
     }
@@ -63,6 +65,7 @@ export class StockLocationPage implements OnInit {
       if (data === false) {
         this.router.navigateByUrl('/login');
       } else {
+        this.Queue = [];
         this.ShowStock = true;
         this.ShowInfo = false;
         this.ShowInventory = false;
@@ -176,7 +179,7 @@ export class StockLocationPage implements OnInit {
     this.ActiveProduct = Product['id'];
   }
   OnClickLot(LocationIndex, ProductIndex, LineIndex){
-    return; 
+    return;
     const Line = this.location_data['inventory_location_ids'][LocationIndex]['product_ids'][ProductIndex]['line_ids'][LineIndex];
     if (this.ActiveLine !== LineIndex) {
       this.ActiveLine = LineIndex;
@@ -196,24 +199,24 @@ export class StockLocationPage implements OnInit {
     this.RefreshView();
   }
   ChangeLineQty(values){
-    this.presentLoading();
+    //this.presentLoading();
     let self = this;
     this.stock.ChangeInventoryLineQty(values).then((data) => {
       self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
       self.ActiveLocation =  data['ActiveLocation'];
       self.ActiveProduct = data['ActiveProduct'];
       self.ActiveLine = 0;
-      self.loading.dismiss();
+      //self.loading.dismiss();
     })
     .catch((error) => {
       this.presentAlert(error.title, error.msg.error_msg);
-      this.loading.dismiss();
+      //this.loading.dismiss();
     });
   }
 
   GetLocationInfo(location, StockInventory = false, Filter= {}) {
     this.presentLoading();
-    this.stock.GetLocationInfo(location, StockInventory = !this.ShowStock, Filter).then((data) => {
+    this.stock.GetLocationInfo(location, StockInventory = !this.ShowStock, Filter, true).then((data) => {
       this.ApplyData(data[0]);
     })
     .catch((error) => {
@@ -377,16 +380,45 @@ export class StockLocationPage implements OnInit {
     return false;
   }
 
-  CheckScanner(val) {
+
+  CheckScanner(val){
+    for (const scan of val){
+      this.CheckScanner_TimeOut(scan);
+    }
+    return;
+    if (val.length < 2){
+      this.reset_scanner();
+      return;
+    }
+    console.log('Me llega a check scanner ' + val);
+    const time = (this.Queue.length + 1) * 150;
+    this.Queue.push(val);
+    this.timeout = new Promise ((resolve) => {
+      setTimeout(() => {
+        if (this.Queue){
+          const scan = this.Queue[0];
+          this.Queue.splice(0, 1);
+          resolve(this.CheckScanner_TimeOut(scan));
+        }
+       }, time); });
+    return this.timeout;
+    // este 500 es el tiempo que suma pulsaciones
+  }
+
+
+  CheckScanner_TimeOut(val) {
     if (val === ''){
       this.reset_scanner();
+      return;
     }
     // ESCANEO DE ALBARAN. SUPONGO SIEMPRE QUE NO HAY UBICACIONES REQUERIDAS
     // CASO 1: EAN O DEFAULT CODE: SUMO UNA CANTIDAD
     // CASO 2: NUMERO DE SERIE: ESCRIBO SERIE Y CANTIDAD 1 EN LA LINEA
     // compruebo si hay un lote y ven algún movimiento
     // al ser asycrono tengo que hacer las busquedas anidadas
-    else if (eval(this.location_data['barcode_re']).exec(val) ) {
+    this.audio.play('click');
+    if (eval(this.location_data['barcode_re']).exec(val) ) {
+
       // Leo UBICACION. Busco el primer movieminto interno que tenga esa ubicación en el codigo de barras.
       this.CheckOpenLocation(val);
     }
@@ -399,6 +431,7 @@ export class StockLocationPage implements OnInit {
     else {
       this.CheckSerial(val);
     }
+    
     this.reset_scanner();
     return;
   }
@@ -423,7 +456,12 @@ export class StockLocationPage implements OnInit {
     }
   }
   onReadingEmitted(val: string) {
-    this.ScannerReading = val;
-    return this.CheckScanner(val);
+
+    for (const scan of val){
+      this.ScannerReading = scan;
+      this.audio.play('click');
+      this.CheckScanner_TimeOut(scan);
+    }
+    return;
   }
 }

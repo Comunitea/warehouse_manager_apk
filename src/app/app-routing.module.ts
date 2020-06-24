@@ -59,7 +59,7 @@ const routes: Routes = [
   { path: 'move-form/:id',
     loadChildren: () => import ('./pages/move-form/move-form.module').then(m => m.MoveFormPageModule)
   },
-  { path: 'info-sale-order/:id',
+  { path: 'info-sale-order/:object/:id',
   loadChildren: () => import ('./pages/info-sale-order/info-sale-order.module').then(m => m.InfoSaleOrderPageModule)
   },
 ];

@@ -30,7 +30,7 @@ export class ProductListPage implements OnInit {
     private stock: StockService
   ) {
     this.offset = 0;
-    this.limit = 25;
+    this.limit = this.stock.TreeLimit;
     this.limit_reached = false;
   }
 
@@ -58,17 +58,19 @@ export class ProductListPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
-    this.scanner_reading = val;
-    this.search = val;
-    this.get_product_list(this.search);
+    // Cojo el ultimo valor del array
+    const scan = val[val.length - 1];
+    this.scanner_reading = scan;
+    this.search = scan;
+    this.get_product_list(scan);
   }
-  
+
   get_product_list(search=null){
     this.offset = 0;
     this.limit_reached = false;
     this.stock.get_product_list(this.offset, this.limit, search).then((data:Array<{}>)=> {
       this.product_list = data;
-      if(Object.keys(data).length < 25){
+      if(Object.keys(data).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       if (Object.keys(this.product_list).length == 1){
@@ -106,7 +108,7 @@ export class ProductListPage implements OnInit {
     this.offset += this.limit;
     this.stock.get_product_list(this.offset, this.limit, this.search).then((data:Array<{}>)=> {
       let current_length = Object.keys(this.product_list).length;
-      if(Object.keys(data).length < 25){
+      if(Object.keys(data).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       for(var k in data) this.product_list[current_length+Number(k)]=data[k];

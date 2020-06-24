@@ -50,6 +50,7 @@ export class StockPickingTypeListPage implements OnInit {
 
   ngOnInit() {
     this.stock.GetStates('stock.picking.batch', 'state');
+    this.stock.SetFilterMoves('Pendientes');
     const self = this;
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {

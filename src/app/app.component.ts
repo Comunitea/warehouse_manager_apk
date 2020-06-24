@@ -25,26 +25,26 @@ export class AppComponent {
       title: 'Inventario',
       url: '/stock-picking-type-list',
       icon: 'book'
-    },  
+    },
     {
       title: 'Productos',
       url: '/product-list',
       icon: 'shirt'
-    },    
+    },
     {
       title: 'Ubicaciones',
       url: '/stock-location-list',
       icon: 'home'
     },
     {
-      title: 'Nuevo Movimiento',
-      url: '/stock-move-location',
-      icon: 'cart'
-    },
-    {
       title: 'Salir',
       url: '/logout',
       icon: 'log-out'
+    },
+    {
+      title: '01.02.00',
+      url: '',
+      icon: 'bug-outline'
     }
   ];
 

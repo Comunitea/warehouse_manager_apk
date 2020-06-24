@@ -31,7 +31,7 @@ export class StockQuantListPage implements OnInit {
     private stock: StockService
   ) {
     this.offset = 0;
-    this.limit = 25;
+    this.limit = this.stock.TreeLimit;
     this.limit_reached = false;
   }
 
@@ -50,9 +50,10 @@ export class StockQuantListPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
-    this.scanner_reading = val;
-    this.search = val;
-    this.get_location_quants(this.search);
+    const scan = val[val.length - 1];
+    this.scanner_reading = scan;
+    this.search = scan;
+    this.get_location_quants(scan);
   }
 
   async presentAlert(titulo, texto) {
@@ -70,7 +71,7 @@ export class StockQuantListPage implements OnInit {
     this.limit_reached = false;
     this.stock.get_location_quants(this.location, this.offset, this.limit, search).then((quants_list:Array<{}>)=> {
       this.quants = quants_list;
-      if(Object.keys(quants_list).length < 25){
+      if(Object.keys(quants_list).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       if (Object.keys(this.quants).length == 1){
@@ -108,7 +109,7 @@ export class StockQuantListPage implements OnInit {
     this.offset += this.limit;
     this.stock.get_location_quants(this.location, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
       let current_length = Object.keys(this.quants).length;
-      if(Object.keys(data).length < 25){
+      if(Object.keys(data).length < this.stock.TreeLimit){
         this.limit_reached = true;
       }
       for(var k in data) this.quants[current_length+Number(k)]=data[k];

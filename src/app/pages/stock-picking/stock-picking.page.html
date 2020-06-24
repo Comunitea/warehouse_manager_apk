@@ -70,7 +70,14 @@
           <ion-col size=3><span><strong>Peso</strong></span></ion-col>
         </ion-row>
         <ion-row>
-          <ion-col size=3><span *ngIf="data.sale_id" class="product-link" (click) = "OpenModal('sale.order', data.sale_id.id)"><strong>{{data.sale_id.name}}</strong></span></ion-col>
+          <ion-col size=3>
+            <div *ngFor="let sale_id of data['sale_ids']">
+              <span class="product-link" (click) = "OpenModal('sale.order', sale_id.id)"><strong>{{sale_id.name}}</strong></span>
+            </div>
+            <div *ngFor="let purchase_id of data['purchase_ids']">
+              <span class="product-link" (click) = "OpenModal('purchase.order', purchase_id.id)"><strong>{{purchase_id.name}}</strong></span>
+            </div>
+          </ion-col>
           <ion-col size=3><span *ngIf="data['scheduled_date']">{{data.scheduled_date}}</span></ion-col>
           <ion-col size=3><ion-input [ngModel]="data.carrier_packages" class="padd0 product-link" type="number" 
           (change) = "ChangePickingValue('carrier_packages', $event.target.value)"></ion-input></ion-col>
@@ -88,13 +95,13 @@
   </ion-card>
   
     <ion-card *ngIf="data['move_lines']">
-      <ion-card-header>
-        <!--ion-row>
+      <!--ion-card-header>
+        <ion-row>
           <ion-col>
             <ion-card-title>Movimientos: <span>{{ data['move_line_count']}}</span> </ion-card-title>
           </ion-col>
-        </ion-row-->
-      </ion-card-header>
+        </ion-row>
+      </ion-card-header-->
       <!--ion-card-content *ngIf="data['move_lines']">
         <app-move-line-list 
           [scanner_reading]="scanner_reading" 
@@ -106,7 +113,7 @@
       <ion-card-content>
         <ion-grid>
           <div *ngFor="let line of data['move_lines']; let index = index; let even = even; let odd = odd" [ngClass]="{'row-odd': odd, 'row-even': even}">
-            <ion-row style="align-items: center">
+            <ion-row style="align-items: center" *ngIf="FilterMoves.indexOf(line.apk_filter_by_qty)== -1">
               <ion-col size=9>
                 <ion-row  style="padding: 0px">
                 <!-- [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">-->
@@ -171,7 +178,7 @@
               </ion-col>
             </ion-row>
           </div>
-      </ion-grid>
+        </ion-grid>
       </ion-card-content>
     </ion-card>
 </ion-content>

@@ -15,10 +15,28 @@ import { StockService } from '../../services/stock.service';
 })
 export class LoginPage implements OnInit {
 
-  CONEXION: ConnectionOptions = { username: '', password: '', url: 'http://localhost', port: 8069, db: '', uid: 0, context: {}, user: {}, logged_in: false};
-  CONEXION_local: ConnectionOptions = { username: '', password: '', url: '', port: null, db: '', uid: 0, context: {}, user: {}, logged_in: false};
+  CONEXION: ConnectionOptions = {username: '',
+                                 password: '',
+                                 url: 'http://localhost',
+                                 port: 8069,
+                                 db: '',
+                                 uid: 0,
+                                 context: {},
+                                 user: {},
+                                 logged_in: false};
+  CONEXION_local: ConnectionOptions = { username: '',
+                                        password: '',
+                                        url: '',
+                                        port: null,
+                                        db: '',
+                                        uid: 0,
+                                        context: {},
+                                        user: {},
+                                        logged_in: false};
   cargar: boolean;
   submitted: boolean;
+  version: string;
+  login_server: boolean;
 
   constructor(
     private audio: AudioService,
@@ -31,9 +49,9 @@ export class LoginPage implements OnInit {
 
   ) {
     if (this.route.snapshot.paramMap.get('login')){
-      this.CONEXION.username = this.route.snapshot.paramMap.get('login')
-    };
-    this.check_storage_conexion(this.route.snapshot.paramMap.get('borrar'))
+      this.CONEXION.username = this.route.snapshot.paramMap.get('login');
+    }
+    this.check_storage_conexion(this.route.snapshot.paramMap.get('borrar'));
     if (this.route.snapshot.paramMap.get('borrar')){
         this.cargar = false;
     }
@@ -46,7 +64,7 @@ export class LoginPage implements OnInit {
 
   check_storage_conexion(borrar) {
     // Fijamos siempre a false el parámetro borrar para no tener que teclear usuario y contraseña siempre
-    borrar = false
+    borrar = false;
     if (borrar){
         this.CONEXION = this.CONEXION_local;
     }	
@@ -73,32 +91,33 @@ export class LoginPage implements OnInit {
     }
     else {
         this.storage.get('CONEXION').then((val) => {
-            var con;
-            if (val == null) {//no existe datos         
-                this.cargar = false;
-                con = this.CONEXION;
-                if (con.username.length < 3 || con.password.length < 3) {
-                    if (verificar) {
-                        this.presentAlert('Alerta!', 'Por favor ingrese usuario y contraseña');
-                    }
-                    return;
-                }
+          var con;
+          if (val == null) {
+            // no existe datos
+            this.cargar = false;
+            con = this.CONEXION;
+            if (con.username.length < 3 || con.password.length < 3) {
+              if (verificar) {
+                this.presentAlert('Alerta!', 'Por favor ingrese usuario y contraseña');
+              }
+              return;
             }
+          }
           else {
-                //si los trae directamente ya fueron verificados
+                // si los trae directamente ya fueron verificados
                 con = val;
                 if (con.username.length < 3 || con.password.length < 3) {
                     this.cargar = false;
-                    return
+                    return;
                 }
           }
           if (con){
             this.storage.set('CONEXION', con).then(() => {
-                  this.log_in();
-                  this.cargar=false
-                })
+              this.log_in();
+              this.cargar = false;
+              });
             }
-        })
+        });
     }
   }
   NavigateNext(){
@@ -107,15 +126,16 @@ export class LoginPage implements OnInit {
   log_in() {
     this.odoo.login(this.CONEXION.username, this.CONEXION.password).then((data)=> {
       this.NavigateNext();
-    }).catch((error)=>{
+    }).catch((error) => {
       this.presentAlert('Error al hacer login:', error);
     });
   }
 
 
   ngOnInit() {
+
     this.odoo.isLoggedIn().then((data)=>{
-      if (data==true) {
+      if (data == true) {
         this.NavigateNext();
       }
     })

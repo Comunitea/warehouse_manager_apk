@@ -1,4 +1,4 @@
-<ion-grid>
+<ion-grid *ngIf="picks">
 
   <!--ion-row *ngIf="picks">
     <ion-col>
@@ -20,17 +20,17 @@
       <div><strong>Estado</strong></div>
     </ion-col>
   </ion-row-->
-  <ion-row *ngIf="picks" *ngFor="let pick of picks; let even = even; let odd =  odd" (click)="open_link(pick.id, filter)" [ngClass]="{'row-odd': odd, 'row-even': even}">
+  <ion-row  *ngFor="let pick of picks; let even = even; let odd = odd" (click)="open_link(pick.id, filter)" [ngClass]="{'row-odd': odd, 'row-even': even}">
     <ion-col>
       <div>{{pick.apk_name}}</div>
     </ion-col>
     <ion-col>
         <div>{{pick.move_line_count}}</div>
     </ion-col>
-    <ion-col *ngIf="pick.default_location === 'location_id']">
+    <ion-col *ngIf="pick.default_location === 'location_id'">
       <div>{{pick.location_id.name}}</div>
     </ion-col>
-     <ion-col *ngIf="pick.default_location === 'location_dest_id']">
+     <ion-col *ngIf="pick.default_location === 'location_dest_id'">
       <div>{{pick.location_dest_id.name}}</div>
     </ion-col>
      

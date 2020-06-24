@@ -8,8 +8,8 @@
       <div><strong>Stock</strong></div>
     </ion-col>
   </ion-row>
-  <div *ngIf="quants" *ngFor="let quant of quants">
-    <ion-row>
+  <div *ngIf="quants">
+    <ion-row *ngFor="let quant of quants">
         <ion-col size="10" style='font-size: small'>
           <div class="product_link" (click)="open_link(quant.product_id.id)">{{quant.product_id.name}}</div>
         </ion-col>

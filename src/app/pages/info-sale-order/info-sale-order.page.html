@@ -27,7 +27,7 @@
         <p>{{SaleOrder['amount_untaxed']}} €</p>
       </ion-label>
   </ion-item>
-  <ion-item>
+  <ion-item *ngIf="SaleOrder['carrier_id']">
       <ion-label>
         <h2>Transportista</h2>
         <p>{{SaleOrder['carrier_id']['name']}} €</p>

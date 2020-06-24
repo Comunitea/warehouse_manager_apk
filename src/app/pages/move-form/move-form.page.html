@@ -11,12 +11,12 @@
           
   </ion-toolbar>
 </ion-header>
-<ion-content *ngIf="data" [scrollEvents]="true" (ionScroll)="onScroll($event)">
+<ion-content *ngIf="data">
   <ion-card >
 
     <ion-card-header>
     <ion-row>
-        <ion-col class="link" (click)="GetMoveInfo(data.id, -1)">Anterior
+        <ion-col class="link" (click)="GetRelativeMoveInfo(data.id, -1)">Anterior
         </ion-col>
         
         <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="ButtonValidate(data.picking_id.id)">Validar
@@ -24,7 +24,7 @@
         <ion-col class="ion-text-center">
           <span *ngIf="data && data.active_location_id">{{data.active_location_id.name}}</span>
         </ion-col>
-        <ion-col class="link ion-text-right" (click)="GetMoveInfo(data.id, +1)">Siguiente
+        <ion-col class="link ion-text-right" (click)="GetRelativeMoveInfo(data.id, +1)">Siguiente
         </ion-col>
       </ion-row>
 
@@ -163,8 +163,8 @@
         <!--*ngIf="data.state.value != 'done' && LotNames.length == 0"-->
         <ion-card-title class="ion-text-center">
           Esperando Serial/Lote: {{LotNames.length}}
-          <ion-button (click)="ActionApplyLotNames()" *ngIf="ChangeLotNames && LotNames.length > 0">
-            <ion-icon class="primary" name="checkmark-done-circle-outline" ></ion-icon>{{LotNames.length}}</ion-button>
+          <!--ion-button (click)="ActionApplyLotNames()" *ngIf="ChangeLotNames && LotNames.length > 0">
+            <ion-icon class="primary" name="checkmark-done-circle-outline" ></ion-icon>{{LotNames.length}}</ion-button-->
           </ion-card-title>
       </ion-card-header>
       <ion-card-content>
@@ -197,18 +197,16 @@
   <div *ngIf="data && ShowMoves">
   <ion-infinite-scroll *ngIf="NeedScroll" threshold="5px" position="top"  (ionInfinite)="EventLoadMoveLines($event, -1)" >
 
-      <ion-infinite-scroll-content style="min-height: 15px"
+      <ion-infinite-scroll-content style="min-height: 15px; text-align: right"
       
         loadingSpinner="bubbles"
         loadingText="Cargando más líneas...">
-        {{SmlIndex}} / {{offset}} de {{data.move_line_ids.length}}
+        <span class="product-link">{{SmlIndex}} / {{offset}} de {{data.move_lines_count}}</span>
       </ion-infinite-scroll-content>
     </ion-infinite-scroll>
          
     <ion-card *ngFor="let sml of data.move_line_ids">
-      <ion-card-header>
         <!--ion-card-title class="ion-text-center">{{sml.field_status_apk}} // {{data.tracking.value}} // {{sml.state.value}} // {{AdvanceOptions}}</ion-card-title-->
-      </ion-card-header>
       <ion-card-content class="sml_not_done">
         <ion-row [ngClass]="{'success': sml.state.value=='done'}"> 
             <!-- BORRAR LINEA -->
@@ -240,21 +238,20 @@
              (click) ="ChangeLineLotId(data['id'],sml.id, sml.lot_id && sml.lot_id.name, false)"
              *ngIf="data.tracking.value != 'none' && read_status(sml.field_status_apk, 'lot_id', 'view')" 
               [ngClass]="{'sml_done': read_status(sml.field_status_apk, 'lot_id', 'done')}"
-              size-xs="5" size-sm="4" size-md="4">
+              size-xs="4" size-sm="4" size-md="4">
               {{sml.lot_id && sml.lot_id.name || 'Lote' }}
             </ion-col>
             <ion-col style="text-align: center"
              *ngIf="data.tracking.value == 'none'"
-              size-xs="5" size-sm="4" size-md="4">
-              
+              size-xs="4" size-sm="4" size-md="4">
             </ion-col>
 
 
             <!--CANTIDAD -->
-            <ion-col  size-xs="4" size-sm="4" size-md="4" *ngIf="data.tracking.value != 'serial' && read_status(sml.field_status_apk, 'qty_done', 'view')" class="ion-text-center" style="padding: 0px">
-                <ion-badge class="link" (click)="ChangeQty(sml, -1)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge>
+            <ion-col  size-xs="5" size-sm="5" size-md="5" *ngIf="data.tracking.value != 'serial' && read_status(sml.field_status_apk, 'qty_done', 'view')" class="ion-text-center" style="padding: 0px">
+                <ion-badge *ngIf="sml.qty_done > 0" class="link" (click)="ChangeQty(sml, -1)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge>
                 <ion-badge [ngClass]="{'back_state_draft': QtyDirty === true}" (click)="InputQty('Cantidad', sml)" > {{sml.qty_done}} de  {{sml.product_uom_qty}}</ion-badge>
-                <ion-badge class="link" (click)="ChangeQty(sml, +1)" style="padding: 3px; margin-left: 10px"> <ion-icon class="primary" name="add-circle-outline"></ion-icon> </ion-badge>
+                <ion-badge *ngIf="sml.qty_done < sml.product_uom_qty" class="link" (click)="ChangeQty(sml, +1)" style="padding: 3px; margin-left: 10px"> <ion-icon class="primary" name="add-circle-outline"></ion-icon> </ion-badge>
             </ion-col>
             <!--BOTONES-->
           </ion-row>
@@ -262,9 +259,10 @@
       </ion-card-content>
     </ion-card>
      <ion-infinite-scroll *ngIf="NeedScroll" threshold="20px" (ionInfinite)="EventLoadMoveLines($event, 1)" >
-      <ion-infinite-scroll-content style="min-height: 1px"
+      <ion-infinite-scroll-content style="min-height: 1px; text-align: right"
         loadingSpinner="bubbles"
         loadingText="Cargando más líneas...">
+        <span class="product-link">{{SmlIndex}} / {{offset}} de {{data.move_lines_count}}</span>
       </ion-infinite-scroll-content>
     </ion-infinite-scroll>
   </div>
