@@ -1,12 +1,13 @@
 import { Component, OnInit, HostListener, ViewChild, Input } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { LoadingController, AlertController, IonContent,  } from '@ionic/angular';
+import { LoadingController, AlertController, IonContent, ToastController, ActionSheetController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 import { VoiceService } from '../../services/voice.service';
 import { ScannerService } from '../../services/scanner.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
+import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
 
 
 @Component({
@@ -30,7 +31,8 @@ export class StockLocationPage implements OnInit {
   Queue: Array<string>;
   timeout: any;
   LastReading: string;
-  Filter = {location_id: false, product_id: false};
+  Filter = {location_id: 0, product_id: 0};
+  BarcodeLength: number;
 
   @Input() ScannerReading: string;
   @ViewChild(ScannerFooterComponent) ScannerFooter: ScannerFooterComponent;
@@ -38,7 +40,7 @@ export class StockLocationPage implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if (this.stock.GetModelInfo('App', 'ActivePage') === 'StockLocationPage' && event.which !== 0) {
+    if (!this.scanner.ActiveScanner && this.stock.GetModelInfo('App', 'ActivePage') === 'StockLocationPage' && event.which !== 0) {
       console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
       this.scanner.key_press(event);
       this.scanner.timeout.then((val) => {
@@ -49,6 +51,7 @@ export class StockLocationPage implements OnInit {
 
   constructor(
     private odoo: OdooService,
+    public toastController: ToastController,
     public router: Router,
     public alertCtrl: AlertController,
     public loadingController: LoadingController,
@@ -56,11 +59,11 @@ export class StockLocationPage implements OnInit {
     private audio: AudioService,
     public stock: StockService,
     private voice: VoiceService,
-    private scanner: ScannerService
+    public scanner: ScannerService,
+    public actionSheetController: ActionSheetController,
   ) { }
 
   ionViewDidEnter(){
-
     this.odoo.isLoggedIn().then((data)=>{
       if (data === false) {
         this.router.navigateByUrl('/login');
@@ -95,6 +98,16 @@ export class StockLocationPage implements OnInit {
       return this.LocationDiv.scrollToPoint(0, yOffset, 500);
     }
   }
+
+  async presentToast(Str = 'Error de validación', Header = 'Aviso:' ) {
+    const toast = await this.toastController.create({
+      header: Header,
+      message: Str,
+      duration: 2000,
+    });
+    toast.present();
+  }
+
   async presentAlert(titulo, texto) {
     this.audio.play('error');
     const alert = await this.alertCtrl.create({
@@ -104,9 +117,9 @@ export class StockLocationPage implements OnInit {
     });
     await alert.present();
   }
-  async presentLoading() {
+  async presentLoading(Message='Cargando ...') {
     this.loading = await this.loadingController.create({
-      message: 'Cargando ...',
+      message: Message,
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
@@ -120,8 +133,8 @@ export class StockLocationPage implements OnInit {
     if (this.ShowInfo){return; }
     this.GetLocationInfo(this.location_data['id'], this.ShowInventory, this.Filter);
   }
-  NewInventory(Filter){
-    const values = {location_id: this.location_data['id'], filter: Filter};
+  NewInventory(Filter, Strat=''){
+    const values = {location_id: this.location_data['id'], filter: Filter, strat: Strat};
     this.stock.NewInventory(values).then((data) => {
       this.ApplyData(data[0]);
     })
@@ -150,7 +163,7 @@ export class StockLocationPage implements OnInit {
   }
 
   DeleteLocation(InventoryId, LocationId, Option){
-    this.Filter.location_id = false;
+    this.Filter.location_id = 0;
     let self = this;
     const values = {inventory_id: InventoryId, location_id: LocationId, option: Option }
     this.stock.DeleteLocation(values).then((data) => {
@@ -163,7 +176,7 @@ export class StockLocationPage implements OnInit {
 
   OnClickLocation(LocationId){
     if (this.Filter.location_id === LocationId) {
-      this.Filter.location_id = false;
+      this.Filter.location_id = 0;
       this.ActiveLocation = 0;
     }
     else {
@@ -171,12 +184,24 @@ export class StockLocationPage implements OnInit {
       this.ActiveLocation = LocationId;
     }
     this.ActiveProduct = 0;
+    this.Filter['product_id'] = 0; 
     const values = {inventory_id: this.location_data['inventory_id'], filter: this.Filter};
     return this.GetInventoryId(values);
   }
   OnClickProduct(LocationIndex, ProductIndex){
     const Product = this.location_data['inventory_location_ids'][LocationIndex]['product_ids'][ProductIndex];
+    if (this.ActiveProduct === Product['id'] && this.ActiveLocation){
+      return this.CheckProduct(Product['wh_code']);
+    }
     this.ActiveProduct = Product['id'];
+    this.Filter['product_id'] = this.ActiveProduct;
+    this.BarcodeLength = 0;
+    // this.Filter.product_id = true;
+    const values = {inventory_id: this.location_data['inventory_id'],
+                    location_id: this.ActiveLocation,
+                    product_id: this.ActiveProduct,
+                    filter: this.Filter};
+    return this.GetInventoryId(values);
   }
   OnClickLot(LocationIndex, ProductIndex, LineIndex){
     return;
@@ -198,21 +223,35 @@ export class StockLocationPage implements OnInit {
     this.ActiveLine = LineIndex;
     this.RefreshView();
   }
-  ChangeLineQty(values){
-    //this.presentLoading();
+
+  UpdateLine(values){
     let self = this;
     this.stock.ChangeInventoryLineQty(values).then((data) => {
       self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
       self.ActiveLocation =  data['ActiveLocation'];
       self.ActiveProduct = data['ActiveProduct'];
       self.ActiveLine = 0;
-      //self.loading.dismiss();
+      self.BarcodeLength = this.location_data['inventory_location_ids'][0].product_ids[0].barcode_length;
     })
     .catch((error) => {
       this.presentAlert(error.title, error.msg.error_msg);
       //this.loading.dismiss();
     });
   }
+
+  ChangeLineQty(values){
+    //this.presentLoading();
+    let self = this;
+    if (this.ActiveLocation === 0 || this.ActiveProduct === 0){
+      this.presentToast('No hay suficiente información para el número de serie/lote');
+    }
+    if (this.BarcodeLength !== 0 && this.BarcodeLength !== values['serial'].length){
+      this.presentToast ('El codigo ' +  values['serial'] + ' no cumple la validación');
+      return;
+    }
+    return this.UpdateLine(values);
+  }
+
 
   GetLocationInfo(location, StockInventory = false, Filter= {}) {
     this.presentLoading();
@@ -233,9 +272,9 @@ export class StockLocationPage implements OnInit {
     let self = this;
     this.stock.GetInventoryId(values).then((data) => {
       self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
+      this.BarcodeLength = data['barcode_length'];
       this.ActiveLocation = data['ActiveLocation'];
       this.loading.dismiss();
-
     })
     .catch((error) => {
       this.presentAlert(error.title, error.msg.error_msg);
@@ -245,9 +284,9 @@ export class StockLocationPage implements OnInit {
   }
   open_link(type, location_id){
     if (type === 'stock') {
-      this.router.navigateByUrl('/stock-quant-list/'+location_id);
+      this.router.navigateByUrl('/stock-quant-list/' + location_id);
     } else {
-      this.router.navigateByUrl('/stock-location-product-list/'+location_id);
+      this.router.navigateByUrl('/stock-location-product-list/' + location_id);
     } 
   }
 
@@ -261,7 +300,7 @@ export class StockLocationPage implements OnInit {
       console.log("Recibida orden de voz: " + voice_command_register);
       if (this.check_if_value_in_responses("stock", voice_command_register)) {
         console.log("Stock");
-        this.router.navigateByUrl('/stock-quant-list/'+this.location['id']);
+        this.router.navigateByUrl('/stock-quant-list/' + this.location['id']);
       } else if (this.check_if_value_in_responses("productos", voice_command_register)){
         console.log("Productos");
         this.router.navigateByUrl('/stock-location-product-list/'+this.location['id']);
@@ -336,6 +375,34 @@ export class StockLocationPage implements OnInit {
       return this.LocationDiv.scrollToPoint(0, yOffset, 500);
     }
   }
+  DeleteInventoryLine(LineId){
+
+    const values = {inventory_id: this.location_data['inventory_id'],
+                    location_id: this.ActiveLocation,
+                    product_id: this.ActiveProduct,
+                    filter: this.Filter,
+                    line_id: LineId,
+                    };
+    if (this.ActiveLocation === 0){
+      return this.GetInventoryId(values);
+    }
+    this.presentLoading('Borrando serie ...')
+    let self = this;
+    this.stock.DeleteInventoryLine(values).then((data) => {
+      self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
+      self.ActiveLocation =  data['ActiveLocation'];
+      self.ActiveProduct = data['ActiveProduct'];
+      self.ActiveLine = 0;
+      self.loading.dismiss();
+    })
+    .catch((error) => {
+      this.loading.dismiss();
+      this.presentAlert(error.title, error.msg.error_msg);
+    });
+    return;
+  }
+
+
   CheckSerial(val){
     // if (this.ActiveLocation === -1){
     //  this.presentAlert('Aviso', 'Debes seleccionar una estantería');
@@ -345,37 +412,78 @@ export class StockLocationPage implements OnInit {
                     location_id: this.ActiveLocation,
                     product_id: this.ActiveProduct,
                     filter: this.Filter,
+                    barcode_length: this.BarcodeLength,
                     wh_code: val,
                     serial: val};
 
-    if (this.ActiveLocation === 0){
+    if (this.ActiveLocation === 0 || this.ActiveProduct === 0){
       return this.GetInventoryId(values);
     }
     this.ChangeLineQty(values);
     return;
   }
+
   CheckProduct(val){
+    var self = this;
     if (this.ActiveLocation === 0){
-      this.presentAlert('Aviso', 'Debes seleccionar una estantería');
+
+      this.presentToast('Debes seleccionar una estantería');
       return true;
     }
-    const location = this.location_data['inventory_location_ids'];
-    for (const product of location['product_ids']){
+    let LocProductIds = [];
+    for (const Location of this.location_data['inventory_location_ids']){
+      if (Location['id'] === this.ActiveLocation){
+        LocProductIds = Location['product_ids']
+      }
+    }
+    for (const product of LocProductIds){
+      console.log (product);
       if (product['wh_code'] === val) {
-        this.ActiveProduct = product['id'];
+        let incr = 0;
+        if (this.ActiveProduct === product['id']) {
+          incr = 1;
+        }
+        else {
+          this.ActiveProduct = product['id'];
+          const values = {inventory_id: this.location_data['inventory_id'],
+                    location_id: this.ActiveLocation,
+                    product_id: this.ActiveProduct,
+                    filter: this.Filter};
+          return this.GetInventoryId(values);
+        }
+        this.Filter.product_id = this.ActiveProduct;
         if (product['tracking'] === 'none'){
           const line = product['line_ids'][0];
           const values = {line: line['id'],
                           inventory_id: this.location_data['inventory_id'],
                           location_id: this.ActiveLocation,
                           product_id: this.ActiveProduct,
-                          inc: 1,
+                          inc: incr,
                           filter: this.Filter};
-          this.ChangeLineQty(values);
-          return true;
+          return this.ChangeLineQty(values);
+        }
+        else {
+          const values = {inventory_id: this.location_data['inventory_id'],
+                    location_id: this.ActiveLocation,
+                    product_id: this.ActiveProduct,
+                    filter: this.Filter,
+                    wh_code: val};
+
+          if (this.ActiveLocation !== 0){
+            return this.GetInventoryId(values);
+          }
         }
         break;
       }
+    }
+    // SI LLEGO AQUÍ DEBO AÑADIR UNA LINEA NUEVA
+    if (this.ActiveLocation !== 0 && this.ActiveProduct === 0){
+      const values = {
+                      inventory_id: this.location_data['inventory_id'],
+                      location_id: this.ActiveLocation,
+                      wh_code: val,
+                      filter: this.Filter};
+      return this.UpdateLine(values);
     }
     return false;
   }
@@ -422,16 +530,15 @@ export class StockLocationPage implements OnInit {
       // Leo UBICACION. Busco el primer movieminto interno que tenga esa ubicación en el codigo de barras.
       this.CheckOpenLocation(val);
     }
-    else if (eval(this.location_data['product_re']).exec(val) ) {
-      // Leo PRODUCTO. Busco el primer movieminto que tenga ese warehouse_cpde que tenga esa ubicación en el codigo de barras.
-      this.CheckProduct(val);
-    }
       // Busco los movimeintos que pertenecemn a esta albrán
       //
-    else {
+    else if (this.ActiveProduct){
       this.CheckSerial(val);
     }
-    
+    else {
+      this.CheckProduct(val);
+    }
+
     this.reset_scanner();
     return;
   }
@@ -456,12 +563,73 @@ export class StockLocationPage implements OnInit {
     }
   }
   onReadingEmitted(val: string) {
-
+    const delay = 200;
+    let index = 0;
     for (const scan of val){
-      this.ScannerReading = scan;
-      this.audio.play('click');
-      this.CheckScanner_TimeOut(scan);
+      if (scan !== ''){
+        index += 1;
+        setTimeout(() => {
+          this.ScannerReading = scan;
+          this.audio.play('click');
+          this.CheckScanner_TimeOut(scan);
+        }, delay * index);
+      }
     }
     return;
   }
+
+  create_buttons() {
+    // tslint:disable-next-line:prefer-const
+    let buttons = [{
+      text: '',
+      icon: 'close',
+      role: 'cancel',
+      handler: () => {
+        console.log('Cancel clicked');
+      }
+    }];
+    // <ion-icon style="margin: 3px" slot="end" name="flash-off-outline" (click)="GetLocationInfo(location_data.id, true)"></ion-icon>
+    let Button = {
+      text: 'Validar inventario',
+      icon: 'checkmark-done-circle-outline',
+      role: '',
+      handler: () => {
+        this.ValidateInventory();
+      }
+    };
+    buttons.push(Button);
+    if (this.BarcodeLength) {
+      Button = {
+        text: 'Anular chequeo nº de serie',
+        icon: '',
+        role: '',
+        handler: () => {
+          this.BarcodeLength = 0;
+        }
+      };
+      buttons.push(Button);
+    }
+    // <!--ion-icon style="margin: 3px" slot="end" name="checkmark-done-circle-outline" (click)="ValidateInventory()"></ion-icon-->
+    Button = {
+      text: 'Validar inventario',
+      icon: 'checkmark-done-circle-outline',
+      role: '',
+      handler: () => {
+        this.ValidateInventory();
+      }
+    };
+    buttons.push(Button);
+    return buttons;
+  }
+
+  async ShowOptions() {
+    this.audio.play('click');
+    const actionSheet = await this.actionSheetController.create({
+      buttons: this.create_buttons()
+    });
+
+    await actionSheet.present();
+  }
+
+
 }

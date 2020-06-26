@@ -43,7 +43,8 @@ export class MoveFormPage implements OnInit {
   TrackingIcon: {};
   WaitingLot: boolean;
   AdvanceOptions: boolean;
-  LotNames: any;
+  LotNames: Array<string>;
+  NewLotNames: Array<boolean>;
   ChangeLotNames: boolean;
   ShowLots: boolean;
   ShowMoves: boolean;
@@ -60,11 +61,13 @@ export class MoveFormPage implements OnInit {
   NeedScroll: boolean;
   LoadingMoves: boolean;
   Ready: boolean;
-  BarcodeLenght: number;
+  BarcodeLength: number;
+  Filter: string;
+  PendingQty: number;
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if ( this.stock.GetModelInfo('App', 'ActivePage') === 'MoveFormPage' && event.which !== 0 && this.Ready) {
+    if (!this.scanner.ActiveScanner && this.stock.GetModelInfo('App', 'ActivePage') === 'MoveFormPage' && event.which !== 0 && this.Ready) {
       console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
       this.scanner.key_press(event);
       this.scanner.timeout.then((val) => {
@@ -74,7 +77,7 @@ export class MoveFormPage implements OnInit {
   }
 
   constructor(
-    private scanner: ScannerService,
+    public scanner: ScannerService,
     private odoo: OdooService,
     public router: Router,
     public alertCtrl: AlertController,
@@ -89,7 +92,19 @@ export class MoveFormPage implements OnInit {
   ) {
     this.moves = ['up', 'down', 'left', 'right'];
   }
-
+  ChangeFilter(){
+    if (this.Filter === 'Todos'){
+      this.Filter = 'Pendientes';
+    }
+    else if (this.Filter === 'Pendientes'){
+      this.Filter = 'Realizados';
+    }
+    else {
+      this.Filter = 'Todos';
+    }
+    this.offset = 0;
+    return this.GetMoveInfo(this.data['id']);
+  }
   CreateButtons() {
     const Id = this.data['id'];
     const State = this.data['state'].value;
@@ -104,7 +119,6 @@ export class MoveFormPage implements OnInit {
         console.log('Cancel clicked');
       }
     }];
-
     const advise = {
       text: 'Vistas: ' + this.ShowMoves + '-' + this.ShowLots,
       icon: '',
@@ -113,12 +127,31 @@ export class MoveFormPage implements OnInit {
       }
     };
     // buttons.push(advise);
-
     if (this.data) {
+      const button = {
+        text: this.Filter,
+        icon: 'search_outline',
+        role: '',
+        handler: () => {
+          this.ChangeFilter();
+        }
+      };
+      buttons.push(button);
+      if (this.data['tracking'].value === 'serial' || true){
+        const button = {
+          text: 'Cambiar vistas',
+          icon: 'eye-outline',
+          role: '',
+          handler: () => {
+            this.AlternateShowLots();
+          }
+        };
+        buttons.push(button);
+      }
       if (['partially_available', 'confirmed'].indexOf(State) !== -1) {
         const button = {
           text: 'Reservar',
-          icon: '',
+          icon: 'battery-charging-outline',
           role: '',
           handler: () => {
             this.ActionAssign(Id);
@@ -129,7 +162,7 @@ export class MoveFormPage implements OnInit {
       if (['partially_available', 'assigned', 'confirmed'].indexOf(State) !== -1) {
         const button = {
           text: 'Quitar reserva',
-          icon: '',
+          icon: 'battery-dead-outline',
           role: '',
           handler: () => {
             this.ActionUnReserve(Id);
@@ -142,18 +175,17 @@ export class MoveFormPage implements OnInit {
         const button = {
           text: 'Actualizar lotes',
           icon: 'checkmark-done-circle-outline',
-          role: '',
+          role: 'barcode-outline',
           handler: () => {
             this.ActionApplyLotNames();
           }
         };
         buttons.push(button);
-
       }
       if (this.LotNames && 'done' !== State && Tracking !== 'none'){
         const button = {
           text: 'Borrar lotes',
-          icon: '',
+          icon: 'trash-bin-outline',
           role: '',
           handler: () => {
             this.CleanLots(Id);
@@ -161,35 +193,20 @@ export class MoveFormPage implements OnInit {
         };
         buttons.push(button);
       }
-      if (this.BarcodeLenght != 0){
+      if (this.BarcodeLength !== 0){
         const button = {
           text: 'Anular chequeo de nº serie',
-          icon: '',
+          icon: 'chatbox-ellipses-outline',
           role: '',
           handler: () => {
-            this.BarcodeLenght = 0;
+            this.BarcodeLength = 0;
           }
         };
         buttons.push(button);
       }
-      
-
-      if (this.LotNames && 'done' !== State && Tracking !== 'none'){
-        const button = {
-            text: 'Nuevo',
-            icon: '',
-            role: '',
-            handler: () => {
-              this.CreateNewSmlId(Id);
-            }
-          };
-        buttons.push(button);
-      }
       // buttons.push(button);
       // buttons.push(buttonReset);
-
     }
-
     return buttons;
   }
   async PresentMenuOptions() {
@@ -206,7 +223,6 @@ export class MoveFormPage implements OnInit {
     this.limit = this.stock.TreeLimit;
     this.limit_reached = false;
     this.LoadingMoves = false;
-    this.FirstLoad = true;
     this.ShowLots = true;
     this.ShowMoves = !this.ShowLots;
     this.stock.SetModelInfo('App', 'ActivePage', 'MoveFormPage');
@@ -216,7 +232,6 @@ export class MoveFormPage implements OnInit {
   }
 
   ngOnInit() {
-
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
@@ -238,12 +253,14 @@ export class MoveFormPage implements OnInit {
     this.FirstLoad = true;
     this.Ready = true;
     this.QtyDirty = false;
+    this.Filter = 'Todos';
     this.InitData();
   }
   InitData() {
     this.ChangeLotNames = false;
     this.LotNames = [];
-    this.BarcodeLenght = 0;
+    this.NewLotNames = [];
+    this.BarcodeLength = 0;
     this.FirstLoad = true;
   }
   read_status(field, campo, propiedad) {
@@ -271,12 +288,27 @@ export class MoveFormPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
+    const delay = 200;
+    let index = 0;
+    for (const scan of val){
+      if (scan !== '') {
+        index += 1;
+        setTimeout(() => {
+          this.scanner_reading = scan;
+          this.audio.play('click');
+          this.CheckScanner(scan);
+        }, delay * index);
+      }
+    }
+    return;
+  }
+
+  onReadingEmitted_orig(val: string) {
 
     for (const scan of val){
       if (scan !== '') {
         this.scanner_reading = scan;
         this.audio.play('click');
-        console.log('CheckScanner ' + scan + ' de ' + val);
         this.CheckScanner(scan);
       }
     }
@@ -315,14 +347,13 @@ export class MoveFormPage implements OnInit {
     }
     this.LoadingMoves = true;
     // this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - this.stock.TreeLimit);
-
     const SmlDomain = [['move_id', '=', this.data['id']]];
-    const values = {model: 'stock.move.line', domain: SmlDomain, offset: this.offset, limit: this.limit};
+    const values = {model: 'stock.move.line', domain: SmlDomain, offset: this.offset, limit: this.limit, filter: this.Filter};
     this.stock.get_apk_object(values).then((SmlIds: Array<{}>) => {
       this.limit_reached = SmlIds.length < this.limit;
       // this.data['move_line_ids'] = this.data['move_line_ids'].concat(SmlIds);
       this.data['move_line_ids'] = SmlIds;
-      this.SmlIndex = this.offset; 
+      this.SmlIndex = this.offset;
       this.offset += this.data['move_line_ids'].length;
       this.LoadingMoves = false;
       // this.LoadingPrevMoves = false;
@@ -338,6 +369,7 @@ export class MoveFormPage implements OnInit {
 
   DeleteLotName(Index){
     this.LotNames.splice(Index, 1);
+    this.NewLotNames.splice(Index, 1);
   }
   async InputQty(titulo, SmlId)
   {
@@ -386,6 +418,7 @@ export class MoveFormPage implements OnInit {
   UpdateSmlIdField(SmlId, values){
     console.log('Update SMLIdField');
     if (this.data['state'].value === 'done') {return; }
+    values['filter_move_lines'] = this.Filter;
     this.stock.UpdateSmlIdField(this.data['id'], SmlId, values).then((data) => {
       if (data) {
         this.apply_move_data(data);
@@ -412,7 +445,13 @@ export class MoveFormPage implements OnInit {
     }
     // actualizo en el servidor el movimiento yno me hace falta esperar ya que puede ser asycrono
     this.data['quantity_done'] += qty;
-    this.stock.UpdateMoveLineQty(SmlId['id'], SmlId['qty_done'], false).then((res) => {}).catch((error) => {});
+    const values = {
+      move_line_id: SmlId['id'],
+      qty_done: SmlId['qty_done'],
+      lot_id: false,
+      filter_move_lines: this.Filter,
+    };
+    this.stock.UpdateMoveLineQty(values).then((res) => {}).catch((error) => {});
 
   }
 
@@ -426,12 +465,22 @@ export class MoveFormPage implements OnInit {
     } else {
       data['base64'] = true;
     }
+    if (this.data && data['id'] !== this.data['id']){
+      this.FirstLoad = true;
+    }
+    else {
+      this.FirstLoad = false;
+    }
+
     this.data = data;
-    this.BarcodeLenght = 0;
+    this.BarcodeLength = 0;
     for (const sml of data['move_line_ids']) {
-      if (sml.lot_id.id) {
-        this.LotNames.push(sml.lot_id.name);
-        this.BarcodeLenght = sml.lot_id.name.length;
+      if (sml.lot_name) {
+        this.LotNames.push(sml.lot_name);
+        this.NewLotNames.push(true);
+      }
+      if (sml.lot_id.id){
+        this.BarcodeLength = sml.lot_id.name.length;
       }
     }
 
@@ -440,12 +489,14 @@ export class MoveFormPage implements OnInit {
         this.ShowLots = this.data['tracking'].value === 'serial';
         this.ShowMoves = !this.ShowLots;
       }
+
       else{
         this.ShowLots = false;
-        this.ShowMoves = !this.ShowLots;
+        this.ShowMoves = true;
       }
 
     }
+    this.PendingQty = this.data['reserved_availability'] - this.data['quantity_done'];
     this.offset = this.data['move_line_ids'].length;
     this.NeedScroll = this.offset >= this.stock.TreeLimit;
     this.FirstLoad = false;
@@ -462,20 +513,20 @@ export class MoveFormPage implements OnInit {
               model: 'stock.move',
               view: 'form',
               sml_limit: this.limit,
-              sml_offset: this.offset,
+              sml_offset: 0,
               move_id: MoveId,
               inc: Index,
+              filter_move_lines: this.Filter,
               filter_moves: Filter};
     console.log('Recupero MOVIMIENTO RELATIVO');
     const self = this;
-    this.presentLoading("Buscando ...");
+    this.presentLoading("Cargando movimiento rel ...");
     this.stock.GetRelativeMoveInfo(values).then((data) => {
       if (data !== MoveId){
         this.offset = 0;
         this.limit = this.stock.TreeLimit;
         this.limit_reached = false;
         this.LoadingMoves = false;
-        this.FirstLoad = true;
         this.ShowLots = true;
         this.ShowMoves = !this.ShowLots;
         self.apply_move_data(data);
@@ -496,7 +547,7 @@ export class MoveFormPage implements OnInit {
     console.log('Recupero MOVIMIENTO');
     this.presentLoading();
     const self = this;
-    this.stock.GetMoveInfo(move, index, this.limit, this.offset).then((data) => {
+    this.stock.GetMoveInfo(move, index, this.limit, this.offset, this.Filter).then((data) => {
       self.apply_move_data(data);
     })
     .catch((error) => {
@@ -506,6 +557,7 @@ export class MoveFormPage implements OnInit {
   }
 
   DoMoveValidate(){
+    return;
     this.presentLoading();
     if (this.data['state'].value === 'done') {return; }
     this.stock.DoMoveValidate(this.data['picking_id'].id, this.data['id'] ).then((data) => {
@@ -534,6 +586,7 @@ export class MoveFormPage implements OnInit {
   }
   */
   ButtonValidate(PickingId) {
+    return;
     this.presentLoading();
     this.stock.ButtonValidate(Number(PickingId)).then((LinesData) => {
       this.cancelLoading()
@@ -573,42 +626,15 @@ export class MoveFormPage implements OnInit {
     });
     await this.loading.present();
   }
-  /*
-  update_lots() {
-    this.stock.CreateMoveLots(this.data['id'], this.new_lots, this.data['active_location_id'].id).then((data) => {
-      this.GetMoveInfo(this.data['id']);
-    })
-    .catch((error) => {
-      this.presentAlert('Error al validar el albarán:', error);
-    });
-  }
-
-  done_status(field) {
-    this.data['field_status_apk'] = this.stock.write_status(this.data['field_status_apk'], field, 'done');
-  }
-  */
-  CreateNewSmlId(SmId){
-    if (this.data['state'].value === 'done') {return; }
-    this.presentLoading();
-    this.stock.CreateNewSmlId(SmId).then((data) => {
-      this.cancelLoading();
-      if (data) {
-        this.reset_scanner() ;
-        this.apply_move_data(data);
-        if (data['warning']) {this.presentAlert('Odoo', data['warning']); }
-      }
-      })
-    .catch((error) => {
-      this.cancelLoading(true);
-      this.presentAlert('Error al crear el movieminto:', error.msg.error_msg);
-    });
-  }
 
   RemoveMoveLineId(SmlId) {
     console.log('RemoveMoveLineId: ' + SmlId)
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
-    this.stock.RemoveMoveLineId(this.data['id'], SmlId).then((data) => {
+    const values = {move_id: this.data['id'],
+                    sml_ids: SmlId,
+                  filter_move_lines: this.Filter};
+    this.stock.RemoveMoveLineId(values).then((data) => {
       this.cancelLoading();
       if (data) {
         this.reset_scanner() ;
@@ -661,25 +687,24 @@ export class MoveFormPage implements OnInit {
       (this.stock.read_status(move['field_status_apk'], 'qty_done' , 'done') === false));
   }
 
-  ProcessLocation(barcode) {
+  ProcessLocation(Barcode) {
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
     const field = this.data['default_location'].value;
     // Miro si coincide con algún ubicación necesaria de los movimientos
-    const confirm = this.LastReading === this.scanner_reading;
-    const MovesToUpdate = this.GetMovesToChangeLoc(this.data['move_line_ids'], confirm);
+    const Confirm = this.LastReading === this.scanner_reading;
+    const MovesToUpdate = this.GetMovesToChangeLoc(this.data['move_line_ids'], Confirm);
     const SmlIds = [];
     for (const move of MovesToUpdate) {SmlIds.push(move['id']); }
     const values = {  move_id: this.data['id'],
+                      sml_ids: SmlIds,
                       field: this.data['default_location'].value,
-                      value: this.data['active_location_id']['id'],
-                      sml_ids: SmlIds};
-    this.stock.AssignLocationToMoves(this.data['id'],
-                                     SmlIds,
-                                     this.data['default_location'].value,
-                                     this.data['active_location_id']['id'],
-                                     barcode,
-                                     confirm)
+                      active_location_id: this.data['active_location_id']['id'],
+                      barcode: Barcode,
+                      confirm: Confirm,
+                      filter_move_lines: this.Filter
+                      };
+    this.stock.AssignLocationToMoves(values)
       .then((data) => {
         if (data) {
           this.reset_scanner() ;
@@ -698,7 +723,8 @@ export class MoveFormPage implements OnInit {
   AssignLocationId(MoveId, LocationId, LocationField) {
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
-    this.stock.AssignLocationId(MoveId, LocationId, LocationField).then((data) => {
+    const values = {id: MoveId, location_field: LocationField, location_id: LocationId};
+    this.stock.AssignLocationId(values).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
@@ -725,11 +751,11 @@ export class MoveFormPage implements OnInit {
   }
 
   ActionAssign(MoveId) {
-
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
     this.audio.play('click');
-    this.stock.ActionAssign(MoveId).then((data) => {
+    const values = {id: MoveId, model: 'stock.move', filter_move_lines: this.Filter};
+    this.stock.ActionAssign(values).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
@@ -746,7 +772,8 @@ export class MoveFormPage implements OnInit {
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
     this.audio.play('click');
-    this.stock.CleanLots(MoveId).then((data) => {
+    const values = {id: MoveId, model: 'stock.move', filter_move_lines: this.Filter};
+    this.stock.CleanLots(values).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
@@ -757,13 +784,28 @@ export class MoveFormPage implements OnInit {
       this.presentAlert('Error al quitar los lotes del movimiento:', error.msg.error_msg);
     });
   }
+  DeleteMoveLine(SmlId){
+    const values = {sml_id: SmlId, filter_move_lines: this.Filter};
+    this.presentLoading();
+    this.audio.play('click');
 
+    this.stock.DeleteMoveLine(values).then((data) => {
+      if (data) {
+        this.reset_scanner() ;
+        this.apply_move_data(data); }
+      else {this.cancelLoading(); }
+    })
+    .catch((error) => {
+      this.cancelLoading(true);
+      this.presentAlert('Error al quitar la reserva de la línea:', error.msg.error_msg);
+    });
+  }
   ActionUnReserve(MoveId) {
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
     this.audio.play('click');
-
-    this.stock.MoveUnReserve(MoveId).then((data) => {
+    const values = {id: MoveId, model: 'stock.move', filter_move_lines: this.Filter}
+    this.stock.MoveUnReserve(values).then((data) => {
       if (data) {
         this.reset_scanner() ;
         this.apply_move_data(data); }
@@ -800,25 +842,6 @@ export class MoveFormPage implements OnInit {
     await alert.present();
   }
 
-  ChangeLineLotId(MoveId= false, SmlId= false, OldLotName= false, NewLotId= false) {
-
-    if (this.data['state'].value === 'done') {return; }
-    this.audio.play('click');
-    if (!MoveId){MoveId = this.data['id'];}
-    if (this.data['state'].value !== 'done'){
-      this.stock.ChangeLineLotId(MoveId, SmlId, OldLotName, NewLotId).then((data) => {
-        if (data) {
-          this.reset_scanner() ;
-          this.apply_move_data(data); }
-      })
-      .catch((error) => {
-        this.presentAlert('Error al actualizar el lote del movimeinto:', error.msg.error_msg);
-      });
-
-    }
-    return;
-
-  }
 
   BacthLot() {
     // Booleano que indica cuando lo que se va aleer es un lote:
@@ -854,11 +877,14 @@ export class MoveFormPage implements OnInit {
     else {
       const LotsToCheck = [];
       for (const lot of LotsToAdd) {
-        if (this.BarcodeLenght === 0) {this.BarcodeLenght = lot.length; }
-        if (lot.length === this.BarcodeLenght){
+        if (this.BarcodeLength === 0) {this.BarcodeLength = lot.length; }
+        if (lot.length === this.BarcodeLength){
           if (this.LotNames.indexOf(lot) === -1) {
             this.LotNames.unshift(lot);
-            this.ChangeLotNames = true; }
+            this.NewLotNames.unshift(false);
+            this.ChangeLotNames = true;
+            this.PendingQty -= 1;
+          }
           else {
             LotsToCheck.unshift(lot);
             }
@@ -877,10 +903,11 @@ export class MoveFormPage implements OnInit {
     this.cancelLoading(true);
     return this.presentToast('No puedes realizar más cantidad de la reservada para el movimiento');
   }
-  async presentToast(str) {
+
+  async presentToast(Str = 'Error de validación', Header = 'Aviso:' ) {
     const toast = await this.toastController.create({
-      header: 'Aviso...',
-      message: str,
+      header: Header,
+      message: Str,
       duration: 2000,
     });
     toast.present();
@@ -894,10 +921,10 @@ export class MoveFormPage implements OnInit {
     console.log('ActionApplyLotNames');
     if (this.data['state'].value === 'done') {return; }
     for (const lot of this.LotNames){
-      if (this.BarcodeLenght === 0) {
-        this.BarcodeLenght = lot.length;
+      if (this.BarcodeLength === 0) {
+        this.BarcodeLength = lot.length;
       }
-      if (lot.length === this.BarcodeLenght){
+      if (lot.length === this.BarcodeLength){
         LotNames.push(lot);
       }
       else {
@@ -909,7 +936,12 @@ export class MoveFormPage implements OnInit {
     // Las lita de lotes siempre es la original más los que añado, por lo que tengo que quitar los de los movmientos
     if (LotNames.length > 0) {
       this.presentLoading();
-      this.stock.CreateMoveLots(this.data['id'], LotNames, this.data['location_dest_id'].id).then((data) => {
+      const values = {id: this.data['id'],
+                      lot_names: LotNames,
+                      active_location: this.data['default_location'].id,
+                      filter_move_lines: this.Filter};
+
+      this.stock.CreateMoveLots(values).then((data) => {
         if (data) {
           this.reset_scanner() ;
           this.apply_move_data(data); }
@@ -923,28 +955,8 @@ export class MoveFormPage implements OnInit {
         this.presentAlert('Error al añadir los lotes el albarán:', error.msg.error_msg);
       });
     }
-    
     return;
-    /* PRUEBO enviando todo y actualizando
-
-    let LotsToCheck = []
-    for (const move of this.data.move_line_ids) {
-      const lot = move.lot_id;
-      if (lot.id) {
-        if (LotsToAdd.indexOf(lot.name) !== -1) {
-          LotsToAdd.pop(lot.name);
-        }
-      }
-    }
-    if (LotsToAdd.length > 0) {
-      this.stock.CreateMoveLots(this.data['id'], LotsToAdd).then((data)=>{
-        this.apply_move_data(data);
-      })
-      .catch((error)=>{
-        this.presentAlert('Error al añadir los lotes el albarán:', error);
-      });
-    }
-    */
+    
   }
 
   SearchOtherMoveByScanner(){}

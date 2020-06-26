@@ -3,7 +3,8 @@
     <ion-buttons slot="start">
       <ion-menu-button class="cmnt-front"></ion-menu-button>
     </ion-buttons>
-    <app-scanner-header [disabled_reader]="true" class="cmnt-back" slot="end"></app-scanner-header>
+     <app-scanner-header class="cmnt-back" slot="end">
+    </app-scanner-header>
     <ion-title class="cmnt-button">{{location_data && location_data.name}}</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -24,15 +25,18 @@
     <ion-card-content *ngIf="location_data.inventory_id === 0" style="text-align-last: center;">
       <ion-card-subtitle> Nuevo Inventario </ion-card-subtitle>
       <ion-badge (click)="NewInventory('none')" style="width: 40%; margin-right: 15px"> Completo </ion-badge> 
-      <ion-badge (click)="NewInventory('partial')" style="width: 40%; margin-right: 15px"> Productos </ion-badge> 
+      <ion-badge (click)="NewInventory('partial')" style="width: 40%; margin-right: 15px"> Productos </ion-badge>
     </ion-card-content>
     <ion-card-content *ngIf="location_data.inventory_id > 0">
       <ion-list>
         
         <ion-item-divider class ="inventory-item">
             {{location_data.inventory_name}}
-            <ion-icon style="margin: 3px" slot="end" name="flash-off-outline" (click)="GetLocationInfo(location_data.id, true)"></ion-icon>
-            <ion-icon style="margin: 3px" slot="end" name="checkmark-done-circle-outline" (click)="ValidateInventory()"></ion-icon>
+            <!--ion-icon style="margin: 3px" slot="end" name="flash-off-outline" (click)="GetLocationInfo(location_data.id, true)"></ion-icon-->
+            <!--ion-icon style="margin: 3px" slot="end" name="checkmark-done-circle-outline" (click)="ValidateInventory()"></ion-icon-->
+            <ion-icon style="margin: 3px" slot="end" name="ellipsis-vertical-outline" (click)="ShowOptions()"></ion-icon>
+
+            ellipsis-vertical-outline
         </ion-item-divider>
         <ion-item-group >
           <div *ngFor="let loc of location_data['inventory_location_ids']; let LocationIndex = index" id="Div{{loc['barcode']}}">
@@ -82,9 +86,9 @@
                       </ion-item>
                       <ion-item *ngFor="let line of product['line_ids']; let LineIndex = index" class ="back-gray-30 inventory-item" >
                         <ion-col size=1></ion-col>
-                        <ion-col size=8 (click) = "OnClickLot (LocationIndex, ProductIndex, LineIndex)" ><span style="font-size: 0.7em">{{line.lot_id.name}}</span></ion-col>
+                        <ion-col size=8 (click) = "OnClickLot (LocationIndex, ProductIndex, LineIndex)" ><span style="font-size: 0.7em">{{line.lot_id && line.lot_id.name || "Esperando serie"}}</span></ion-col>
                         <ion-col size=3 class="ion-text-right">
-                          <ion-badge class="qty-badge" [ngClass]="{'qty-badge-dirty': line.qty_dirty === true}"> 
+                          <ion-badge class="qty-badge" [ngClass]="{'qty-badge-dirty': line.qty_dirty === true}" (click) = "DeleteInventoryLine (line['id'])"> 
                             <ion-icon class="primary" name="trash-outline"></ion-icon> 
                           </ion-badge>
                         </ion-col>
@@ -103,7 +107,7 @@
                       </ion-item>
                       <ion-item *ngFor="let line of product['line_ids']; let LineIndex = index" class ="back-gray-30 inventory-item">
                         <ion-col size=1></ion-col>
-                        <ion-col size=8 (click) = "OnClickLot (LocationIndex, ProductIndex, LineIndex)"><span style="font-size: 0.7em">{{line.lot_id.name}}</span></ion-col>
+                        <ion-col size=8 (click) = "OnClickLot (LocationIndex, ProductIndex, LineIndex)"><span style="font-size: 0.7em">{{line.lot_id && line.lot_id.name || "Esperando lote"}}</span></ion-col>
                         <ion-col size=3 class="ion-text-right">
                           <ion-badge class="qty-badge" [ngClass]="{'qty-badge-dirty': line.qty_dirty === true}" (click)="InputQty(LocationIndex, ProductIndex, LineIndex, 'Cantidad')">
                             {{line.product_qty}}

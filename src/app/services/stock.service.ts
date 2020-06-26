@@ -220,10 +220,8 @@ export class StockService {
   }
 
 
-  RemoveMoveLineId(MoveId, SmlIds){
+  RemoveMoveLineId(values){
     const self = this;
-    const values = {  move_id: MoveId,
-                      sml_ids: SmlIds};
     const promise = new Promise( (resolve, reject) => {
     self.odooCon.execute('stock.move.line', 'remove_line_id', values).then((done) => {
         resolve(done);
@@ -236,15 +234,8 @@ export class StockService {
     return promise;
   }
 
-  AssignLocationToMoves(MoveId, SmlIds, FieldId, ActiveLocationId, Barcode, Confirm) {
+  AssignLocationToMoves(values) {
     const self = this;
-    const values = {  move_id: MoveId,
-                      sml_ids: SmlIds,
-                      field: FieldId,
-                      active_location_id: ActiveLocationId,
-                      barcode: Barcode,
-                      confirm: Confirm,
-                      };
     const promise = new Promise( (resolve, reject) => {
     self.odooCon.execute('stock.move.line', 'assign_location_to_moves', values).then((done) => {
         resolve(done);
@@ -256,9 +247,8 @@ export class StockService {
     });
     return promise;
   }
-  AssignLocationId(MoveId, LocationId, LocationField) {
+  AssignLocationId(values) {
     const self = this;
-    const values = {id: MoveId, location_field: LocationField, location_id: LocationId};
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.move', 'assign_location_id', values).then((done) => {
         resolve(done);
@@ -270,9 +260,8 @@ export class StockService {
     });
     return promise;
   }
-  CleanLots(MoveId){
+  CleanLots(values){
     const self = this;
-    const values = {id: MoveId, model: 'stock.move'};
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.move', 'clean_lots', values).then((done) => {
         resolve(done);
@@ -285,9 +274,8 @@ export class StockService {
     return promise;
   }
 
-  ActionAssign(MoveId) {
+  ActionAssign(values) {
     const self = this;
-    const values = {id: MoveId, model: 'stock.move'};
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.move', 'move_assign_apk', values).then((done) => {
         resolve(done);
@@ -299,15 +287,28 @@ export class StockService {
     });
     return promise;
   }
-  MoveUnReserve(MoveId) {
+  DeleteMoveLine(values){
     const self = this;
-    const values = {id: MoveId, model: 'stock.move'};
+    const promise = new Promise( (resolve, reject) => {
+    self.odooCon.execute('stock.move', 'delete_move_line', values).then((done) => {
+        resolve(done);
+      })
+      .catch((err) => {
+        reject(err);
+        console.log('Error al quitar la reserva del movimiento: ' + err.msg.error_msg);
+    });
+    });
+    return promise;
+  }
+
+  MoveUnReserve(values) {
+    const self = this;
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.move', 'move_unreserve_apk', values).then((done) => {
         resolve(done);
       })
       .catch((err) => {
-        reject(false);
+        reject(err);
         console.log('Error al quitar la reserva del movimiento: ' + err.msg.error_msg);
     });
     });
@@ -506,7 +507,7 @@ export class StockService {
         resolve(done);
       })
       .catch((err) => {
-        reject(err.msg.error_msg);
+        reject(err);
         console.log('Error al validar');
     });
     });
@@ -541,9 +542,9 @@ export class StockService {
     });
     return promise;
   }
-  GetMoveInfo(MoveId, index= 0, limit= this.TreeLimit, offset = 0) {
+  GetMoveInfo(MoveId, index= 0, limit= this.TreeLimit, offset = 0, Filter = 'Todos') {
     const self = this;
-    const values = {id: MoveId, index, model: 'stock.move', view: 'form', sml_limit: limit, sml_offset: offset};
+    const values = {id: MoveId, index, model: 'stock.move', view: 'form', sml_limit: limit, sml_offset: offset, filter_move_lines: Filter};
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.move', 'get_apk_object', values).then((data) => {
           resolve(data);
@@ -586,24 +587,8 @@ export class StockService {
     return promise;
   }
 
-  ChangeLineLotId(MoveId, MoveLineId, OldLotName, NewLotId){
+  CreateMoveLots(values) {
     const self = this;
-    const values = {move_id: MoveId, sml_ids: MoveLineId, new_lot_id: NewLotId, old_lot_name: OldLotName};
-    const model = 'stock.move.line';
-    const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute(model, 'change_line_lot_id', values).then((data) => {
-          resolve(data);
-      })
-      .catch((err) => {
-        reject(err);
-    });
-    });
-    return promise;
-  }
-
-  CreateMoveLots(MoveId, LotNames, ActiveLocationId) {
-    const self = this;
-    const values = {id: MoveId, lot_names: LotNames, active_location: ActiveLocationId};
     const model = 'stock.move';
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'create_move_lots', values).then((data) => {
@@ -1053,6 +1038,21 @@ export class StockService {
     return promise;
   }
 
+  DeleteInventoryLine(values) {
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+    self.odooCon.execute('stock.location', 'delete_inventory_obj', values).then((done) => {
+      console.log(done);
+      resolve(done);
+    })
+    .catch((err) => {
+      console.log(err);
+      reject(err);
+      console.log('Error al realizar la consulta:' + err.msg.error_msg);
+    });
+    });
+    return promise;
+}
   ChangeInventoryLineQty(values) {
     const self = this;
     const promise = new Promise( (resolve, reject) => {
@@ -1234,14 +1234,9 @@ export class StockService {
     return promise;
   }
 
-  UpdateMoveLineQty(MoveId, QtyDone, LotId) {
+  UpdateMoveLineQty(values) {
     const self = this;
     const Model = 'stock.move.line';
-    const values = {
-      move_line_id: MoveId,
-      qty_done: QtyDone,
-      lot_id: LotId,
-    };
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(Model, 'set_qty_done_from_apk', values).then((done) => {
         if (done['error'] === true) {

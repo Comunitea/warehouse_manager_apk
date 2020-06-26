@@ -44,7 +44,7 @@ export class StockPickingPage implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if (this.stock.GetModelInfo('App', 'ActivePage') === 'StockPickingPage' && event.which !== 0) {
+    if (!this.scanner.ActiveScanner && this.stock.GetModelInfo('App', 'ActivePage') === 'StockPickingPage' && event.which !== 0) {
       console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
       this.scanner.key_press(event);
       this.scanner.timeout.then((val) => {
@@ -55,7 +55,7 @@ export class StockPickingPage implements OnInit {
 
   constructor(
     public modalController: ModalController,
-    private scanner: ScannerService,
+    public scanner: ScannerService,
     private odoo: OdooService,
     public router: Router,
     public alertCtrl: AlertController,
@@ -143,10 +143,10 @@ QtyError(){
   this.audio.play('error');
   return this.presentToast('No puedes realizar más cantidad de la reservada para el movimiento');
 }
-async presentToast(str) {
+async presentToast(Str = 'Error de validación', Header = 'Aviso:' ) {
   const toast = await this.toastController.create({
-    header: 'Aviso...',
-    message: str,
+    header: Header,
+    message: Str,
     duration: 2000,
   });
   toast.present();
@@ -279,7 +279,7 @@ CheckOpenPicking(val){
 CheckSerial(val){
   const self = this;
   const remove = this.LastReading === val;
-  this.presentLoading('Buscando ...');
+  this.presentLoading('Buscando Serial...');
   this.stock.FindSerialForMove(val, this.picking, remove).then ((res) => {
     if (res  !== false){
       const UpMove = res[0];
@@ -479,10 +479,6 @@ CheckScanner(val) {
   }
   ButtonValidate(){
     let self = this;
-    if (this.data['current_packages'] * this.data['current_height'] === 0) {
-      this.presentAlert('Aviso!', 'Rellena correctamente los campos de paquetes y peso');
-      return;
-    }
     this.presentLoading();
     this.stock.ButtonValidate(this.data['id']).then((data) => {
       self.loading.dismiss();
@@ -490,7 +486,7 @@ CheckScanner(val) {
     })
     .catch((error) => {
       self.loading.dismiss();
-      self.presentAlert('Error al validar el albarán:', error);
+      this.presentAlert('Error al validar:', error.msg.error_msg);
     });
   }
 

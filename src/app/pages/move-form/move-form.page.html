@@ -162,7 +162,7 @@
       <ion-card-header>
         <!--*ngIf="data.state.value != 'done' && LotNames.length == 0"-->
         <ion-card-title class="ion-text-center">
-          Esperando Serial/Lote: {{LotNames.length}}
+          Esperando Serial/Lote: Faltan {{PendingQty}}
           <!--ion-button (click)="ActionApplyLotNames()" *ngIf="ChangeLotNames && LotNames.length > 0">
             <ion-icon class="primary" name="checkmark-done-circle-outline" ></ion-icon>{{LotNames.length}}</ion-button-->
           </ion-card-title>
@@ -176,14 +176,13 @@
                 </ion-col>
                 <ion-col size="2" class="ion-text-center" >
                   <ion-icon (click) = "DeleteLotName(NameIndex)" 
-                  *ngIf="data.state.value != done" size="small" color = "danger" 
+                  *ngIf="!NewLotNames[NameIndex]" size="small" color = "danger" 
                   style="vertical-align: bottom state_icon" name="trash-outline"></ion-icon>
                 </ion-col>
               </ion-row>
               <!--ion-icon  size="small" style="vertical-align: bottom state_icon" class="{{'state_'+ sml.state.value}}" name="{{StateIcon[sml.state.value]}}"></ion-icon-->
             </ion-col>
            </ion-row>
-        <!--ion-card-title class="ion-text-center" (click) = "ChangeLineLotId(data['id'], false, lot, false)">{{lot}}</ion-card-title-->
       </ion-card-content>
     </ion-card>
 
@@ -235,7 +234,6 @@
 
             <!-- LOTE -->
             <ion-col  style="text-align: center"
-             (click) ="ChangeLineLotId(data['id'],sml.id, sml.lot_id && sml.lot_id.name, false)"
              *ngIf="data.tracking.value != 'none' && read_status(sml.field_status_apk, 'lot_id', 'view')" 
               [ngClass]="{'sml_done': read_status(sml.field_status_apk, 'lot_id', 'done')}"
               size-xs="4" size-sm="4" size-md="4">
@@ -246,7 +244,11 @@
               size-xs="4" size-sm="4" size-md="4">
             </ion-col>
 
-
+            <ion-col  size-xs="5" size-sm="5" size-md="5" *ngIf="data.tracking.value === 'serial' && read_status(sml.field_status_apk, 'lot_id', 'done')" class="ion-text-right" style="padding: 0px">
+                <ion-icon (click) = "DeleteMoveLine(sml.id)" 
+                  size="small" color = "danger" 
+                  style="vertical-align: bottom state_icon" name="trash-outline"></ion-icon>
+            </ion-col>
             <!--CANTIDAD -->
             <ion-col  size-xs="5" size-sm="5" size-md="5" *ngIf="data.tracking.value != 'serial' && read_status(sml.field_status_apk, 'qty_done', 'view')" class="ion-text-center" style="padding: 0px">
                 <ion-badge *ngIf="sml.qty_done > 0" class="link" (click)="ChangeQty(sml, -1)" style="padding: 3px; margin-right: 10px"> <ion-icon class="primary" name="remove-circle-outline"></ion-icon> </ion-badge>

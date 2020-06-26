@@ -22,7 +22,7 @@ export class ScannerHeaderComponent implements OnInit {
     private audio: AudioService,
     private voice: VoiceService,
     public alertCtrl: AlertController,
-    private scanner: ScannerService
+    public scanner: ScannerService
   ) { }
 
   ngOnInit() {
