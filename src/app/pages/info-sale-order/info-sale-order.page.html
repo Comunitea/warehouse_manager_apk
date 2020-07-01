@@ -33,6 +33,12 @@
         <p>{{SaleOrder['carrier_id']['name']}} €</p>
       </ion-label>
   </ion-item>
+  <ion-item *ngIf="SaleOrder['team_id']">
+      <ion-label>
+        <h2>Transportista</h2>
+        <p>{{SaleOrder['team_id']['name']}} €</p>
+      </ion-label>
+  </ion-item>
   </ion-list>
   
 </ion-content>

@@ -35,20 +35,21 @@
       <!--app-picking-list *ngIf="pickings" [code]="current_code" [filter]="filter" [picks]="pickings"></app-picking-list-->
 
       <ion-row *ngFor="let pick of pickings; let even = even; let odd =  odd" [ngClass]="{'row-odd': odd, 'row-even': even}" style="min-height: 30px">
-        <ion-col class="ion-align-self-center">
-          <span class="product-link" (click)="OpenLink(pick.id)" >{{pick.apk_name}}</span>
+        <ion-col size="3" class="ion-align-self-center">
+          <span class="product-link" (click)="OpenLink(pick.id)" >{{pick.apk_name.substring(pick.apk_name.length - 5)}}</span>
         </ion-col>
          <ion-col class="ion-align-self-center" >
             <div *ngIf="pick.sale_id">
-              <span class="product-link" (click) = "OpenModal('sale.order', pick.sale_id.id)"><strong>{{pick.sale_id.name}}</strong></span>
-            </div>
+              <span class="product-link" (click) = "OpenModal('sale.order', pick.sale_id.id)"><strong>{{pick['sale_id']['name']}}</strong></span>
+              <span *ngIf="pick['carrier_id']"> - {{pick['carrier_id']['name']}} </span>
+              <span *ngIf="pick['team_id']"> - {{pick['team_id']['name']}} </span>
+                </div>
             <div *ngIf="pick.purchase_id">
               <span class="product-link" (click) = "OpenModal('purchase.order', pick.purchase_id.id)"><strong>{{pick.purchase_id.name}}</strong></span>
             </div>
         </ion-col>
-        <ion-col class="ion-align-self-center ion-text-center" size="1">
-            <span>{{pick.move_line_count}}</span>
-        </ion-col>
+        
+
         <!--ion-col class="ion-align-self-center ion-text-left" *ngIf="pick.default_location.value === 'location_id'">
           <div>{{pick.location_id.name}}</div>
         </ion-col>
@@ -61,6 +62,9 @@
         <!--/ion-col>
         <ion-col  class="ion-align-self-center"-->
         <ion-icon  size="normal" class="{{'state_'+ pick.pick_state.value}} " name="{{StateIcon[pick.pick_state.value]}}"></ion-icon>
+        </ion-col>
+        <ion-col class="ion-align-self-center ion-text-center" size="1">
+            <span>{{pick.total_reserved_availability}}</span>
         </ion-col>
       </ion-row>
 

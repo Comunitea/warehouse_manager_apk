@@ -1,0 +1,23 @@
+<ion-header>
+  <ion-toolbar class="cmnt-front">
+    <button class="cmnt-button" slot="end" ion-button icon-only item-end (click)="goBack()">
+      <ion-icon style="font-size: 2em;" name="arrow-undo-outline" class="cmnt-front"></ion-icon>
+    </button> 
+  <ion-title>BARCODE MULTILINE</ion-title>
+  </ion-toolbar> 
+  
+</ion-header>
+<ion-content>
+<ion-card-header>
+    <ion-card-subtitle>{{LName}}</ion-card-subtitle>
+    <ion-card-title>{{PName}} </ion-card-title>
+  </ion-card-header>
+
+  <ion-card-content style="text-align: -webkit-center;">
+  <ion-textarea id="eans" (ionChange) = 'CalcRows()' 
+  style="background-color: #eeeeee; width: 250px; height: 350px" rows=25 textarea type="text" [(ngModel)]="ean"> </ion-textarea>
+  </ion-card-content>
+
+  
+
+</ion-content>

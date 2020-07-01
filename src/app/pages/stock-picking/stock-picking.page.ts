@@ -486,7 +486,7 @@ CheckScanner(val) {
     })
     .catch((error) => {
       self.loading.dismiss();
-      this.presentAlert('Error al validar:', error.msg.error_msg);
+      console.log('Error al validar')
     });
   }
 

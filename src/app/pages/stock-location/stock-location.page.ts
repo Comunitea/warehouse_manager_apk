@@ -1,13 +1,15 @@
 import { Component, OnInit, HostListener, ViewChild, Input } from '@angular/core';
+import {OverlayEventDetail} from '@ionic/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { LoadingController, AlertController, IonContent, ToastController, ActionSheetController } from '@ionic/angular';
+import { LoadingController, AlertController, IonContent, ToastController, ActionSheetController, ModalController } from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
 import { VoiceService } from '../../services/voice.service';
 import { ScannerService } from '../../services/scanner.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
-import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
+import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
+
 
 
 @Component({
@@ -26,6 +28,7 @@ export class StockLocationPage implements OnInit {
   ActiveLocation: number;
   ActiveProduct: number;
   ActiveLine: number;
+  ActiveLineIndex: number;
   ActiveLocationEl: any;
   loading: any;
   Queue: Array<string>;
@@ -50,6 +53,7 @@ export class StockLocationPage implements OnInit {
   }
 
   constructor(
+    private modalController: ModalController,
     private odoo: OdooService,
     public toastController: ToastController,
     public router: Router,
@@ -165,7 +169,7 @@ export class StockLocationPage implements OnInit {
   DeleteLocation(InventoryId, LocationId, Option){
     this.Filter.location_id = 0;
     let self = this;
-    const values = {inventory_id: InventoryId, location_id: LocationId, option: Option }
+    const values = {inventory_id: InventoryId, location_id: LocationId, option: Option}
     this.stock.DeleteLocation(values).then((data) => {
       self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
     })
@@ -183,12 +187,13 @@ export class StockLocationPage implements OnInit {
       this.Filter.location_id = LocationId;
       this.ActiveLocation = LocationId;
     }
-    this.ActiveProduct = 0;
-    this.Filter['product_id'] = 0; 
+    this.ActiveProduct = this.ActiveLineIndex = 0;
+    this.Filter['product_id'] = 0;
     const values = {inventory_id: this.location_data['inventory_id'], filter: this.Filter};
     return this.GetInventoryId(values);
   }
   OnClickProduct(LocationIndex, ProductIndex){
+    this.ActiveLineIndex = 0;
     const Product = this.location_data['inventory_location_ids'][LocationIndex]['product_ids'][ProductIndex];
     if (this.ActiveProduct === Product['id'] && this.ActiveLocation){
       return this.CheckProduct(Product['wh_code']);
@@ -204,6 +209,10 @@ export class StockLocationPage implements OnInit {
     return this.GetInventoryId(values);
   }
   OnClickLot(LocationIndex, ProductIndex, LineIndex){
+    if (this.ActiveLineIndex === 0){
+      this.ActiveLineIndex = LineIndex;
+    }
+    else {this.ActiveLineIndex = 0}
     return;
     const Line = this.location_data['inventory_location_ids'][LocationIndex]['product_ids'][ProductIndex]['line_ids'][LineIndex];
     if (this.ActiveLine !== LineIndex) {
@@ -433,7 +442,7 @@ export class StockLocationPage implements OnInit {
     let LocProductIds = [];
     for (const Location of this.location_data['inventory_location_ids']){
       if (Location['id'] === this.ActiveLocation){
-        LocProductIds = Location['product_ids']
+        LocProductIds = Location['product_ids'];
       }
     }
     for (const product of LocProductIds){
@@ -610,15 +619,18 @@ export class StockLocationPage implements OnInit {
       buttons.push(Button);
     }
     // <!--ion-icon style="margin: 3px" slot="end" name="checkmark-done-circle-outline" (click)="ValidateInventory()"></ion-icon-->
-    Button = {
-      text: 'Validar inventario',
-      icon: 'checkmark-done-circle-outline',
+    // <!--ion-icon slot="end" name="reload-circle-outline" (click)="DeleteLocation(location_data.inventory_id, loc.id, 'reset')"></ion-icon-->
+    if (this.ActiveLocation && false){
+      Button = {
+      text: 'Resetar datos',
+      icon: 'reload-circle-outline',
       role: '',
       handler: () => {
-        this.ValidateInventory();
-      }
-    };
-    buttons.push(Button);
+        this.DeleteLocation(this.location_data['inventory_id'], this.ActiveLocation, 'reset');
+        }
+      };
+      buttons.push(Button);
+    }
     return buttons;
   }
 
@@ -631,5 +643,47 @@ export class StockLocationPage implements OnInit {
     await actionSheet.present();
   }
 
+  OpenBarcodeMultiline(ProductId, p_name, l_name){
+    this.scanner.ActiveScanner = false;
+    this.stock.SetModelInfo('App', 'ActivePage', '');
+    this.openModalBarcodeMulti(ProductId, p_name, l_name);
+  }
+  async openModalBarcodeMulti(PrId, p_name, l_name){
+    const modal = await this.modalController.create({
+      component: BarcodeMultilinePage,
+      componentProps: { LocationId: this.ActiveLocation,
+                        InventoryId: this.location_data['inventory_id'],
+                        ProductId: PrId,
+                        LName: l_name,
+                        PName: p_name,
+                        IName: this.location_data['inventory_name']
+                      },
+    });
+    modal.onDidDismiss().then((detail: OverlayEventDetail) => {
+      this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
+      if (detail !== null) {
+        const values = {inventory_id: this.location_data['inventory_id'],
+                        location_id: this.ActiveLocation,
+                        product_id: PrId,
+                        ean_ids: detail['data']};
+        this.LoadEans(values);
+      }
+    });
+    await modal.present();
+  }
+  LoadEans(values){
+    this.presentLoading();
+    let self = this;
+    this.stock.LoadEans(values).then((data) => {
+      self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
+      this.BarcodeLength = data['barcode_length'];
+      this.ActiveLocation = data['ActiveLocation'];
+      this.loading.dismiss();
+    })
+    .catch((error) => {
+      this.presentAlert(error.title, error.msg.error_msg);
+      this.loading.dismiss();
+    });
 
+  }
 }

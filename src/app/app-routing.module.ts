@@ -62,6 +62,9 @@ const routes: Routes = [
   { path: 'info-sale-order/:object/:id',
   loadChildren: () => import ('./pages/info-sale-order/info-sale-order.module').then(m => m.InfoSaleOrderPageModule)
   },
+  { path: 'barcode-multiline/:inventory/:location/:product',
+  loadChildren: () => import ('./pages/barcode-multiline/barcode-multiline.module').then(m => m.BarcodeMultilinePageModule)
+  },
 ];
 
 @NgModule({

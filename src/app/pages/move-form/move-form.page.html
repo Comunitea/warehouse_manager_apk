@@ -49,7 +49,7 @@
       <ion-row> 
         <ion-col size="5"class="ion-text-left"><strong>{{data.product_id.default_code || data.product_id.barcode}}</strong></ion-col>
         <ion-col size="2"class="ion-text-right"><strong>Cant: </strong></ion-col>
-        <ion-col size="4"class="ion-text-right"><ion-badge class="primary" style="vertical-align: bottom">  {{data.quantity_done}} de {{data.product_uom_qty}} {{data.product_uom.name}} </ion-badge></ion-col>
+        <ion-col size="4"class="ion-text-right"><ion-badge class="primary" style="vertical-align: bottom">  {{data.quantity_done}} de {{data.reserved_availability}} {{data.product_uom.name}} </ion-badge></ion-col>
       </ion-row>
       <ion-row *ngIf="data.state.value != 'cancel' && data.state.value != 'done' && data.move_line_ids.length == 1 && data.tracking.value == 'none'">
       </ion-row>
@@ -158,14 +158,18 @@
     </ion-card-content>
   </ion-card>
   <div *ngIf="data.state.value != 'done' && data && ShowLots">
+  
+        <ion-item>
+          <ion-button class="primary" slot="end" 
+          (click) = "OpenBarcodeMultiline(data['product_id']['id'], data['product_id']['default_code'], data['active_location_id']['name'])" *ngIf="data['active_location_id']['usage']['value'] == 'internal'">
+            <ion-icon  name="menu-outline" ></ion-icon>
+          </ion-button>
+          <ion-label>Espero serie/Lote: Faltan {{PendingQty}}</ion-label>
+        </ion-item>
     <ion-card >
       <ion-card-header>
         <!--*ngIf="data.state.value != 'done' && LotNames.length == 0"-->
-        <ion-card-title class="ion-text-center">
-          Esperando Serial/Lote: Faltan {{PendingQty}}
-          <!--ion-button (click)="ActionApplyLotNames()" *ngIf="ChangeLotNames && LotNames.length > 0">
-            <ion-icon class="primary" name="checkmark-done-circle-outline" ></ion-icon>{{LotNames.length}}</ion-button-->
-          </ion-card-title>
+          
       </ion-card-header>
       <ion-card-content>
         <ion-row>
@@ -194,15 +198,14 @@
     </ion-card>
   </div>
   <div *ngIf="data && ShowMoves">
-  <ion-infinite-scroll *ngIf="NeedScroll" threshold="5px" position="top"  (ionInfinite)="EventLoadMoveLines($event, -1)" >
+  <!--ion-infinite-scroll *ngIf="NeedScroll" threshold="5px" position="top"  (ionInfinite)="EventLoadMoveLines($event, -1)" >
 
       <ion-infinite-scroll-content style="min-height: 15px; text-align: right"
-      
         loadingSpinner="bubbles"
         loadingText="Cargando más líneas...">
         <span class="product-link">{{SmlIndex}} / {{offset}} de {{data.move_lines_count}}</span>
       </ion-infinite-scroll-content>
-    </ion-infinite-scroll>
+    </ion-infinite-scroll-->
          
     <ion-card *ngFor="let sml of data.move_line_ids">
         <!--ion-card-title class="ion-text-center">{{sml.field_status_apk}} // {{data.tracking.value}} // {{sml.state.value}} // {{AdvanceOptions}}</ion-card-title-->
@@ -260,13 +263,13 @@
           
       </ion-card-content>
     </ion-card>
-     <ion-infinite-scroll *ngIf="NeedScroll" threshold="20px" (ionInfinite)="EventLoadMoveLines($event, 1)" >
+     <!--ion-infinite-scroll *ngIf="NeedScroll" threshold="20px" (ionInfinite)="EventLoadMoveLines($event, 1)" >
       <ion-infinite-scroll-content style="min-height: 1px; text-align: right"
         loadingSpinner="bubbles"
         loadingText="Cargando más líneas...">
         <span class="product-link">{{SmlIndex}} / {{offset}} de {{data.move_lines_count}}</span>
       </ion-infinite-scroll-content>
-    </ion-infinite-scroll>
+    </ion-infinite-scroll-->
   </div>
   <!--div *ngIf="data && data.tracking.value=='none'">
     <ion-card *ngFor="let sml of data.move_line_ids">

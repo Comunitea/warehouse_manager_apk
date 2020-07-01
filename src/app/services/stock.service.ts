@@ -71,12 +71,13 @@ export class StockService {
 
   BINARYPOSITION = {product_id: 0, location_id: 1, lot_id: 2, package_id: 3, location_dest_id: 4, result_package_id: 5, qty_done: 6};
   FLAG_PROP =  {view: 1, req: 2, done: 4};
-
   status: Array<{'model': BigInteger, 'ids': Array<BigInteger>, 'domain': []; filter: 'filter', limit: BigInteger, offset: BigInteger}>;
   ModelInfo: {};
   TreeLimit: number;
   FilterMovesValues: {};
   FilterMoves: string;
+  Parameter: {};
+  Defaults: {'ShowLots': true};
 
   constructor(
     public odooCon: OdooService,
@@ -84,8 +85,17 @@ export class StockService {
     public storage: Storage
   ) {
     this.Domains = {};
+    this.Parameter = {};
     this.SetDomainsStates();
   }
+
+  SetParam(param, value){
+    this.Parameter[param] = value;
+  }
+  GetParam(param){
+    return this.Parameter[param] || this.Defaults[param];
+  }
+
   SetFilterMoves(filter){
     this.FilterMoves = filter;
   }
@@ -1068,7 +1078,36 @@ export class StockService {
     });
     return promise;
 }
-
+  LoadEans(values){
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.inventory', 'load_eans', values).then((done) => {
+        console.log(done);
+        resolve(done);
+      })
+      .catch((err) => {
+        console.log(err);
+        reject(err);
+        console.log('Error al enviar los eans:' + err.msg.error_msg);
+    });
+    });
+    return promise;
+  }
+  LoadEansToMove(values){
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.move', 'load_eans', values).then((done) => {
+        console.log(done);
+        resolve(done);
+      })
+      .catch((err) => {
+        console.log(err);
+        reject(err);
+        console.log('Error al enviar los eans:' + err.msg.error_msg);
+    });
+    });
+    return promise;
+  }
   DeleteLocation(values){
     const self = this;
     const promise = new Promise( (resolve, reject) => {

@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, ViewChild, HostListener } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Storage } from '@ionic/storage';
-import { AlertController, ActionSheetController, IonInfiniteScroll, ToastController} from '@ionic/angular';
+import { AlertController, ActionSheetController, IonInfiniteScroll, ToastController, ModalController} from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { AudioService } from '../../services/audio.service';
 import { StockService } from '../../services/stock.service';
@@ -10,8 +10,8 @@ import { LoadingController } from '@ionic/angular';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
 // import { setMaxListeners } from 'cluster';
 import { ScannerService } from '../../services/scanner.service';
-
-
+import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
+import {OverlayEventDetail} from '@ionic/core';
 
 @Component({
   selector: 'app-move-form',
@@ -19,14 +19,10 @@ import { ScannerService } from '../../services/scanner.service';
   styleUrls: ['./move-form.page.scss'],
 })
 
-
-
 export class MoveFormPage implements OnInit {
 
   @ViewChild(ScannerFooterComponent) ScannerFooter: ScannerFooterComponent;
   @ViewChild(IonInfiniteScroll, {static: false}) infiniteScroll: IonInfiniteScroll;
-
-
   @Input() scanner_reading: string;
 
 
@@ -50,7 +46,7 @@ export class MoveFormPage implements OnInit {
   ShowMoves: boolean;
   WaitingQty: boolean;
   ActiveLine: any;
-  FirstLoad: boolean;
+  
   DirtyLines: boolean;
   QtyDirty: boolean;
   offset: number;
@@ -88,7 +84,8 @@ export class MoveFormPage implements OnInit {
     private location: Location,
     public loadingController: LoadingController,
     public toastController: ToastController,
-    public actionSheetController: ActionSheetController
+    public actionSheetController: ActionSheetController,
+    private modalController: ModalController,
   ) {
     this.moves = ['up', 'down', 'left', 'right'];
   }
@@ -223,8 +220,6 @@ export class MoveFormPage implements OnInit {
     this.limit = this.stock.TreeLimit;
     this.limit_reached = false;
     this.LoadingMoves = false;
-    this.ShowLots = true;
-    this.ShowMoves = !this.ShowLots;
     this.stock.SetModelInfo('App', 'ActivePage', 'MoveFormPage');
     this.InitVars();
     const move = this.route.snapshot.paramMap.get('id');
@@ -232,6 +227,7 @@ export class MoveFormPage implements OnInit {
   }
 
   ngOnInit() {
+    this.stock.SetParam('ShowLots', true);
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
@@ -250,7 +246,6 @@ export class MoveFormPage implements OnInit {
   }
   InitVars() {
     this.StateIcon = this.stock.getStateIcon('stock.move');
-    this.FirstLoad = true;
     this.Ready = true;
     this.QtyDirty = false;
     this.Filter = 'Todos';
@@ -261,7 +256,6 @@ export class MoveFormPage implements OnInit {
     this.LotNames = [];
     this.NewLotNames = [];
     this.BarcodeLength = 0;
-    this.FirstLoad = true;
   }
   read_status(field, campo, propiedad) {
     return this.stock.read_status(field, campo, propiedad);
@@ -269,8 +263,15 @@ export class MoveFormPage implements OnInit {
 
   AlternateShowLots() {
     this.audio.play('click');
-    this.ShowLots = !this.ShowLots;
-    this.ShowMoves = !this.ShowLots;
+    if (this.data['tracking'] !== 'none'){
+      this.ShowLots = !this.ShowLots;
+      this.ShowMoves = !this.ShowLots;
+    }
+    else {
+      this.ShowLots = false;
+      this.ShowMoves = true;
+    }
+    this.stock.SetParam('ShowLots', this.ShowLots);
   }
 
   AlternateAdvanceOptions() {
@@ -403,7 +404,7 @@ export class MoveFormPage implements OnInit {
           handler: (data) => {
             if (SmlId['qty_done'] !== data['qty_done']) {
               const QuantityDone = this.data['quantity_done'] - SmlId['qty_done'] + data['qty_done']
-              if (QuantityDone > this.data['product_uom_qty']) {
+              if (QuantityDone > this.data['reserved_availability']) {
                 return this.QtyError();
               }
               const values = {qty_done: data['qty_done']};
@@ -454,7 +455,16 @@ export class MoveFormPage implements OnInit {
     this.stock.UpdateMoveLineQty(values).then((res) => {}).catch((error) => {});
 
   }
-
+  apply_views(){
+     if (this.data['tracking'].value === 'serial'){
+      this.ShowLots = this.stock.GetParam('ShowLots');
+      this.ShowMoves = !this.ShowLots;
+    }
+    else{
+      this.ShowLots = false;
+      this.ShowMoves = true;
+    }
+  }
   apply_move_data(data) {
     this.InitData();
     console.log("Entro en Apply move data")
@@ -465,15 +475,9 @@ export class MoveFormPage implements OnInit {
     } else {
       data['base64'] = true;
     }
-    if (this.data && data['id'] !== this.data['id']){
-      this.FirstLoad = true;
-    }
-    else {
-      this.FirstLoad = false;
-    }
-
     this.data = data;
     this.BarcodeLength = 0;
+
     for (const sml of data['move_line_ids']) {
       if (sml.lot_name) {
         this.LotNames.push(sml.lot_name);
@@ -483,23 +487,10 @@ export class MoveFormPage implements OnInit {
         this.BarcodeLength = sml.lot_id.name.length;
       }
     }
-
-    if (this.FirstLoad) {
-      if (this.data['state'].value !== 'done') {
-        this.ShowLots = this.data['tracking'].value === 'serial';
-        this.ShowMoves = !this.ShowLots;
-      }
-
-      else{
-        this.ShowLots = false;
-        this.ShowMoves = true;
-      }
-
-    }
+    this.apply_views();
     this.PendingQty = this.data['reserved_availability'] - this.data['quantity_done'];
     this.offset = this.data['move_line_ids'].length;
     this.NeedScroll = this.offset >= this.stock.TreeLimit;
-    this.FirstLoad = false;
     this.cancelLoading();
 
     // this.audio.play('click');
@@ -527,8 +518,6 @@ export class MoveFormPage implements OnInit {
         this.limit = this.stock.TreeLimit;
         this.limit_reached = false;
         this.LoadingMoves = false;
-        this.ShowLots = true;
-        this.ShowMoves = !this.ShowLots;
         self.apply_move_data(data);
 
 
@@ -657,7 +646,7 @@ export class MoveFormPage implements OnInit {
       // Si hay un sml_id
       // entonces miro a ver si  superamos la cantidad
       const QuantityDone = this.data['quantity_done'] + 1;
-      if (QuantityDone > this.data['product_uom_qty']) {
+      if (QuantityDone > this.data['reserved_availability']) {
 
         return this.QtyError();
       }
@@ -693,9 +682,9 @@ export class MoveFormPage implements OnInit {
     const field = this.data['default_location'].value;
     // Miro si coincide con algún ubicación necesaria de los movimientos
     const Confirm = this.LastReading === this.scanner_reading;
-    const MovesToUpdate = this.GetMovesToChangeLoc(this.data['move_line_ids'], Confirm);
+    // const MovesToUpdate = this.GetMovesToChangeLoc(this.data['move_line_ids'], Confirm);
     const SmlIds = [];
-    for (const move of MovesToUpdate) {SmlIds.push(move['id']); }
+    for (const move of this.data['move_line_ids']) {SmlIds.push(move['id']); }
     const values = {  move_id: this.data['id'],
                       sml_ids: SmlIds,
                       field: this.data['default_location'].value,
@@ -863,7 +852,7 @@ export class MoveFormPage implements OnInit {
   }
 
   ProcessSerialId() {
-    if (this.data['quantity_done'] >= this.data['product_uom_qty'] || this.LotNames.length >= this.data['product_uom_qty']) {
+    if (this.data['quantity_done'] >= this.data['reserved_availability'] || this.LotNames.length >= this.data['reserved_availability']) {
       return this.QtyError();
     }
     if (this.data['state'].value === 'done') {return; }
@@ -956,7 +945,6 @@ export class MoveFormPage implements OnInit {
       });
     }
     return;
-    
   }
 
   SearchOtherMoveByScanner(){}
@@ -1029,6 +1017,51 @@ export class MoveFormPage implements OnInit {
       }
     }  */
   }
+
+  OpenBarcodeMultiline(ProductId, PName, LName){
+    this.scanner.ActiveScanner = false;
+    this.stock.SetModelInfo('App', 'ActivePage', '');
+    this.openModalBarcodeMulti(ProductId, PName, LName);
+  }
+  async openModalBarcodeMulti(PrId, pname, lname){
+    const modal = await this.modalController.create({
+      component: BarcodeMultilinePage,
+      componentProps: { LocationId: this.data['active_location_id']['id'],
+                        MoveId: this.data['id'],
+                        ProductId: PrId,
+                        LName: lname,
+                        PName: pname,
+                        IName: 'Multilinea'
+                      },
+    });
+    modal.onDidDismiss().then((detail: OverlayEventDetail) => {
+      this.stock.SetModelInfo('App', 'ActivePage', 'MoveFormPage');
+      if (detail !== null && detail['data'].length > 0) {
+        const values = {move_id: this.data['id'],
+                        location_id: this.data['active_location_id']['id'],
+                        product_id: PrId,
+                        ean_ids: detail['data']};
+        this.LoadEans(values);
+      }
+    });
+    await modal.present();
+  }
+  LoadEans(values){
+    this.presentLoading();
+    let self = this;
+    this.stock.LoadEansToMove(values).then((data) => {
+      this.apply_move_data(data);
+      this.loading.dismiss();
+    })
+    .catch((error) => {
+      this.presentAlert(error.title, error.msg.error_msg);
+      this.loading.dismiss();
+    });
+
+  }
+
+
+
   NavigateStockPicking(PickingId){
     this.router.navigateByUrl('/stock-picking/' + PickingId);
   }
