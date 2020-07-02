@@ -87,6 +87,10 @@ export class StockService {
     this.Domains = {};
     this.Parameter = {};
     this.SetDomainsStates();
+    this.GetWhCodeFilter('crm.team', 'filter_crm_team');
+    this.GetWhCodeFilter('delivery.carrier', 'filter_delivery_carrier');
+    this.GetWhCodeFilter('stock.picking.batch', 'filter_stock_picking_batch');
+
   }
 
   SetParam(param, value){
@@ -218,7 +222,6 @@ export class StockService {
   GetStates(Model, Field, Type= 'Selection'){
     const self = this;
     const values = {  model: Model, field: Field, type: Type};
-
     self.odooCon.execute('info.apk', 'get_field_group', values).then((data) => {
         this.SetModelInfo(Model, 'filter_' + Field, data);
       })
@@ -229,6 +232,17 @@ export class StockService {
 
   }
 
+  GetWhCodeFilter(Model, Filter){
+    const self = this;
+    const values = {};
+    self.odooCon.execute(Model, 'get_wh_code_filter', values).then((data) => {
+        this.SetModelInfo(Model, Filter, data);
+      })
+      .catch((err) => {
+        console.log('Error al sacar los wh_codes para los filtros los campos de un modelo: ' + err.msg.error_msg);
+
+    });
+  }
 
   RemoveMoveLineId(values){
     const self = this;
@@ -417,17 +431,16 @@ export class StockService {
     }
 
   }
-  GetPickingList(Search= null, Offset= 0, Limit= 0, State = null){
+  GetPickingList(Search= null, Offset= 0, Limit= 0, FilterValues = {}){
     const self = this;
-
-    if (State && State['value'] === 'all'){State = null; }
     const TypeId = this.GetModelInfo('stock.picking.type', 'PickingTypeId');
     const DomainName = this.GetModelInfo ('stock.picking.type', 'DomainName');
     const ActiveIds = this.GetModelInfo('stock.picking.batch', 'ActiveIds') || [];
     const values = {picking_type_id: TypeId,
                     domain_name: DomainName,
                     active_ids: ActiveIds,
-                    state: State,
+                    state: null,
+                    filter_values: FilterValues,
                     search: Search,
                     limit: Limit,
                     offset: Offset};
@@ -908,7 +921,9 @@ export class StockService {
     const domain = [];
 
     if (search) {
-      domain.push('|', ['name', 'ilike', '%' + search + '%'], ['default_code', 'ilike', '%' + search + '%']);
+      domain.push('|', '|', ['wh_code', 'ilike', '%' + search + '%'],
+      ['name', 'ilike', '%' + search + '%'],
+      ['default_code', 'ilike', '%' + search + '%']);
     }
 
     const values = {
@@ -943,7 +958,7 @@ export class StockService {
       offset: 0,
       limit: 0,
       fields: ['id', 'name', 'default_code', 'list_price', 'standard_price', 'qty_available', 'virtual_available', 'categ_id', 'tracking',
-      'barcode', 'description_short', 'image_medium', 'stock_quant_ids']
+      'barcode', 'apk_name', 'image_medium', 'stock_quant_ids']
     };
     console.log(values);
     const promise = new Promise( (resolve, reject) => {

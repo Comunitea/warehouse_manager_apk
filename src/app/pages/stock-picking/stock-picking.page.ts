@@ -166,17 +166,23 @@ async InputQty(Index)
     if (Move.reserved_availability === 0){
       return this.presentAlert('Aviso', 'No tienes ninguna cantidad reservada. Regulariza inventario')
     }
+    let ProposedQty;
     this.audio.play('click');
+    if (Move['quantity_done'] === 0){
+      ProposedQty = Move['reserved_availability'];
+    }
+    else {ProposedQty = Move['quantity_done']; }
+
     const alert = await this.alertCtrl.create({
       header: 'Cantidad',
       subHeader: '',
       inputs: [{name: 'qty_done',
-               value: Number(Move['quantity_done']),
+               value: Number(ProposedQty),
                type: 'number',
                id: 'qty-id',
                // cssClass: 'input-number primary',//
                // class: 'input-number',
-               placeholder:  Move['quantity_done']}],
+               placeholder:  ProposedQty}],
       buttons: [{
           text: 'Cancelar',
           role: 'cancel',
@@ -193,11 +199,12 @@ async InputQty(Index)
               // }
               // Similar a check product pero con cantidad en vez de increment0
               let self = this;
-              this.presentLoading('Actualizando ...');
+
               const QuantityDone = data['qty_done'];
-              if (QuantityDone > Move['product_uom_qty']) {
+              if (QuantityDone > Move['reserved_availability']) {
                 return this.QtyError();
               }
+              this.presentLoading('Actualizando ...');
               this.stock.UpdateMoveQty( Move['id'], false, false, data['qty_done'], false, this.FilterMoves).then((res) => {
                 this.loading.dismiss();
                 if (res !== false){

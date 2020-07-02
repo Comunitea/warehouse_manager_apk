@@ -35,8 +35,8 @@ export class ProductListPage implements OnInit {
   }
 
   ngOnInit() {
-    this.odoo.isLoggedIn().then((data)=>{
-      if (data==false) {
+    this.odoo.isLoggedIn().then((data) => {
+      if (data == false) {
         this.router.navigateByUrl('/login');
       } else {
         this.get_product_list();
@@ -68,7 +68,7 @@ export class ProductListPage implements OnInit {
   get_product_list(search=null){
     this.offset = 0;
     this.limit_reached = false;
-    this.stock.get_product_list(this.offset, this.limit, search).then((data:Array<{}>)=> {
+    this.stock.get_product_list(this.offset, this.limit, search).then((data:Array <{}> )=> {
       this.product_list = data;
       if(Object.keys(data).length < this.stock.TreeLimit){
         this.limit_reached = true;

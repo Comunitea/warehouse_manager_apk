@@ -32,7 +32,12 @@ export class StockPickingListPage implements OnInit {
   States: Array<{}>;
   State: {};
   StateValue: string;
+  CarrierValue: string;
+  TeamValue: string;
   MaxNumber: number;
+  FilterDeliveryCarrier: Array<string>;
+  FilterCrmTeam: Array<string>;
+  FilterPickState: Array<string>;
 
   constructor(
     private odoo: OdooService,
@@ -49,12 +54,18 @@ export class StockPickingListPage implements OnInit {
 
   ionViewDidEnter(){
     this.offset = 0;
-    this.limit = this.MaxNumber = this.stock.TreeLimit;
+    this.limit = this.MaxNumber = this.stock.TreeLimit * 2;
     this.limit_reached = false;
     this.GetPickingList(null, this.offset, this.limit);
   }
 
   ngOnInit() {
+    this.StateValue = '';
+    this.CarrierValue = '';
+    this.TeamValue = '';
+    this.FilterPickState = this.stock.GetModelInfo('stock.picking.batch', 'filter_stock_picking_batch');
+    this.FilterDeliveryCarrier = this.stock.GetModelInfo('delivery_carrier', 'filter_delivery_carrier');
+    this.FilterCrmTeam = this.stock.GetModelInfo('crm.team', 'filter_crm_team');
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
@@ -95,7 +106,18 @@ export class StockPickingListPage implements OnInit {
   OpenLink(PickId){
     this.router.navigateByUrl('/stock-picking/' + PickId + '/1');
   }
+  ChangeFilter(model){
+    if (model === 'pick_state'){
+      if (this.StateValue === '') {
+        this.State = null; }
+      else{
+        this.State = this.States.filter(x => x['value'] === this.StateValue)[0]; }
+    }
 
+
+    this.offset = 0;
+    this.GetPickingList(this.search, this.offset, this.limit);
+  }
   ChangeStateFilter(){
     if (this.StateValue === '') {
       this.State = null; }
@@ -112,7 +134,8 @@ export class StockPickingListPage implements OnInit {
 
   GetPickingList(search= null, offset, limit){
     this.limit_reached = false;
-    this.stock.GetPickingList(search, offset, limit, this.State).then((data: Array<{}>) => {
+    const FilterValues = {'filter_state': this.StateValue, 'filter_crm_team': this.TeamValue, 'filter_carrier': this.CarrierValue}
+    this.stock.GetPickingList(search, offset, limit, FilterValues).then((data: Array<{}>) => {
       this.pickings = data;
       if (data.length < this.MaxNumber){
         this.limit_reached = true;
@@ -169,15 +192,20 @@ export class StockPickingListPage implements OnInit {
       }
     }, 500);
   }
-
-  picking_list_infinite_scroll_add() {
-    this.offset += this.limit;
-    this.stock.GetPickingList(this.search, this.offset, this.limit, this.State).then((data: Array <{}>) => {
-      if (data.length < this.MaxNumber){
-        this.limit_reached = true;
+  NavigatePick(Index){
+    if (Index === 0)
+      {this.offset -= this.limit;
+       if (this.offset < 0) {
+         this.offset = 0; }
       }
-      for (const pick of data) {this.pickings.push(pick); }
 
+    else {this.offset += this.limit; }
+    return this.picking_list_infinite_scroll_add();
+  }
+  picking_list_infinite_scroll_add() {
+    // this.offset += this.limit;
+    this.stock.GetPickingList(this.search, this.offset, this.limit, this.State).then((data: Array <{}>) => {
+      this.pickings = data;
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);
