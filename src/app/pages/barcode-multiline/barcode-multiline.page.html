@@ -14,8 +14,8 @@
   </ion-card-header>
 
   <ion-card-content style="text-align: -webkit-center;">
-  <ion-textarea id="eans" (ionChange) = 'CalcRows()' 
-  style="background-color: #eeeeee; width: 250px; height: 350px" rows=25 textarea type="text" [(ngModel)]="ean"> </ion-textarea>
+  <ion-textarea #EanList id="eans" (ionChange) = 'CalcRows()' autofocus='true'
+    style="background-color: #eeeeee; width: 250px; height: 350px" rows=25 textarea type="text" [(ngModel)]="ean"> </ion-textarea>
   </ion-card-content>
 
   

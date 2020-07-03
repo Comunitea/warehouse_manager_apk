@@ -247,7 +247,7 @@
               size-xs="4" size-sm="4" size-md="4">
             </ion-col>
 
-            <ion-col  size-xs="5" size-sm="5" size-md="5" *ngIf="data.tracking.value === 'serial' && read_status(sml.field_status_apk, 'lot_id', 'done')" class="ion-text-right" style="padding: 0px">
+            <ion-col  size-xs="5" size-sm="5" size-md="5" *ngIf="data.tracking.value === 'serial' && read_status(sml['field_status_apk'], 'lot_id', 'done')" class="ion-text-right" style="padding: 0px">
                 <ion-icon (click) = "DeleteMoveLine(sml.id)" 
                   size="small" color = "danger" 
                   style="vertical-align: bottom state_icon" name="trash-outline"></ion-icon>

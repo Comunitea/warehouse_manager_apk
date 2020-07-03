@@ -152,8 +152,12 @@ async presentToast(Str = 'Error de validación', Header = 'Aviso:' ) {
   toast.present();
 }
 
-async InputQty(Index)
-  {
+async InputQty(Index, State = 'assigned'){
+    if (State === 'done' || State === 'draft' || State === 'confirmed') {
+      this.presentToast('Esta hecho o cancelado');
+      return;
+    }
+
     if (this.data['pick_state'].value === 'done') {
       this.audio.play('error');
       return; }
@@ -436,9 +440,14 @@ CheckScanner(val) {
     }
   }
 
-  OpenLink(LocationId, model= 'move-form'){
+  OpenLink(LocationId, State, model= 'move-form'){
+    if (State === 'assigned' || State === 'partially_available') {
     this.audio.play('click');
     this.router.navigateByUrl('/' + model + '/' + LocationId);
+    }
+    else {
+      this.presentToast('Esta hecho o cancelado');
+    }
   }
 
   ActionAssign(){
@@ -485,6 +494,16 @@ CheckScanner(val) {
     });
   }
   ButtonValidate(){
+    if (this.data['need_package'] && this.data['carrier_packages'] === 0){
+      this.audio.play('error');
+      this.presentToast('Necesitas meter los paquetes');
+      return;
+    }
+    if (this.data['need_weight'] && this.data['carrier_weight'] === 0){
+      this.audio.play('error');
+      this.presentToast('Necesitas meter el peso');
+      return;
+    }
     let self = this;
     this.presentLoading();
     this.stock.ButtonValidate(this.data['id']).then((data) => {
@@ -537,13 +556,19 @@ CheckScanner(val) {
 
   NavigatePickingList(){
     this.audio.play('click');
-    let ActiveIds = this.stock.GetModelInfo('stock.picking.batch', 'ActiveIds');
+    // let ActiveIds = this.stock.GetModelInfo('stock.picking.batch', 'ActiveIds');
     this.router.navigateByUrl('/stock-picking-list');
   }
   ApplyPickData(data){
     this.loading.dismiss();
     this.data = data;
     this.NextPrev = this.stock.GetNextPrev('stock.picking.batch', data['id']);
+    if (data['notes']){
+      setTimeout(() => {
+        this.presentAlert('Aviso', data['notes']);
+      }, 300);
+      
+    }
 
   }
   GetPickingInfo(PickId, index = 0) {

@@ -3,7 +3,7 @@ import { Component, NgModule } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { SplashScreen } from '@ionic-native/splash-screen/ngx';
 import { StatusBar } from '@ionic-native/status-bar/ngx';
-
+import { Keyboard } from '@ionic-native/keyboard/ngx';
 import { Storage } from '@ionic/storage';
 import { OdooService } from './services/odoo.service';
 import { StockService } from './services/stock.service';
@@ -42,7 +42,7 @@ export class AppComponent {
       icon: 'log-out'
     },
     {
-      title: '01.05.00',
+      title: '01.07.00',
       url: '',
       icon: 'bug-outline'
     }

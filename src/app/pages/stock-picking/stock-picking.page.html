@@ -15,15 +15,17 @@
   <ion-card >
     <ion-card-header>
       <ion-row>
-         <ion-col class="product-link" (click)="Navigate(0)">Anterior
+         <ion-col>
+          <ion-badge (click)="Navigate(0)" style="marging-left: 15px; margin-right: 15px"> Anterior </ion-badge> 
         </ion-col>
         
         <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="ButtonValidate(data.picking_id.id)">Validar
         </ion-col> -->
-        <ion-col class="ion-text-center">
+        <ion-col class="ion-text-right">
           <span *ngIf="data && data.active_location_id">{{data.active_location_id.old_name}}</span>
         </ion-col>
-        <ion-col class="product-link ion-text-right" (click)="Navigate(1)">Siguiente
+        <ion-col class="ion-text-right">
+          <ion-badge (click)="Navigate(1)" style="marging-left: 15px; margin-right: 0px"> Siguiente </ion-badge> 
         </ion-col>
       </ion-row>
       <ion-row>
@@ -31,7 +33,7 @@
           <ion-card-title >{{data.apk_name}}</ion-card-title>
           <ion-card-subtitle class="ion-text-right {{'state_'+ data.pick_state.value}}" >
               <ion-badge *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()" style="marging-left: 15px; margin-right: 15px"> Validar </ion-badge> 
-              <ion-badge style="marging-left: 15px; margin-right: 15px" class="ion-text-left {{'back_state_'+ data.pick_state.value}}"># {{ data['move_line_count']}} </ion-badge>
+              <ion-badge style="marging-left: 15px; margin-right: 15px" class="ion-text-left {{'back_state_'+ data.pick_state.value}}"># {{ data['total_qty_done']}} de {{data['total_reserved_availability']}} </ion-badge>
               <ion-badge class="ion-text-right {{'back_state_'+ data.pick_state.value}}">{{data.pick_state.name}}</ion-badge>
           </ion-card-subtitle>
         </ion-col>
@@ -62,6 +64,12 @@
         De <span class="product-link" *ngIf="data['location_id']" color="primary" (click)="OpenLink(data.location_id['id'], 'stock-location')">{{data.location_id['name']}} </span> para
         <span class="product-link" *ngIf="data['location_dest_id']" color="primary" (click)="OpenLink(data.location_dest_id['id'], 'stock-location')">{{data.location_dest_id['name']}} </span>
       </div-->
+      <div class="row-even" style="text-align: center" *ngIf="data['sale_id']">
+        <ion-row>
+          <ion-col size=6><span><strong>{{data.team_id.name}}</strong></span></ion-col>
+          <ion-col size=6><span><strong>{{data.carrier_id.name}}</strong></span></ion-col>
+        </ion-row>
+      </div>
       <div class="row-even" style="text-align: center">
         <ion-row >
           <ion-col size=3><span *ngIf="data['priority']"><strong>{{data.priority['name'] + " "}}</strong></span></ion-col>
@@ -117,7 +125,7 @@
               <ion-col size=9>
                 <ion-row  style="padding: 0px">
                 <!-- [ngClass]="{'success': line.quantity_done == line.product_uom_qty}">-->
-                  <ion-col size="9" (click)="OpenLink(line.id)"> 
+                  <ion-col size="9" (click)="OpenLink(line.id, line.state.value)"> 
                     <ion-icon  size="normal" name="{{TrackingIcon[line.tracking.value]}}"></ion-icon>
                     <span class="product-link" style="font-size: small; "> {{line.product_id['default_code']}}</span>
                   </ion-col> 
@@ -133,18 +141,18 @@
                 <ion-button         
                               size="small"
                               class="min80"
-                              (click)="InputQty(index)">
+                              (click)="InputQty(index, line.state.value)">
                               <span> {{line.quantity_done}} </span>
                               <ion-icon slot="end" name="checkmark-done-circle-outline"></ion-icon>
                               <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>
                               </ion-button>
               </ion-col>
-              <ion-col size=3 class="min80" style="text-align: right" *ngIf="line.state.value!='done'" (click)="InputQty('Cantidad', sml)">
+              <ion-col size=3 class="min80" style="text-align: right" *ngIf="line.state.value!='done'">
                 <ion-button         
                           *ngIf="line.quantity_done == 0 && ['assigned', 'partially_available'].indexOf(line.state.value) != -1" 
                               size="small"
                               class="min80 {{'move_state_'+ line.field_status}} "
-                              (click)="InputQty(index)">
+                              (click)="InputQty(index, line.state.value)">
                               <span> {{line.quantity_done}} </span>
                               <ion-icon slot="end" name="cart-outline"></ion-icon>
                               <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>
@@ -153,7 +161,7 @@
                           *ngIf="line.quantity_done == 0 && ['confirmed'].indexOf(line.state.value) != -1" 
                               size="small"
                               class="min80 {{'move_state_'+ line.field_status}}"
-                              (click)="InputQty(index)">
+                              (click)="InputQty(index, line.state.value)">
                               <span> {{line.quantity_done}} </span>
                               <ion-icon slot="end" name="trash-bin-outline"></ion-icon>
                               <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>
@@ -162,7 +170,7 @@
                           *ngIf="line.quantity_done != 0 && ['assigned', 'partially_available'].indexOf(line.state.value) != -1" 
                               size="small"
                               class="min80 {{'move_state_'+ line.field_status}}"
-                              (click)="InputQty(index)">
+                              (click)="InputQty(index, line.state.value)">
                               <span> {{line.quantity_done}} </span>
                               <ion-icon slot="end" name="checkmark-circle-outline"></ion-icon>
                               <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>

@@ -36,13 +36,13 @@ export class ProductListPage implements OnInit {
 
   ngOnInit() {
     this.odoo.isLoggedIn().then((data) => {
-      if (data == false) {
+      if (data === false) {
         this.router.navigateByUrl('/login');
       } else {
         this.get_product_list();
       }
     })
-    .catch((error)=>{
+    .catch((error) => {
       this.presentAlert('Error al comprobar tu sesión:', error);
     });
   }

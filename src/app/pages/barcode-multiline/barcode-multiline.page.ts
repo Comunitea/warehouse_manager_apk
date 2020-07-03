@@ -1,6 +1,7 @@
-import { Component, OnInit, Input, } from '@angular/core';
-import { NavController, ModalController } from '@ionic/angular';
+import { Component, OnInit, Input, ViewChild } from '@angular/core';
+import { NavController, ModalController, IonTextarea} from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
+import { Keyboard } from '@ionic-native/keyboard/ngx';
 import { Timestamp } from 'rxjs';
 
 @Component({
@@ -17,18 +18,31 @@ export class BarcodeMultilinePage implements OnInit {
   @Input() IName;
   @Input() PName;
 
+  @ViewChild('EanList') EanList: IonTextarea;
+
   ean: string;
   rows: number;
 
-  constructor(public odoo: OdooService, private modalController: ModalController) {
+  constructor(public odoo: OdooService, private modalController: ModalController,private keyboard: Keyboard) {
 
    }
 
-   ionViewWillEnter() {
-
+  ionViewWillEnter() {
+  setTimeout(() => {
+    this.EanList.setFocus();
+    setTimeout(() => {
+      this.keyboard.hide();
+    }, 50);
+  }, 150);
   }
-
+  AfterViewInit() {
+    setTimeout(() => {
+       this.EanList.setFocus();
+       this.keyboard.hide();
+    }, 150);
+  }
   ngOnInit() {
+    this.EanList.setFocus();
   }
   goBack() {
     this.myDismiss();

@@ -46,6 +46,9 @@ export class StockPickingTypeListPage implements OnInit {
   ionViewDidEnter(){
     this.FillMenuTypes();
     this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
+    this.stock.GetWhCodeFilter('stock.picking.batch', 'filter_crm_team', 'team_id');
+    this.stock.GetWhCodeFilter('stock.picking.batch', 'filter_delivery_carrier', 'carrier_id');
+    this.stock.GetWhCodeFilter('stock.picking.batch', 'filter_batch_state', 'state');
   }
 
   ngOnInit() {

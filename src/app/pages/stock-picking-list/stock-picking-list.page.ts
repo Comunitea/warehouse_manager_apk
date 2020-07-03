@@ -31,21 +31,22 @@ export class StockPickingListPage implements OnInit {
   StateIcon: {};
   States: Array<{}>;
   State: {};
-  StateValue: string;
-  CarrierValue: string;
-  TeamValue: string;
   MaxNumber: number;
   FilterDeliveryCarrier: Array<string>;
+  ValueFilterDeliveryCarrier: string;
   FilterCrmTeam: Array<string>;
+  ValueFilterCrmTeam: string;
   FilterPickState: Array<string>;
+  ValueFilterPickState: string;
+  TotalPicks: number;
 
   constructor(
-    private odoo: OdooService,
+    public odoo: OdooService,
     public router: Router,
     private route: ActivatedRoute,
     public alertCtrl: AlertController,
     private audio: AudioService,
-    private stock: StockService,
+    public stock: StockService,
   ) {
     // this.offset = 0;
     // this.limit = 5;
@@ -60,18 +61,14 @@ export class StockPickingListPage implements OnInit {
   }
 
   ngOnInit() {
-    this.StateValue = '';
-    this.CarrierValue = '';
-    this.TeamValue = '';
-    this.FilterPickState = this.stock.GetModelInfo('stock.picking.batch', 'filter_stock_picking_batch');
-    this.FilterDeliveryCarrier = this.stock.GetModelInfo('delivery_carrier', 'filter_delivery_carrier');
-    this.FilterCrmTeam = this.stock.GetModelInfo('crm.team', 'filter_crm_team');
+    this.FilterPickState = this.stock.GetModelInfo('stock.picking.batch', 'filter_batch_state');
+    this.FilterDeliveryCarrier = this.stock.GetModelInfo('stock.picking.batch', 'filter_delivery_carrier');
+    this.FilterCrmTeam = this.stock.GetModelInfo('stock.picking.batch', 'filter_crm_team');
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
       } else {
         // Lo voy a cambiar por
-        this.StateValue = '';
         this.StateIcon = this.stock.getStateIcon('stock.move');
         this.States = this.stock.GetModelInfo('stock.picking.batch', 'filter_state');
         const All = {name: 'Todos', value: 'all'};
@@ -107,25 +104,8 @@ export class StockPickingListPage implements OnInit {
     this.router.navigateByUrl('/stock-picking/' + PickId + '/1');
   }
   ChangeFilter(model){
-    if (model === 'pick_state'){
-      if (this.StateValue === '') {
-        this.State = null; }
-      else{
-        this.State = this.States.filter(x => x['value'] === this.StateValue)[0]; }
-    }
-
-
     this.offset = 0;
     this.GetPickingList(this.search, this.offset, this.limit);
-  }
-  ChangeStateFilter(){
-    if (this.StateValue === '') {
-      this.State = null; }
-    else{
-      this.State = this.States.filter(x => x['value'] === this.StateValue)[0]; }
-    this.offset = 0;
-    this.GetPickingList(this.search, this.offset, this.limit);
-
   }
   OpenModal(Model, Id) {
     this.router.navigateByUrl('/info-sale-order/' + Model + '/' + Id);
@@ -134,9 +114,10 @@ export class StockPickingListPage implements OnInit {
 
   GetPickingList(search= null, offset, limit){
     this.limit_reached = false;
-    const FilterValues = {'filter_state': this.StateValue, 'filter_crm_team': this.TeamValue, 'filter_carrier': this.CarrierValue}
+    const FilterValues = {'filter_pick_state': this.ValueFilterPickState, 'filter_crm_team': this.ValueFilterCrmTeam, 'filter_delivery_carrier': this.ValueFilterDeliveryCarrier}
     this.stock.GetPickingList(search, offset, limit, FilterValues).then((data: Array<{}>) => {
       this.pickings = data;
+      this.TotalPicks = data && data[0]['count_batch_ids'] || 0;
       if (data.length < this.MaxNumber){
         this.limit_reached = true;
       }
@@ -204,8 +185,11 @@ export class StockPickingListPage implements OnInit {
   }
   picking_list_infinite_scroll_add() {
     // this.offset += this.limit;
-    this.stock.GetPickingList(this.search, this.offset, this.limit, this.State).then((data: Array <{}>) => {
+    const FilterValues = {'filter_pick_state': this.ValueFilterPickState, 'filter_crm_team': this.ValueFilterCrmTeam, 'filter_delivery_carrier': this.ValueFilterDeliveryCarrier}
+    this.stock.GetPickingList(this.search, this.offset, this.limit, FilterValues).then((data: Array <{}>) => {
+      this.TotalPicks = data && data[0]['count_batch_ids'] || 0
       this.pickings = data;
+      this.limit_reached = data.length < this.limit;
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);

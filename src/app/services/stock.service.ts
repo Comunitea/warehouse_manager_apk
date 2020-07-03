@@ -87,9 +87,9 @@ export class StockService {
     this.Domains = {};
     this.Parameter = {};
     this.SetDomainsStates();
-    this.GetWhCodeFilter('crm.team', 'filter_crm_team');
-    this.GetWhCodeFilter('delivery.carrier', 'filter_delivery_carrier');
-    this.GetWhCodeFilter('stock.picking.batch', 'filter_stock_picking_batch');
+    // this.GetWhCodeFilter('crm.team', 'filter_crm_team');
+    // this.GetWhCodeFilter('delivery.carrier', 'filter_delivery_carrier');
+    // this.GetWhCodeFilter('stock.picking.batch', 'filter_stock_picking_batch');
 
   }
 
@@ -232,11 +232,11 @@ export class StockService {
 
   }
 
-  GetWhCodeFilter(Model, Filter){
+  GetWhCodeFilter(Model, Filter, Field){
     const self = this;
-    const values = {};
+    const values = {field: Field, filter: Filter};
     self.odooCon.execute(Model, 'get_wh_code_filter', values).then((data) => {
-        this.SetModelInfo(Model, Filter, data);
+        self.SetModelInfo(Model, Filter, data);
       })
       .catch((err) => {
         console.log('Error al sacar los wh_codes para los filtros los campos de un modelo: ' + err.msg.error_msg);

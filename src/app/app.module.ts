@@ -5,7 +5,7 @@ import { RouteReuseStrategy } from '@angular/router';
 import { IonicModule, IonicRouteStrategy} from '@ionic/angular';
 import { SplashScreen } from '@ionic-native/splash-screen/ngx';
 import { StatusBar } from '@ionic-native/status-bar/ngx';
-
+import { Keyboard } from '@ionic-native/keyboard/ngx';
 import { IonicStorageModule } from '@ionic/storage';
 import { NativeAudio } from '@ionic-native/native-audio/ngx';
 import { SpeechRecognition } from '@ionic-native/speech-recognition/ngx';
@@ -26,6 +26,7 @@ import { AppRoutingModule } from './app-routing.module';
   providers: [
     StatusBar,
     SplashScreen,
+    Keyboard,
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     NativeAudio,
     SpeechRecognition,
