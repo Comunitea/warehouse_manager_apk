@@ -152,6 +152,32 @@ async presentToast(Str = 'Error de validación', Header = 'Aviso:' ) {
   toast.present();
 }
 
+async confirmationPrompt(Str = 'Error de validación', Header = 'Aviso:') {
+  return new Promise(async (resolve) => {
+    const confirm = await this.alertCtrl.create({
+      header: Header,
+      message: Str,
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          handler: () => {
+            return resolve(false);
+          },
+        },
+        {
+          text: 'OK',
+          handler: () => {
+            return resolve(true);
+          },
+        },
+      ],
+    });
+
+    await confirm.present();
+  });
+}
+
 async InputQty(Index, State = 'assigned'){
     if (State === 'done' || State === 'draft' || State === 'confirmed') {
       this.presentToast('Esta hecho o cancelado');
@@ -493,7 +519,7 @@ CheckScanner(val) {
       this.presentAlert('Error', error);
     });
   }
-  ButtonValidate(){
+  async ButtonValidate(){
     if (this.data['need_package'] && this.data['carrier_packages'] === 0){
       this.audio.play('error');
       this.presentToast('Necesitas meter los paquetes');
@@ -503,6 +529,13 @@ CheckScanner(val) {
       this.audio.play('error');
       this.presentToast('Necesitas meter el peso');
       return;
+    }
+    if (this.data['total_qty_done'] != this.data['total_reserved_availability']){
+      this.audio.play('error');
+      let confirmation = await this.confirmationPrompt('No se han confirmado todos los movimientos, ¿quieres validar igualmente?')
+      if (!confirmation) {
+        return;
+      }
     }
     let self = this;
     this.presentLoading();

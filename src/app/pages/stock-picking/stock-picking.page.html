@@ -16,7 +16,7 @@
     <ion-card-header>
       <ion-row>
          <ion-col>
-          <ion-badge (click)="Navigate(0)" style="marging-left: 15px; margin-right: 15px"> Anterior </ion-badge> 
+          <ion-badge (click)="Navigate(0)" style="margin-right: 15px"> Anterior </ion-badge> 
         </ion-col>
         
         <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="ButtonValidate(data.picking_id.id)">Validar
@@ -25,15 +25,15 @@
           <span *ngIf="data && data.active_location_id">{{data.active_location_id.old_name}}</span>
         </ion-col>
         <ion-col class="ion-text-right">
-          <ion-badge (click)="Navigate(1)" style="marging-left: 15px; margin-right: 0px"> Siguiente </ion-badge> 
+          <ion-badge (click)="Navigate(1)" style="margin-right: 0px"> Siguiente </ion-badge> 
         </ion-col>
       </ion-row>
       <ion-row>
         <ion-col size="8">
           <ion-card-title >{{data.apk_name}}</ion-card-title>
           <ion-card-subtitle class="ion-text-right {{'state_'+ data.pick_state.value}}" >
-              <ion-badge *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()" style="marging-left: 15px; margin-right: 15px"> Validar </ion-badge> 
-              <ion-badge style="marging-left: 15px; margin-right: 15px" class="ion-text-left {{'back_state_'+ data.pick_state.value}}"># {{ data['total_qty_done']}} de {{data['total_reserved_availability']}} </ion-badge>
+              <ion-badge *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()" style="margin-right: 15px"> Validar </ion-badge> 
+              <ion-badge style="margin-right: 15px" class="ion-text-left {{'back_state_'+ data.pick_state.value}}"># {{ data['total_qty_done']}} de {{data['total_reserved_availability']}} </ion-badge>
               <ion-badge class="ion-text-right {{'back_state_'+ data.pick_state.value}}">{{data.pick_state.name}}</ion-badge>
           </ion-card-subtitle>
         </ion-col>
