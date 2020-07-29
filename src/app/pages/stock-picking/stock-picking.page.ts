@@ -509,9 +509,8 @@ CheckScanner(val) {
     this.presentLoading('Actualizando ...');
     const values = {model: 'stock.picking.batch', id: this.picking, field: Field, value: Value};
     this.stock.ChangeFieldValue(values).then((OK: Array<{}>) => {
-
       for (const Item of OK){
-        self.data[Item['field']] = Item['value'];
+        this.data[Field] = Item[Field];
       }
       this.loading.dismiss();
     }).catch((error) => {
