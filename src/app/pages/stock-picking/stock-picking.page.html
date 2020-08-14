@@ -32,7 +32,7 @@
         <ion-col size="8">
           <ion-card-title >{{data.apk_name}}</ion-card-title>
           <ion-card-subtitle class="ion-text-right {{'state_'+ data.pick_state.value}}" >
-              <ion-badge *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()" style="margin-right: 15px"> Validar </ion-badge> 
+              <ion-badge *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()" style="margin-right: 15px"> Validar </ion-badge>
               <ion-badge style="margin-right: 15px" class="ion-text-left {{'back_state_'+ data.pick_state.value}}"># {{ data['total_qty_done']}} de {{data['total_reserved_availability']}} </ion-badge>
               <ion-badge class="ion-text-right {{'back_state_'+ data.pick_state.value}}">{{data.pick_state.name}}</ion-badge>
           </ion-card-subtitle>
@@ -72,13 +72,13 @@
       </div>
       <div class="row-even" style="text-align: center">
         <ion-row >
-          <ion-col size=3><span *ngIf="data['priority']"><strong>{{data.priority['name'] + " "}}</strong></span></ion-col>
-          <ion-col size=3><span *ngIf="data['scheduled_date']"> <strong>Fecha </strong></span></ion-col>
-          <ion-col size=3><span><strong>Paquetes</strong></span></ion-col>
-          <ion-col size=3><span><strong>Peso</strong></span></ion-col>
+          <ion-col size=4><span *ngIf="data['priority']"><strong>{{data.priority['name'] + " "}}</strong></span></ion-col>
+          <ion-col size=4><span *ngIf="data['scheduled_date']"> <strong>Fecha </strong></span></ion-col>
+          <ion-col size=2><span><strong>Packs</strong></span></ion-col>
+          <ion-col size=2><span><strong>Peso</strong></span></ion-col>
         </ion-row>
         <ion-row>
-          <ion-col size=3>
+          <ion-col size=4>
             <div *ngFor="let sale_id of data['sale_ids']">
               <span class="product-link" (click) = "OpenModal('sale.order', sale_id.id)"><strong>{{sale_id.name}}</strong></span>
             </div>
@@ -86,10 +86,10 @@
               <span class="product-link" (click) = "OpenModal('purchase.order', purchase_id.id)"><strong>{{purchase_id.name}}</strong></span>
             </div>
           </ion-col>
-          <ion-col size=3><span *ngIf="data['scheduled_date']">{{data.scheduled_date}}</span></ion-col>
-          <ion-col size=3><ion-input [ngModel]="data.carrier_packages" class="padd0 product-link" type="number" 
+          <ion-col size=4><span *ngIf="data['scheduled_date']">{{data.scheduled_date}}</span></ion-col>
+          <ion-col size=2><ion-input [ngModel]="data.carrier_packages" class="padd0 product-link" type="number" 
           (change) = "ChangePickingValue('carrier_packages', $event.target.value)"></ion-input></ion-col>
-          <ion-col size=3><ion-input [ngModel]="data.carrier_weight" class="padd0 product-link"  type="number" 
+          <ion-col size=2><ion-input [ngModel]="data.carrier_weight" class="padd0 product-link"  type="number" 
           (change) = "ChangePickingValue('carrier_weight', $event.target.value)"></ion-input></ion-col>
         </ion-row>
         
@@ -149,36 +149,28 @@
               </ion-col>
               <ion-col size=3 class="min80" style="text-align: right" *ngIf="line.state.value!='done'">
                 <ion-button         
-                          *ngIf="line.quantity_done == 0 && ['assigned', 'partially_available'].indexOf(line.state.value) != -1" 
+                          *ngIf="line.quantity_done == 0" 
                               size="small"
-                              class="min80 {{'move_state_'+ line.field_status}} "
+                              class="min80 {{'move_state_confirmed'}}"
                               (click)="InputQty(index, line.state.value)">
                               <span> {{line.quantity_done}} </span>
                               <ion-icon slot="end" name="cart-outline"></ion-icon>
                               <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>
                               </ion-button>
                 <ion-button         
-                          *ngIf="line.quantity_done == 0 && ['confirmed'].indexOf(line.state.value) != -1" 
+                          *ngIf="line.quantity_done != 0 && line.quantity_done !== line.reserved_availability"
                               size="small"
-                              class="min80 {{'move_state_'+ line.field_status}}"
-                              (click)="InputQty(index, line.state.value)">
-                              <span> {{line.quantity_done}} </span>
-                              <ion-icon slot="end" name="trash-bin-outline"></ion-icon>
-                              <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>
-                              </ion-button>
-                <ion-button         
-                          *ngIf="line.quantity_done != 0 && ['assigned', 'partially_available'].indexOf(line.state.value) != -1" 
-                              size="small"
-                              class="min80 {{'move_state_'+ line.field_status}}"
+                              class="min80 {{'move_state_assigned'}}"
                               (click)="InputQty(index, line.state.value)">
                               <span> {{line.quantity_done}} </span>
                               <ion-icon slot="end" name="checkmark-circle-outline"></ion-icon>
                               <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>
                               </ion-button>
                 <ion-button         
-                          *ngIf="['done'].indexOf(line.state.value) != -1" 
+                          *ngIf="line.quantity_done != 0 && line.quantity_done === line.reserved_availability"
                               size="small"
-                              class="min80 {{'move_state_'+ line.field_status}}">
+                              class="min80 {{'move_state_done'}}"
+                              (click)="InputQty(index, line.state.value)">
                               <span> {{line.quantity_done}} </span>
                               <ion-icon slot="end" name="checkmark-done-circle-outline"></ion-icon>
                               <span style="padding-left: 8px" slot="end">{{line.reserved_availability}}</span>

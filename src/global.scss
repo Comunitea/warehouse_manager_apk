@@ -33,7 +33,10 @@
     }
 }
 
-
+.error-link {
+    color: #e41212; 
+    font-weight: bold;
+}
 
 .product-link {
     color: var(--ion-color-primary);
@@ -104,8 +107,14 @@ ion-col {
 .state_icon {
     max-width: 25px !important;
 }
-.move_state_done {
+.move_state_confirmed {
     color: white;
+}
+.move_state_done {
+    color: lightgreen;
+}
+.move_state_assigned {
+    color: yellow;
 }
 .move_state_true {
     color: #85f085;

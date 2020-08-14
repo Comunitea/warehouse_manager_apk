@@ -98,7 +98,8 @@
       <div *ngFor="let pick of pickings; let even = even; let odd =  odd">
         <ion-row [ngClass]="{'row-odd': odd, 'row-even': even}" style="min-height: 10px">
           <ion-col size="2" class="ion-align-self-center">
-            <span class="product-link" (click)="OpenLink(pick.id)" >{{pick.apk_name.substring(pick.apk_name.length - 5)}}</span>
+            <span *ngIf="!pick['try_validate'] || pick['pick_state']['value'] === 'done'" class="product-link" (click)="OpenLink(pick.id)" >{{pick.apk_name.substring(pick.apk_name.length - 5)}}</span>
+            <span *ngIf="pick['try_validate'] && pick['pick_state']['value'] !== 'done'" class="error-link">{{pick.apk_name.substring(pick.apk_name.length - 5)}}</span>
           </ion-col>
           <ion-col class="ion-align-self-center" >
               <div>

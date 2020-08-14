@@ -227,7 +227,6 @@ export class MoveFormPage implements OnInit {
   }
 
   ngOnInit() {
-    this.stock.SetParam('ShowLots', true);
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
@@ -245,6 +244,10 @@ export class MoveFormPage implements OnInit {
     });
   }
   InitVars() {
+    this.stock.SetParam('ShowLots', true);
+    //this.ShowLots = false;
+    //this.ShowMoves = true;
+    //this.stock.SetParam('ShowLots', this.ShowLots);
     this.StateIcon = this.stock.getStateIcon('stock.move');
     this.Ready = true;
     this.QtyDirty = false;
@@ -456,7 +459,10 @@ export class MoveFormPage implements OnInit {
 
   }
   apply_views(){
-     if (this.data['tracking'].value === 'serial'){
+    // this.ShowMoves = !this.ShowLots;
+    // return;
+
+    if (this.data['tracking'].value === 'serial'){
       this.ShowLots = this.stock.GetParam('ShowLots');
       this.ShowMoves = !this.ShowLots;
     }

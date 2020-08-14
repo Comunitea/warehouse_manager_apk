@@ -87,7 +87,7 @@ export class StockPickingPage implements OnInit {
   }
 
   ionViewDidEnter(){
-
+    
     this.stock.SetModelInfo('App', 'ActivePage', 'StockPickingPage');
     this.ActiveOperation = false;
     this.picking = parseInt(this.route.snapshot.paramMap.get('id'));
@@ -529,23 +529,24 @@ CheckScanner(val) {
       this.presentToast('Necesitas meter el peso');
       return;
     }
-    if (this.data['total_qty_done'] != this.data['total_reserved_availability']){
+    if (this.data['total_qty_done'] !== this.data['total_reserved_availability']){
       this.audio.play('error');
-      let confirmation = await this.confirmationPrompt('No se han confirmado todos los movimientos, ¿quieres validar igualmente?')
+      const confirmation = await this.confirmationPrompt('No se han confirmado todos los movimientos, ¿quieres validar igualmente?')
       if (!confirmation) {
         return;
       }
     }
     let self = this;
-    this.presentLoading();
+    // this.presentLoading();
     this.stock.ButtonValidate(this.data['id']).then((data) => {
-      self.loading.dismiss();
-      self.router.navigateByUrl('/stock-picking-list');
+      // self.loading.dismiss();
+      // self.router.navigateByUrl('/stock-picking-list');
     })
     .catch((error) => {
-      self.loading.dismiss();
-      console.log('Error al validar')
+      // self.loading.dismiss();
+      // console.log('Error al validar');
     });
+    this.router.navigateByUrl('/stock-picking-list');
   }
 
   async force_set_qty_done(MoveId, field, model = 'stock.picking.batch'){

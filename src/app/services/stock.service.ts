@@ -71,13 +71,14 @@ export class StockService {
 
   BINARYPOSITION = {product_id: 0, location_id: 1, lot_id: 2, package_id: 3, location_dest_id: 4, result_package_id: 5, qty_done: 6};
   FLAG_PROP =  {view: 1, req: 2, done: 4};
+  Defaults = {ShowLots: true};
   status: Array<{'model': BigInteger, 'ids': Array<BigInteger>, 'domain': []; filter: 'filter', limit: BigInteger, offset: BigInteger}>;
   ModelInfo: {};
   TreeLimit: number;
   FilterMovesValues: {};
   FilterMoves: string;
   Parameter: {};
-  Defaults: {'ShowLots': true};
+  
 
   constructor(
     public odooCon: OdooService,
@@ -97,14 +98,20 @@ export class StockService {
     this.Parameter[param] = value;
   }
   GetParam(param){
-    return this.Parameter[param] || this.Defaults[param];
+    if (this.Parameter[param] === undefined){
+      return this.Defaults[param];
+    }
+    return this.Parameter[param];
   }
 
   SetFilterMoves(filter){
     this.FilterMoves = filter;
   }
   GetFilterMoves(){
-    return this.FilterMoves || 'Todos';
+    if (this.FilterMoves === undefined){
+      return 'Todos';
+    }
+    return this.FilterMoves;
   }
   GetModelInfo(model, key){
     if ((Object.keys(this.ModelInfo).indexOf(model) !== -1) && (Object.keys(this.ModelInfo[model]).indexOf(key) !== -1))  {
@@ -526,17 +533,25 @@ export class StockService {
     const promise = new Promise( (resolve, reject) => {
       console.log('button validate pick');
       console.log(PickId);
-      self.odooCon.execute(model, 'button_validate_apk', values).then((done) => {
-        resolve(done);
-      })
-      .catch((err) => {
-        reject(err);
-        console.log('Error al validar');
-    });
+      self.odooCon.execute(model, 'mark_as_pda_validate', values).then((ok) => {
+        if (ok) {
+          self.odooCon.execute(model, 'button_validate_apk', values).then((done) => {
+            resolve(done);
+            })
+          .catch((err) => {
+            reject(err);
+            console.log('Error al validar');
+            });
+          }
+        })
+        .catch((err) => {
+          reject(err);
+          console.log('Error al validar');
+        });
+
     });
     return promise;
   }
-
 
 
   GetPickingInfo(PickId, index= 0, FilterMoves) {
