@@ -174,7 +174,7 @@ export class MoveFormPage implements OnInit {
           icon: 'checkmark-done-circle-outline',
           role: 'barcode-outline',
           handler: () => {
-            this.ActionApplyLotNames();
+            this.PrevActionApplyLotNames();
           }
         };
         buttons.push(button);
@@ -912,14 +912,78 @@ export class MoveFormPage implements OnInit {
     this.ActiveLine = SmlId;
     this.WaitingQty = true;
   }
+  PrevActionApplyLotNames(){
+    let LotsToAdd = [];
+    const LotNamesCount = this.LotNames.length;
+    for (let i = 0; i < LotNamesCount; i++){
+      if (this.NewLotNames[i]){continue;
+      }
+      LotsToAdd.push(this.LotNames[i]);
+    }
+
+    return this.ActionApplyLotNames(LotsToAdd);
+  }
   ActionApplyLotNames(LotNames = []) {
+    let LotsToAdd = [];
+    let LotNamesCount = this.LotNames.length;
+    if (this.BarcodeLength === 0) {
+      if (this.LotNames){
+        this.BarcodeLength = this.LotNames[LotNamesCount - 1].length;
+      }
+      else {
+        this.BarcodeLength = LotNames[0].length;
+      }
+    }
+    for (const lot of LotNames){
+      if (lot.length !== this.BarcodeLength){
+        this.audio.play('error');
+        this.presentToast('El código ' + lot + ' no cumple la validación')
+        continue;
+      }
+      const idx = this.LotNames.indexOf(lot);
+      if (idx > -1 && this.NewLotNames[idx]) {
+        this.audio.play('error');
+        this.presentToast('El código ' + lot + ' ya está en la lista');
+        continue;
+      }
+      LotsToAdd.push(lot);
+    }
+    if (LotsToAdd.length > 0) {
+      this.presentLoading();
+      const values = {id: this.data['id'],
+                      lot_names: LotsToAdd,
+                      active_location: this.data['default_location'].id,
+                      filter_move_lines: this.Filter};
+
+      this.stock.CreateMoveLots(values).then((data) => {
+        if (data) {
+          this.reset_scanner() ;
+          this.apply_move_data(data); }
+        else {
+          this.cancelLoading();
+        }
+      })
+      .catch((error) => {
+        this.audio.play('error');
+        this.cancelLoading();
+        this.presentAlert('Error al añadir los lotes el albarán:', error.msg.error_msg);
+      });
+    }
+    return;
+
+  }
+
+  ActionApplyLotNamesBis(LotNames = []) {
     console.log('ActionApplyLotNames');
     if (this.data['state'].value === 'done') {return; }
     for (const lot of this.LotNames){
       if (this.BarcodeLength === 0) {
         this.BarcodeLength = lot.length;
       }
-      if (lot.length === this.BarcodeLength){
+      if (LotNames && LotNames.indexOf(lot) > -1 ) {
+        this.presentToast('El código ' + lot + ' ya está en la lista');
+      }
+      else if (lot.length === this.BarcodeLength){
         LotNames.push(lot);
       }
       else {
@@ -1146,7 +1210,7 @@ export class MoveFormPage implements OnInit {
     }
     if (order === '119'){
       // F8
-      this.ActionApplyLotNames();
+      this.PrevActionApplyLotNames();
       res = true;
     }
     if (order === '120'){

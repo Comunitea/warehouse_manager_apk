@@ -265,6 +265,7 @@ CheckMoveIsFilter(Move, Index){
   else if (action === 'Unlink') {
     this.data['move_lines'].splice(Index, 1);
   }
+  this.data['total_qty_done'] = Move['total_qty_done'];
   return true;
 }
 

@@ -32,9 +32,10 @@
         <ion-col size="8">
           <ion-card-title >{{data.apk_name}}</ion-card-title>
           <ion-card-subtitle class="ion-text-right {{'state_'+ data.pick_state.value}}" >
-              <ion-badge *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()" style="margin-right: 15px"> Validar </ion-badge>
+              <ion-badge style="margin-right: 15px" *ngIf="data.pick_state.value == 'assigned'" (click)="ButtonValidate()"> Validar </ion-badge>
               <ion-badge style="margin-right: 15px" class="ion-text-left {{'back_state_'+ data.pick_state.value}}"># {{ data['total_qty_done']}} de {{data['total_reserved_availability']}} </ion-badge>
-              <ion-badge class="ion-text-right {{'back_state_'+ data.pick_state.value}}">{{data.pick_state.name}}</ion-badge>
+              <ion-badge style="margin-right: 15px" class="ion-text-right {{'back_state_'+ data.pick_state.value}}" >{{data.pick_state.name}}</ion-badge>
+              <!--ion-badge class="ion-text-right">{{FilterMoves}}</ion-badge-->
           </ion-card-subtitle>
         </ion-col>
         <!-- BOTONES ALBARAN -->
