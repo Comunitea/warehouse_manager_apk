@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, NO_ERRORS_SCHEMA } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 
@@ -14,6 +14,7 @@ import { TextToSpeech } from '@ionic-native/text-to-speech/ngx';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
+
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],
@@ -22,6 +23,7 @@ import { AppRoutingModule } from './app-routing.module';
     IonicStorageModule.forRoot(),
     IonicModule.forRoot(),
     AppRoutingModule,
+
   ],
   providers: [
     StatusBar,
@@ -32,6 +34,7 @@ import { AppRoutingModule } from './app-routing.module';
     SpeechRecognition,
 
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  schemas: [NO_ERRORS_SCHEMA]
 })
 export class AppModule {}

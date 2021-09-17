@@ -3,7 +3,7 @@
     <ion-buttons slot="start" >
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <ion-title>Listado de Albaranes</ion-title>
+    <ion-title>{{PickingTypeCode || 'Listado de Albaranes' }}</ion-title>
       <ion-buttons slot="end" class="cmnt-front">
     </ion-buttons>
   </ion-toolbar>
@@ -16,26 +16,24 @@
         <ion-toolbar>
           <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
         </ion-toolbar>
-
-
       </ion-row>
       <ion-row>
-      <ion-col class="action-button"><ion-button (click)="Navigate('stock-picking-type-list')"><ion-icon class="primary" name="arrow-undo-circle-outline" ></ion-icon></ion-button></ion-col>
-      <ion-col size=3>
-        <ion-select (ionChange)="ChangeFilter('delivery_carrier')" [(ngModel)]="ValueFilterDeliveryCarrier" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
-          <ion-select-option *ngFor="let option of FilterDeliveryCarrier" value="{{option['value']}}">{{option['name']}}</ion-select-option>
-        </ion-select>        
-      </ion-col>
-      <ion-col size=3>
-        <ion-select (ionChange)="ChangeFilter('crm_team')" [(ngModel)]="ValueFilterCrmTeam" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
-          <ion-select-option *ngFor="let option of FilterCrmTeam" value="{{option['value']}}">{{option['name']}}</ion-select-option>
-        </ion-select>        
-      </ion-col>
-      <ion-col size=3>
-        <ion-select (ionChange)="ChangeFilter('pick_state')" [(ngModel)]="ValueFilterPickState" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
-          <ion-select-option *ngFor="let option of FilterPickState" value="{{option['value']}}">{{option['name']}}</ion-select-option>
-        </ion-select>        
-      </ion-col>
+        <ion-col class="action-button"><ion-button (click)="Navigate('stock-picking-type-list')"><ion-icon class="primary" name="arrow-undo-circle-outline" ></ion-icon></ion-button></ion-col>
+        <ion-col size=3>
+          <ion-select (ionChange)="ChangeFilter()" [(ngModel)]="ValueFilter1" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
+            <ion-select-option *ngFor="let option of Filter1" value="{{option['value']}}">{{option['name']}}</ion-select-option>
+          </ion-select>        
+        </ion-col>
+        <ion-col size=3>
+          <ion-select (ionChange)="ChangeFilter()" [(ngModel)]="ValueFilter2" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
+            <ion-select-option *ngFor="let option of Filter2" value="{{option['value']}}">{{option['name']}}</ion-select-option>
+          </ion-select>        
+        </ion-col>
+        <ion-col size=3>
+          <ion-select (ionChange)="ChangeFilter()" [(ngModel)]="ValueFilter3" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
+            <ion-select-option *ngFor="let option of Filter3" value="{{option['value']}}">{{option['name']}}</ion-select-option>
+          </ion-select>        
+        </ion-col>
       </ion-row>
       <ion-row>
       <!--ion-item-sliding id="item100">
@@ -54,15 +52,15 @@
 
     <ion-item-options side="start">
       <ion-item-option style="width:150px;" color="secondary">
-        <ion-select (ionChange)="ChangeFilter('crm_team')" [(ngModel)]="ValueFilterCrmTeam" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
+        <ion-select (ionChange)="ChangeFilter('crm_team')" [(ngModel)]="ValueFilter2" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
           <ion-select-option *ngFor="let option of FilterCrmTeam" value="{{option['value']}}">{{option['name']}}</ion-select-option>
         </ion-select>        
       
       </ion-item-option>
       <ion-item-option color="medium" style="width:150px;">
         
-        <ion-select (ionChange)="ChangeFilter('delivery_carrier')" [(ngModel)]="ValueFilterDeliveryCarrier" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
-          <ion-select-option *ngFor="let option of FilterDeliveryCarrier" value="{{option['value']}}">{{option['name']}}</ion-select-option>
+        <ion-select (ionChange)="ChangeFilter('delivery_carrier')" [(ngModel)]="ValueFilter1" interface="popover" okText="Aplicar" multiple="true" cancelText="Cancelar">
+          <ion-select-option *ngFor="let option of Filter1" value="{{option['value']}}">{{option['name']}}</ion-select-option>
         </ion-select>        
       
       </ion-item-option>
@@ -86,62 +84,63 @@
           <span *ngIf="offset > 0" (click)="NavigatePick(0)">Anterior</span>
         </ion-col>
         
-        <!-- <ion-col *ngIf="data.ready_to_validate" class="link" (click)="ButtonValidate(data.picking_id.id)">Validar
+        <!-- <ion-col *ngIf="data['ready_to_validate']" class="link" (click)="ButtonValidate(data['picking_id'].id)">Validar
         </ion-col> -->
         <ion-col size="6" class="ion-text-center">
           <span>De {{this.offset}} a {{this.limit}} de {{this.TotalPicks}}</span>
         </ion-col>
         <ion-col class="product-link ion-text-right">
-        <span *ngIf="!limit_reached" (click)="NavigatePick(1)">Siguiente</span>
+        <span *ngIf="!LimitReached" (click)="NavigatePick(1)">Siguiente</span>
         </ion-col>
       </ion-row>
-      <div *ngFor="let pick of pickings; let even = even; let odd =  odd">
+      <div *ngFor="let pick of pickings; let even = even; let odd = odd">
         <ion-row [ngClass]="{'row-odd': odd, 'row-even': even}" style="min-height: 10px">
           <ion-col size="2" class="ion-align-self-center">
-            <span *ngIf="!pick['try_validate'] || pick['pick_state']['value'] === 'done'" class="product-link" (click)="OpenLink(pick.id)" >{{pick.apk_name.substring(pick.apk_name.length - 5)}}</span>
-            <span *ngIf="pick['try_validate'] && pick['pick_state']['value'] !== 'done'" class="error-link">{{pick.apk_name.substring(pick.apk_name.length - 5)}}</span>
+           
+            <span *ngIf="!pick['try_validate'] || pick['pick_state']['value'] === 'done'" class="product-link" (click)="OpenLink(pick['id'])" >{{pick['apk_name']}}</span>
+            <span *ngIf="pick['try_validate'] && pick['pick_state']['value'] !== 'done'" class="error-link">{{pick['apk_name']}}</span>
           </ion-col>
           <ion-col class="ion-align-self-center" >
               <div>
-                <span class="fs08"> {{pick['carrier_id']['wh_code']}}</span>
-                <span class="fs08"> {{pick['team_id']['wh_code']}}</span>
-                <span class="product-link fs08" (click) = "OpenModal('sale.order', pick.sale_id.id)"><strong> {{pick['sale_id']['name']}}</strong></span>
-                <span class="product-link fs08"  (click) = "OpenModal('purchase.order', pick.purchase_id.id)"><strong> {{pick.purchase_id.name}}</strong></span>
+                <span class="fs08" *ngIf="pick['carrier_id']"> {{ pick['carrier_id']['wh_code']}}</span>
+                <span class="fs08"> {{pick['team_id'] && pick['team_id']['wh_code']}}</span>
+                <span class="product-link fs08" (click) = "OpenModal('sale.order', pick['sale_id'].id)"><strong> {{pick['sale_id']['name']}}</strong></span>
+                <span class="product-link fs08"  (click) = "OpenModal('purchase.order', pick['purchase_id'].id)"><strong> {{pick['purchase_id'].name}}</strong></span>
               </div>
           </ion-col>
-          <!--ion-col class="ion-align-self-center ion-text-left" *ngIf="pick.default_location.value === 'location_id'">
-            <div>{{pick.location_id.name}}</div>
+          <!--ion-col class="ion-align-self-center ion-text-left" *ngIf="pick['default_location'].value === 'location_id'">
+            <div>{{pick['location_id'].name}}</div>
           </ion-col>
-          <ion-col class="ion-align-self-center  ion-text-left" *ngIf="pick.default_location.value === 'location_dest_id'">
-            <div>{{pick.location_dest_id.name}}</div>
+          <ion-col class="ion-align-self-center  ion-text-left" *ngIf="pick['default_location'].value === 'location_dest_id'">
+            <div>{{pick['location_dest_id']['name']}}</div>
           </ion-col-->
           
           <ion-col size="3" class="ion-align-self-center ion-text-center fs08">
-            <span >{{pick.scheduled_date}} </span>
+            <span >{{pick['scheduled_date']}} </span>
           <!--/ion-col>
           <ion-col  class="ion-align-self-center"-->
-          <ion-icon  size="normal" class="{{'state_'+ pick.pick_state.value}} " name="{{StateIcon[pick.pick_state.value]}}"></ion-icon>
+          <ion-icon  size="normal" class="{{'state_'+ pick['pick_state'].value}} " name="{{StateIcon[pick['pick_state'].value]}}"></ion-icon>
           <ion-icon  *ngIf="pick['state']['value'] != 'done' && pick['try_validate'] === true" 
               size="normal" 
               color="danger" name="notifications-circle-outline"></ion-icon>
           </ion-col>
           <ion-col class="ion-align-self-center ion-text-center" size="1">
-              <span class="fs08">{{pick.total_reserved_availability}}</span>
+              <span class="fs08">{{pick['total_reserved_availability']}}</span>
           </ion-col>
         </ion-row>
         <ion-row [ngClass]="{'row-odd': odd, 'row-even': even}" style="min-height: 10px">
           <ion-col size="12">
-            <span class="fs08">{{pick.partner_id.name}}</span>
+            <span class="fs08">{{pick['partner_id'].name}}</span>
           </ion-col>
         </ion-row>
       </div>
 
-      <!--ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
+      <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
         <ion-infinite-scroll-content
           loadingSpinner="bubbles"
           loadingText="Cargando más productos...">
         </ion-infinite-scroll-content>
-      </ion-infinite-scroll-->
+      </ion-infinite-scroll>
     </ion-card-content>
   </ion-card>
 </ion-content>

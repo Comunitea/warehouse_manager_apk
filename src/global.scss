@@ -59,7 +59,7 @@
     color: #656565;
 }
 ion-col {
-    padding: 2px;
+    // padding: 2px;
 }
 
 .state_draft{
@@ -82,6 +82,9 @@ ion-col {
 }
 .state_done{
     color: #077c07; 
+}
+.draft {
+    color: #e2b3b3
 }
 .back_state_draft{
     background-color: #656565 !important;
@@ -128,7 +131,6 @@ ion-col {
 .action-button {
     max-width: 60px;
     align-self: flex-start;
-
 }
 .marquee {
     width: 100%;
@@ -148,19 +150,24 @@ ion-col {
     100% { text-indent: 1em }
 }
 ion-toolbar{
-    --min-height: 30px !important
+    // --min-height: 30px !important
 
 }
 ion-menu-button {
-    height: 35px;
-    width: 35px;
+    // height: 35px;
+    // width: 35px;
 }
 ion-card  {
-    margin: 0px;
+ 
+}
+ion-col {
+    padding: 2px;
+}
+ion-card-header {
+    font-weight: bold;
 }
 ion-card-content ion-card-header {
-    padding :2px;
-    font-size: 11px;
+ 
 }
 .cmnt-back {
     --background: #white;
@@ -183,9 +190,9 @@ ion-card-content ion-card-header {
 }
 
 .button-small {
-    font-size: 11px;
-    --padding-start: 0.4em;
-    --padding-end: 0.4em;
+    // font-size: 11px;
+    // --padding-start: 0.4em;
+    // --padding-end: 0.4em;
 }
 .em3 {
     height: 4em;
@@ -215,12 +222,12 @@ ion-card-content ion-card-header {
 }
 .qty-badge{
     width: 50px;
-    background-color: #cec2ca; 
+    background-color: var(--ion-color-secondary); 
     vertical-align: middle;
 }
 .qty-badge-dirty{
     width: 50px;
-    background-color: #ffac98;
+    background-color: var(--ion-color-primary); 
     vertical-align: middle;
 }
 .qty-badge-group{
@@ -258,4 +265,81 @@ ion-card-content ion-card-header {
 }
 .fs07 {
     font-size: 0.7em;
+}
+.font-primary{
+    background-color:  var(--ion-color-primary-contrast);
+    color: var(--ion-color-primary)
+}
+.font-success{
+    background-color:  var(--ion-color-success-contrast);
+    color: var(--ion-color-success)
+}
+// MARGENES Y PADDINGS
+.m3px {
+    margin: 3px;
+}
+.m0px {
+    margin: 0px;
+}
+.p3px {
+    padding: 3px;
+}
+.p0px {
+    padding: 0px;
+}
+.card {
+    padding: 3px;
+    margin: 0px;
+}
+.primary-deactive {
+    display: 'hidden';
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+}
+.primary-active {
+    background:  var(--ion-color-primary-tint);
+    color:var(--ion-color-primary-contrast);
+}
+
+.hide-selected {
+    display: none;
+}
+.show-selected {
+    
+}
+.secondary-active {
+    background:  #dfdfdf;
+    // color:var(--ion-color-primary-contrast);
+}
+.button-qties { 
+    --background: var(--ion-color-primary-contrast);
+    color: var(--ion-color-primary);
+    // border-radius: 5px;
+    // border: solid 2px #000000;
+    font-weight: bold;
+}
+.required{
+    color: #ff0000;
+}
+.not-required{
+    --background: var(--ion-color-primary-contrast);
+    color: var(--ion-color-primary);
+}
+.ready {
+    --background: #cefaca;
+}
+.border-qties{
+    border-radius: 6px;
+    border: solid 2px var(--ion-color-medium-tint);
+}
+.button-lot { 
+    --background: var(--ion-color-medium-contrast);
+    color: var(--ion-color-medium);
+    font-weight: bold;
+}
+.barcode-modal-css .modal-wrapper{
+    height: 70%;
+    width: 70%;
+    position: absolute; 
+    display: block;  
 }

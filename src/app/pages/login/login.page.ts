@@ -24,11 +24,11 @@ export class LoginPage implements OnInit {
                                  context: {},
                                  user: {},
                                  logged_in: false};
-  CONEXION_local: ConnectionOptions = { username: '',
-                                        password: '',
-                                        url: '',
-                                        port: null,
-                                        db: '',
+  CONEXION_local: ConnectionOptions = { username: 'cmnt_kiko',
+                                        password: 'cmnt',
+                                        url: 'http://192.168.0.146',
+                                        port: 8069,
+                                        db: 'prod_17_08',
                                         uid: 0,
                                         context: {},
                                         user: {},
@@ -37,6 +37,7 @@ export class LoginPage implements OnInit {
   submitted: boolean;
   version: string;
   login_server: boolean;
+  KeyTime: number;
 
   constructor(
     private audio: AudioService,
@@ -67,8 +68,12 @@ export class LoginPage implements OnInit {
     borrar = false;
     if (borrar){
         this.CONEXION = this.CONEXION_local;
-    }	
+        this.KeyTime = 300;
+    }
     else {
+        this.storage.get('KeyTime').then ((val) =>
+        {this.KeyTime = val; }).catch (() => {this.KeyTime = 100; });
+
         this.storage.get('CONEXION').then((val) => {
             if (val && val['username']){
                 this.CONEXION = val
@@ -84,10 +89,11 @@ export class LoginPage implements OnInit {
 
   conectarApp(verificar) {
     this.cargar = true;
+    this.storage.set('KeyTime', this.KeyTime).then();
     if (verificar){
         this.storage.set('CONEXION', this.CONEXION).then(() => {
           this.log_in();
-        })
+        });
     }
     else {
         this.storage.get('CONEXION').then((val) => {
@@ -121,7 +127,9 @@ export class LoginPage implements OnInit {
     }
   }
   NavigateNext(){
-    this.router.navigateByUrl('/stock-picking-type-list');
+    this.storage.set('KeyTime', this.KeyTime).then(() => {
+      this.router.navigateByUrl('/navegacion-principal');
+    });
   }
   log_in() {
     this.odoo.login(this.CONEXION.username, this.CONEXION.password).then((data)=> {
@@ -139,30 +147,29 @@ export class LoginPage implements OnInit {
         this.NavigateNext();
       }
     })
-    .catch((error)=>{
+    .catch((error) => {
       this.presentAlert('Error al hacer login:', error);
     });
   }
 
   ionViewDidEnter(){
-    this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
+    this.stock.SetModelInfo('App', 'ActivePage', 'LoginPage');
   }
   onLogin(form: NgForm) {
     this.submitted = true;
 
     if (form.valid) {
-      this.CONEXION = { 
+      this.CONEXION = {
         username: form.form.value.username, 
         password: form.form.value.password, 
         port: form.form.value.port || this.CONEXION.port, 
         url: form.form.value.url || this.CONEXION.url, 
         db: form.form.value.db || this.CONEXION.db, 
-        uid: 0, 
-        context: {}, 
-        user: {}, 
+        uid: 0,
+        context: {},
+        user: {},
         logged_in: false
       };
-      
       this.storage.set('CONEXION', this.CONEXION).then(() => {
         this.log_in();
       })

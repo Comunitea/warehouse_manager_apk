@@ -20,15 +20,8 @@ export class ProductListInfoComponent implements OnInit {
 
   ngOnInit() {}
 
-  NewInventory(ProductId){
-    //this.audio.play('bip');
-    const values = {location_id: false, product_id: ProductId};
-    this.stock.NewInventory(values).then((data) => {
-      this.router.navigateByUrl('/stock-location/' + data['location_id']);
-    })
-    .catch((error) => {
-      this.presentAlert(error.title, error.msg.error_msg);
-    });
+  OpenStock(ProductId){
+    this.router.navigateByUrl('/stock-location/' + 13 + '/' + ProductId);
   }
   async presentAlert(titulo, texto) {
     this.audio.play('error');

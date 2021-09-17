@@ -1,0 +1,86 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Menú Principal</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+<ion-grid>
+  <ion-row>
+    <ion-col>
+      <div>
+        <ion-card size="6">
+          <ion-card-header color="primary" (click)="NavegarA('/navegacion-albaranes')">Albaranes</ion-card-header>
+          <ion-card-content>
+            Listado de tipos de albarán.
+            Trabajos de almacén.
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-col>
+    <ion-col size="6">
+      <div>
+        <ion-card >
+          <ion-card-header color="primary" (click)="NavegarA('/inventory')" >Inventario</ion-card-header>
+          <ion-card-content>
+            Ajustes de inventario.
+            Modificación de existencias y nº de serie.
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-col>
+  </ion-row>
+  <ion-row>
+    <ion-col>
+      <div>
+        <ion-card size="6">
+          <ion-card-header color="primary">Ubicaciones</ion-card-header>
+          <ion-card-content>
+            Listado de ubicaciones y stock.
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-col>
+    <ion-col size="6">
+      <div>
+        <ion-card >
+          <ion-card-header color="primary">Artículos</ion-card-header>
+          <ion-card-content>
+            Listado de artículos.
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-col>
+  </ion-row>
+</ion-grid>
+ 
+</ion-content>
+<ion-tab-bar slot="bottom" class="bottom-tab-bar">
+    <ion-tab-button tab="home" (click)="TabNavegarA('/login')">
+      <ion-icon mode="md" name="home"></ion-icon>
+      <ion-label>Home</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="schedules" (click)="ToDoToday()" class="inner-left-btn">
+      <ion-icon name="calendar"></ion-icon>
+      <ion-label>Hoy</ion-label>
+      <ion-badge>{{ParaHoy}}</ion-badge>
+    </ion-tab-button>
+
+    <!--ion-tab-button (click)="presentButtons()" class="button-center">
+      <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      <ion-label>Acciones</ion-label>
+    </ion-tab-button-->
+
+    <ion-tab-button (click)="CreateFilterButtons()" tab="users" class="inner-right-btn">
+      <ion-icon name="funnel-outline"></ion-icon>
+      <ion-label>Filtrar</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="settings">
+      <ion-icon name="settings"></ion-icon>
+      <ion-label>Settings</ion-label>
+    </ion-tab-button>
+
+  </ion-tab-bar>

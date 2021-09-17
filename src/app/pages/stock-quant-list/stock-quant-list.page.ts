@@ -16,11 +16,11 @@ export class StockQuantListPage implements OnInit {
 
   offset: number;
   limit: number;
-  limit_reached: boolean;
+  LimitReached: boolean;
   quants: {};
   search: string;
   location: string;
-  scanner_reading: string;
+  ScannerReading: string;
 
   constructor(
     private odoo: OdooService,
@@ -32,7 +32,7 @@ export class StockQuantListPage implements OnInit {
   ) {
     this.offset = 0;
     this.limit = this.stock.TreeLimit;
-    this.limit_reached = false;
+    this.LimitReached = false;
   }
 
   ngOnInit() {
@@ -51,7 +51,7 @@ export class StockQuantListPage implements OnInit {
 
   onReadingEmitted(val: string) {
     const scan = val[val.length - 1];
-    this.scanner_reading = scan;
+    this.ScannerReading = scan;
     this.search = scan;
     this.get_location_quants(scan);
   }
@@ -68,11 +68,11 @@ export class StockQuantListPage implements OnInit {
   
   get_location_quants(search=null){
     this.offset = 0;
-    this.limit_reached = false;
+    this.LimitReached = false;
     this.stock.get_location_quants(this.location, this.offset, this.limit, search).then((quants_list:Array<{}>)=> {
       this.quants = quants_list;
       if(Object.keys(quants_list).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       if (Object.keys(this.quants).length == 1){
         this.router.navigateByUrl('/product/'+this.quants[0]['product_id'][0]);
@@ -99,7 +99,7 @@ export class StockQuantListPage implements OnInit {
 
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
-      if (this.limit_reached) {
+      if (this.LimitReached) {
         event.target.disabled = true;
       }
     }, 500);
@@ -110,7 +110,7 @@ export class StockQuantListPage implements OnInit {
     this.stock.get_location_quants(this.location, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
       let current_length = Object.keys(this.quants).length;
       if(Object.keys(data).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       for(var k in data) this.quants[current_length+Number(k)]=data[k];
     })

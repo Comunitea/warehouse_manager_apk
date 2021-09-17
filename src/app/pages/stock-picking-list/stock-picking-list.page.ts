@@ -13,11 +13,11 @@ import {} from '../stock-picking-type-list/stock-picking-type-list.page'
 })
 export class StockPickingListPage implements OnInit {
 
-  @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
+  @ViewChild(IonInfiniteScroll, {static: false}) infiniteScroll: IonInfiniteScroll;
 
   offset: number;
   limit: number;
-  limit_reached: boolean;
+  LimitReached: boolean;
   pickings: Array<{}>;
   picking_state: string;
   picking_types: {};
@@ -26,18 +26,29 @@ export class StockPickingListPage implements OnInit {
   filter: string;
   search: string;
   current_code: string;
-  scanner_reading: string;
-  not_allowed_fields: {};
+  ScannerReading: string;
+  not_allowed_fields: string;
   StateIcon: {};
   States: Array<{}>;
   State: {};
   MaxNumber: number;
-  FilterDeliveryCarrier: Array<string>;
-  ValueFilterDeliveryCarrier: string;
-  FilterCrmTeam: Array<string>;
-  ValueFilterCrmTeam: string;
-  FilterPickState: Array<string>;
-  ValueFilterPickState: string;
+
+  Filter1: Array<string>;
+  ValueFilter1: string;
+
+  Filter2: Array<string>;
+  ValueFilter2: string;
+
+  Filter3: Array<string>;
+  ValueFilter3: string;
+
+  PickingTypeCode: string;
+  //FilterDeliveryCarrier: Array<string>;
+  //ValueFilterDeliveryCarrier: string;
+  //FilterCrmTeam: Array<string>;
+  //ValueFilterCrmTeam: string;
+  //FilterPickState: Array<string>;
+  //ValueFilterPickState: string;
   TotalPicks: number;
 
   constructor(
@@ -50,20 +61,21 @@ export class StockPickingListPage implements OnInit {
   ) {
     // this.offset = 0;
     // this.limit = 5;
-    // this.limit_reached = false;
+    // this.LimitReached = false;
   }
 
   ionViewDidEnter(){
     this.offset = 0;
     this.limit = this.MaxNumber = this.stock.TreeLimit * 2;
-    this.limit_reached = false;
+    this.LimitReached = false;
+    this.PickingTypeCode = this.stock.GetModelInfo('stock.picking.type', 'Code');
     this.GetPickingList(null, this.offset, this.limit);
   }
 
   ngOnInit() {
-    this.FilterPickState = this.stock.GetModelInfo('stock.picking.batch', 'filter_batch_state');
-    this.FilterDeliveryCarrier = this.stock.GetModelInfo('stock.picking.batch', 'filter_delivery_carrier');
-    this.FilterCrmTeam = this.stock.GetModelInfo('stock.picking.batch', 'filter_crm_team');
+    this.Filter3 = this.stock.GetModelInfo('stock.picking.batch', 'filter_3');
+    this.Filter1 = this.stock.GetModelInfo('stock.picking.batch', 'filter_1');
+    this.Filter2 = this.stock.GetModelInfo('stock.picking.batch', 'filter_2');
     this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
@@ -81,7 +93,7 @@ export class StockPickingListPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
-    this.scanner_reading = val;
+    this.ScannerReading = val;
     this.search = val;
     this.offset = 0;
     this.GetPickingList(this.search, this.offset, this.limit);
@@ -103,7 +115,7 @@ export class StockPickingListPage implements OnInit {
   OpenLink(PickId){
     this.router.navigateByUrl('/stock-picking/' + PickId + '/1');
   }
-  ChangeFilter(model){
+  ChangeFilter(model = 'stock.picking'){
     this.offset = 0;
     this.GetPickingList(this.search, this.offset, this.limit);
   }
@@ -112,14 +124,16 @@ export class StockPickingListPage implements OnInit {
     // return this.presentModal({Model: ModelO, Id: IdO});
   }
 
-  GetPickingList(search= null, offset, limit){
-    this.limit_reached = false;
-    const FilterValues = {'filter_pick_state': this.ValueFilterPickState, 'filter_crm_team': this.ValueFilterCrmTeam, 'filter_delivery_carrier': this.ValueFilterDeliveryCarrier}
+  GetPickingList(search = null, offset, limit){
+    this.LimitReached = false;
+    const FilterValues = {filter_3: this.ValueFilter3, filter_2: this.ValueFilter2, filter_1: this.ValueFilter1}
+
+    console.log(FilterValues);
     this.stock.GetPickingList(search, offset, limit, FilterValues).then((data: Array<{}>) => {
       this.pickings = data;
-      this.TotalPicks = data && data[0]['count_batch_ids'] || 0;
+      this.TotalPicks = data[0] && data[0]['count_batch_ids'] || 0;
       if (data.length < this.MaxNumber){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
 
       // if (Object.keys(this.pickings).length === 1){
@@ -131,7 +145,7 @@ export class StockPickingListPage implements OnInit {
   /*
   get_picking_list(search = null){
     this.offset = 0;
-    this.limit_reached = false;
+    this.LimitReached = false;
     this.stock.GetPicking(this.compute_domain(search), null, 'tree', this.offset, this.limit, search).then((picking_list: Array<{}>) => {
       this.pickings = picking_list;
       // if (this.pickings[0] && this.pickings[0]['picking_fields']) {
@@ -139,7 +153,7 @@ export class StockPickingListPage implements OnInit {
       //  console.log(this.not_allowed_fields);
       // }
       if (Object.keys(picking_list).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       if (Object.keys(this.pickings).length == 1){
         this.router.navigateByUrl('/stock-picking/'+this.pickings[0]['id']);
@@ -168,7 +182,7 @@ export class StockPickingListPage implements OnInit {
       this.picking_list_infinite_scroll_add();
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
-      if (this.limit_reached) {
+      if (this.LimitReached) {
         event.target.disabled = true;
       }
     }, 500);
@@ -181,15 +195,16 @@ export class StockPickingListPage implements OnInit {
       }
 
     else {this.offset += this.limit; }
+    
     return this.picking_list_infinite_scroll_add();
   }
   picking_list_infinite_scroll_add() {
     // this.offset += this.limit;
-    const FilterValues = {'filter_pick_state': this.ValueFilterPickState, 'filter_crm_team': this.ValueFilterCrmTeam, 'filter_delivery_carrier': this.ValueFilterDeliveryCarrier}
+    const FilterValues = {filter_3: this.ValueFilter3, filter_2: this.ValueFilter2, filter_1: this.ValueFilter1}
     this.stock.GetPickingList(this.search, this.offset, this.limit, FilterValues).then((data: Array <{}>) => {
-      this.TotalPicks = data && data[0]['count_batch_ids'] || 0
+      this.TotalPicks = data[0] && data[0]['count_batch_ids'] || 0;
       this.pickings = data;
-      this.limit_reached = data.length < this.limit;
+      this.LimitReached = data.length < this.limit;
     })
     .catch((error) => {
       this.presentAlert('Error al recuperador el listado de operaciones:', error);

@@ -16,7 +16,7 @@ export class LocationListComponent implements OnInit {
   ngOnInit() {}
 
   open_link(location_id){
-    this.router.navigateByUrl('/stock-location/'+location_id);
+    this.router.navigateByUrl('/stock-location/' + location_id);
   }
 
 }

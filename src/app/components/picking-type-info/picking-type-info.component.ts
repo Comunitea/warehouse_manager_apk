@@ -1,6 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { StockService } from '../../services/stock.service';
+import { IonicModule } from '@ionic/angular';
 
 @Component({
   selector: 'app-picking-type-info',

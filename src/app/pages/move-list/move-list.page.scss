@@ -1,0 +1,37 @@
+
+//  ('draft', 'No disponible'), ('confirmed', 'Confirmado'), ('waiting', 'En espera'),  ('in_progress', 'En proceso'),('assigned', 'Completado'),('done', 'Validado')
+
+.ion-tab-button-class {
+    --padding-top: 0;
+    --padding-end: 6px;
+    --padding-bottom: 0;
+    --padding-start: 6px;
+}
+.draft{
+    color: var(--ion-color-warning);
+    font-size: 1em;
+}
+.confirmed{
+    color: var(--ion-color-primary-contrast);
+    font-size: 1em;
+}
+.waiting{
+    color: var(--ion-color-warning);
+    font-size: 1em;
+}
+.partially_available{
+    color: var(--ion-color-warning);
+    font-size: 1em;
+}
+.in_progress{
+    color: var(--ion-color-primary-contrast);
+    font-size: 1em;
+}
+.assigned{
+    color:  var(--ion-color-primary-contrast);
+    font-size: 1em;
+}
+.done{
+    color: var(--ion-color-success) ;
+    font-size: 1em;
+}

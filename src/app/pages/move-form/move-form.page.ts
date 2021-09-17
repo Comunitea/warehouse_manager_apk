@@ -13,6 +13,7 @@ import { ScannerService } from '../../services/scanner.service';
 import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
 import {OverlayEventDetail} from '@ionic/core';
 
+
 @Component({
   selector: 'app-move-form',
   templateUrl: './move-form.page.html',
@@ -23,7 +24,7 @@ export class MoveFormPage implements OnInit {
 
   @ViewChild(ScannerFooterComponent) ScannerFooter: ScannerFooterComponent;
   @ViewChild(IonInfiniteScroll, {static: false}) infiniteScroll: IonInfiniteScroll;
-  @Input() scanner_reading: string;
+  @Input() ScannerReading: string;
 
 
 
@@ -51,7 +52,11 @@ export class MoveFormPage implements OnInit {
   QtyDirty: boolean;
   offset: number;
   limit: number;
-  limit_reached: boolean;
+  LimitReached: boolean;
+  MaxSmlCount: number;
+  TotalSmlCount: number;
+  ShowNavs: boolean;
+  SmlCount: number;
   LoadingPrevMoves: boolean;
   SmlIndex: number;
   NeedScroll: boolean;
@@ -60,6 +65,13 @@ export class MoveFormPage implements OnInit {
   BarcodeLength: number;
   Filter: string;
   PendingQty: number;
+  LinesCount: number;
+  ShowLocation: boolean;
+  ShowLocationDest: boolean;
+  ShowPackage: boolean;
+  ShowPackageDest: boolean;
+
+
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
@@ -215,11 +227,11 @@ export class MoveFormPage implements OnInit {
     await actionSheet.present();
   }
   ionViewDidEnter(){
-    console.log('ionViewDidEnter');
     this.offset = 0;
-    this.limit = this.stock.TreeLimit;
-    this.limit_reached = false;
+    this.limit = this.MaxSmlCount = 10;
+    this.LimitReached = false;
     this.LoadingMoves = false;
+    this.AdvanceOptions = false;
     this.stock.SetModelInfo('App', 'ActivePage', 'MoveFormPage');
     this.InitVars();
     const move = this.route.snapshot.paramMap.get('id');
@@ -244,7 +256,7 @@ export class MoveFormPage implements OnInit {
     });
   }
   InitVars() {
-    this.stock.SetParam('ShowLots', true);
+    this.stock.SetParam('ShowLots', false);
     //this.ShowLots = false;
     //this.ShowMoves = true;
     //this.stock.SetParam('ShowLots', this.ShowLots);
@@ -259,14 +271,16 @@ export class MoveFormPage implements OnInit {
     this.LotNames = [];
     this.NewLotNames = [];
     this.BarcodeLength = 0;
+    // this.apply_views();
   }
   read_status(field, campo, propiedad) {
     return this.stock.read_status(field, campo, propiedad);
   }
 
   AlternateShowLots() {
+
     this.audio.play('click');
-    if (this.data['tracking'] !== 'none'){
+    if (this.data['tracking']['value'] !== 'none'){
       this.ShowLots = !this.ShowLots;
       this.ShowMoves = !this.ShowLots;
     }
@@ -286,19 +300,15 @@ export class MoveFormPage implements OnInit {
     this.router.navigateByUrl('/stock-picking/' + this.data['batch_id']['id'] + '/1');
     // this.location.back();
   }
-
-  GetMovesDone(moves, value= true) {
-    return moves.filter(move => this.stock.read_status(move['field_status_apk'], 'qty_done', 'done') === value);
-  }
-
   onReadingEmitted(val: string) {
     const delay = 200;
     let index = 0;
     for (const scan of val){
+
       if (scan !== '') {
         index += 1;
         setTimeout(() => {
-          this.scanner_reading = scan;
+          this.ScannerReading= scan;
           this.audio.play('click');
           this.CheckScanner(scan);
         }, delay * index);
@@ -306,19 +316,6 @@ export class MoveFormPage implements OnInit {
     }
     return;
   }
-
-  onReadingEmitted_orig(val: string) {
-
-    for (const scan of val){
-      if (scan !== '') {
-        this.scanner_reading = scan;
-        this.audio.play('click');
-        this.CheckScanner(scan);
-      }
-    }
-    return;
-  }
-
   async presentAlert(titulo, texto) {
     this.audio.play('click');
     const alert = await this.alertCtrl.create({
@@ -330,50 +327,24 @@ export class MoveFormPage implements OnInit {
     await alert.present();
   }
   // SCROLL CONTROL
-
-  EventLoadMoveLines(event, dir) {
-    setTimeout(() => {
-      console.log('Loading more locations');
-      event.target.complete();
-      // this.offset += this.stock.TreeLimit;
-      // App logic to determine if all data is loaded
-      // and disable the infinite scroll
-      this.LoadMoveLines(dir);
-        // event.target.disabled = true;
-    }, 500);
-  }
-  LoadMoveLines(Dir){
-    console.log('LoadMoveLines');
-    if (Dir === 1 && this.limit_reached) {return; }
-    if (Dir === -1){
-      if (this.offset <= this.stock.TreeLimit) {return; }
-      this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - this.stock.TreeLimit);
+  MoveSml(Forward){
+    if (Forward){
+      if (this.LimitReached){return; }
+      // this.offset += count;
+      return this.GetMoveInfo();
     }
-    this.LoadingMoves = true;
-    // this.offset = Math.max(0, this.offset - this.data['move_line_ids'].length - this.stock.TreeLimit);
-    const SmlDomain = [['move_id', '=', this.data['id']]];
-    const values = {model: 'stock.move.line', domain: SmlDomain, offset: this.offset, limit: this.limit, filter: this.Filter};
-    this.stock.get_apk_object(values).then((SmlIds: Array<{}>) => {
-      this.limit_reached = SmlIds.length < this.limit;
-      // this.data['move_line_ids'] = this.data['move_line_ids'].concat(SmlIds);
-      this.data['move_line_ids'] = SmlIds;
-      this.SmlIndex = this.offset;
-      this.offset += this.data['move_line_ids'].length;
-      this.LoadingMoves = false;
-      // this.LoadingPrevMoves = false;
-    })
-    .catch((error) => {
-      this.presentAlert(error.tittle, error.msg.error_msg);
-    });
-  }
-
-  toggleInfiniteScroll() {
-    this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
+    else {
+      
+      if (this.offset <= this.SmlCount){return; }
+      this.offset -= (this.SmlCount + this.MaxSmlCount) ;
+      return this.GetMoveInfo();
+    }
   }
 
   DeleteLotName(Index){
     this.LotNames.splice(Index, 1);
     this.NewLotNames.splice(Index, 1);
+    this.PendingQty += 1;
   }
   async InputQty(titulo, SmlId)
   {
@@ -429,7 +400,7 @@ export class MoveFormPage implements OnInit {
       }
       })
     .catch((error) => {
-      this.presentAlert('Error al escribor en el movimiento:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
 
@@ -462,9 +433,9 @@ export class MoveFormPage implements OnInit {
     // this.ShowMoves = !this.ShowLots;
     // return;
 
-    if (this.data['tracking'].value === 'serial'){
-      this.ShowLots = this.stock.GetParam('ShowLots');
-      this.ShowMoves = !this.ShowLots;
+    if (this.data && this.data['tracking'].value === 'serial'){
+      this.ShowLots = true;
+      this.ShowMoves = false;
     }
     else{
       this.ShowLots = false;
@@ -472,6 +443,7 @@ export class MoveFormPage implements OnInit {
     }
   }
   apply_move_data(data) {
+
     this.InitData();
     console.log("Entro en Apply move data")
     console.log(data);
@@ -483,11 +455,15 @@ export class MoveFormPage implements OnInit {
     }
     this.data = data;
     this.BarcodeLength = 0;
+    // this.ShowLocation = data['view_move_fields'][0] === '1';
+    // this.ShowLocationDest = data['view_move_fields'][1] === '1';
+    // this.ShowPackage = data['view_move_fields'][2] === '1';
+    // this.ShowPackageDest = data['view_move_fields'][3] === '1';
 
     for (const sml of data['move_line_ids']) {
       if (sml.lot_name) {
-        this.LotNames.push(sml.lot_name);
-        this.NewLotNames.push(true);
+        //this.LotNames.push(sml.lot_name);
+        //this.NewLotNames.push(true);
       }
       if (sml.lot_id.id){
         this.BarcodeLength = sml.lot_id.name.length;
@@ -495,108 +471,41 @@ export class MoveFormPage implements OnInit {
     }
     this.apply_views();
     this.PendingQty = this.data['reserved_availability'] - this.data['quantity_done'];
-    this.offset = this.data['move_line_ids'].length;
-    this.NeedScroll = this.offset >= this.stock.TreeLimit;
+    this.offset = this.data['offset'];
+    this.LimitReached = this.data['limit_reached'];
+    this.SmlCount = this.data['sml_count'];
+    this.TotalSmlCount = this.data['sml_count_no_limit'];
+    this.ShowNavs = this.TotalSmlCount > this.SmlCount;
+    this.NeedScroll = false; // this.offset <= this.MaxSmlCount ;
     this.cancelLoading();
+
 
     // this.audio.play('click');
     if (data['message']){this.presentAlert('Odoo', data['message']); }
+    console.log('Function apply_move_data. OK')
 
   }
-
-  GetRelativeMoveInfo(MoveId, Index = 0, Filter= this.stock.GetFilterMoves()){
-    const values = {id: MoveId,
-              index: 0,
-              model: 'stock.move',
-              view: 'form',
-              sml_limit: this.limit,
-              sml_offset: 0,
-              move_id: MoveId,
-              inc: Index,
-              filter_move_lines: this.Filter,
-              filter_moves: Filter};
-    console.log('Recupero MOVIMIENTO RELATIVO');
-    const self = this;
-    this.presentLoading("Cargando movimiento rel ...");
-    this.stock.GetRelativeMoveInfo(values).then((data) => {
-      if (data !== MoveId){
-        this.offset = 0;
-        this.limit = this.stock.TreeLimit;
-        this.limit_reached = false;
-        this.LoadingMoves = false;
-        self.apply_move_data(data);
-
-
-        // this.ionViewDidEnter();
-        // this.router.navigateByUrl('/move-form/' + data);
-      }
-      else {this.cancelLoading(); }
-    })
-    .catch((error) => {
-      this.cancelLoading(true);
-      this.presentAlert('Error al recuperar el movimiento:', error.msg.error_msg);
-    });
+  GetValuesMoveInfo(move, values){
+    values['id'] = move;
+    values['model'] = 'stock.move';
+    values['view'] = 'form';
+    values['sml_limit'] = this.MaxSmlCount;
+    values['sml_offset'] = this.offset;
+    values['filter_move_lines'] = this.Filter;
+    return values;
   }
 
-  GetMoveInfo(move, index = 0) {
+  GetMoveInfo(move = this.data['id'], values = {}) {
     console.log('Recupero MOVIMIENTO');
     this.presentLoading();
     const self = this;
-    this.stock.GetMoveInfo(move, index, this.limit, this.offset, this.Filter).then((data) => {
+    values = this.GetValuesMoveInfo(move, values);
+    this.stock.GetMoveInfo(values).then((data) => {
       self.apply_move_data(data);
     })
     .catch((error) => {
       this.cancelLoading(true);
-      this.presentAlert('Error al recuperar el movimiento:', error.msg.error_msg);
-    });
-  }
-
-  DoMoveValidate(){
-    return;
-    this.presentLoading();
-    if (this.data['state'].value === 'done') {return; }
-    this.stock.DoMoveValidate(this.data['picking_id'].id, this.data['id'] ).then((data) => {
-      if (data){this.apply_move_data(data); }
-    })
-    .catch((error) => {
-      this.cancelLoading(true);
-      this.presentAlert('Error al validar el albarán:', error.msg.error_msg);
-    });
-  }
-
-  /*
-  action_confirm() {
-    if (this.data['tracking'] === 'none') {
-      this.stock.set_move_qty_done_from_apk(this.data['id'], this.data['quantity_done']).then((LinesData) => {
-        console.log(LinesData);
-        this.GetMoveInfo(this.data['id'], +1);
-      })
-      .catch((error) => {
-        this.presentAlert('Error al validar el albarán:', error);
-      });
-    }
-    // else if (this.data['tracking'] != 'none' && this.new_lots){
-    // this.update_lots();
-    // }
-  }
-  */
-  ButtonValidate(PickingId) {
-    return;
-    this.presentLoading();
-    this.stock.ButtonValidate(Number(PickingId)).then((LinesData) => {
-      this.cancelLoading()
-      if (LinesData && LinesData['err'] === false) {
-
-        console.log('Reloading');
-        this.loading.dismiss();
-        this.location.back();
-      } else if (LinesData['err'] !== false) {
-        this.presentAlert('Error al validar el albarán:', LinesData['err']);
-      }
-    })
-    .catch((error) => {
-      this.cancelLoading(true)
-      this.presentAlert('Error al validar el albarán:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
 
@@ -619,6 +528,9 @@ export class MoveFormPage implements OnInit {
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
+    setTimeout(() => {
+      this.loading.dismiss();
+    }, 5000);
     await this.loading.present();
   }
 
@@ -638,14 +550,14 @@ export class MoveFormPage implements OnInit {
       })
     .catch((error) => {
       this.cancelLoading(true);
-      this.presentAlert('Error al borrar el movieminto:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
 
   ProcessProductId() {
     console.log('ProcessProductId');
     if (this.data['state'].value === 'done') {return; }
-    this.presentLoading();
+    // this.presentLoading();
     const SmlId = this.data['move_line_ids'].filter(
       move => (this.data['active_location_id'].id === move[this.data['default_location'].value].id))[0];
     if (SmlId){
@@ -653,16 +565,13 @@ export class MoveFormPage implements OnInit {
       // entonces miro a ver si  superamos la cantidad
       const QuantityDone = this.data['quantity_done'] + 1;
       if (QuantityDone > this.data['reserved_availability']) {
-
         return this.QtyError();
       }
       // Escribo el producto y l aubicación con ok. y ademas le sumo una a la cantidad
-      SmlId['field_status_apk'] = this.stock.write_status(SmlId['field_status_apk'], 'product_id', 'done');
-      SmlId['field_status_apk'] = this.stock.write_status(SmlId['field_status_apk'], this.data['default_location'], 'done');
       this.ChangeQty(SmlId, 1);
     }
     this.reset_scanner() ;
-    this.cancelLoading();
+    // this.cancelLoading();
   }
   GetMovesToChangeLoc(moves, confirm=false) {
     console.log('GetMovesToChangeLoc');
@@ -670,16 +579,12 @@ export class MoveFormPage implements OnInit {
     // Si confirmar:
     // filtro los movimientos que ya tienen esa ubicación y no hechos
     if (confirm){
-      return moves.filter(move => (this.stock.read_status(move['field_status_apk'], loc , 'done') === true) &&
-      (this.stock.read_status(move['field_status_apk'], 'qty_done' , 'done') === false));
+      return moves.filter(move => (move['qty_done'] === 0));
     }
     // Si no confirmo filtro los movimeintos:
     // que ya tienen ubicación y no están hechos
     // y los que no tengan ubicación
-    return moves.filter(move =>
-      (this.stock.read_status(move['field_status_apk'], loc , 'done') === false) ||
-      (this.stock.read_status(move['field_status_apk'], loc , 'done') === true) &&
-      (this.stock.read_status(move['field_status_apk'], 'qty_done' , 'done') === false));
+    return moves.filter(move =>(move['qty_done'] !== 0));
   }
 
   ProcessLocation(Barcode) {
@@ -687,18 +592,18 @@ export class MoveFormPage implements OnInit {
     this.presentLoading();
     const field = this.data['default_location'].value;
     // Miro si coincide con algún ubicación necesaria de los movimientos
-    const Confirm = this.LastReading === this.scanner_reading;
+    const Confirm = this.LastReading === this.ScannerReading
     // const MovesToUpdate = this.GetMovesToChangeLoc(this.data['move_line_ids'], Confirm);
     const SmlIds = [];
     for (const move of this.data['move_line_ids']) {SmlIds.push(move['id']); }
-    const values = {  move_id: this.data['id'],
-                      sml_ids: SmlIds,
-                      field: this.data['default_location'].value,
-                      active_location_id: this.data['active_location_id']['id'],
-                      barcode: Barcode,
-                      confirm: Confirm,
-                      filter_move_lines: this.Filter
-                      };
+    const vals = {
+                    sml_ids: SmlIds,
+                    field: this.data['default_location'].value,
+                    active_location_id: this.data['active_location_id']['id'],
+                    barcode: Barcode,
+                    confirm: Confirm,
+                    };
+    const values = this.GetValuesMoveInfo(this.data['id'], vals);
     this.stock.AssignLocationToMoves(values)
       .then((data) => {
         if (data) {
@@ -718,7 +623,8 @@ export class MoveFormPage implements OnInit {
   AssignLocationId(MoveId, LocationId, LocationField) {
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
-    const values = {id: MoveId, location_field: LocationField, location_id: LocationId};
+    const vals = {id: MoveId, location_field: LocationField, location_id: LocationId};
+    const values = this.GetValuesMoveInfo(this.data['id'], vals);
     this.stock.AssignLocationId(values).then((data) => {
       if (data) {
         this.reset_scanner() ;
@@ -727,7 +633,7 @@ export class MoveFormPage implements OnInit {
     })
     .catch((error) => {
       this.cancelLoading(true);
-      this.presentAlert('Error al asignar las ubicaciones de origen del movimiento:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
 
@@ -740,8 +646,6 @@ export class MoveFormPage implements OnInit {
   ProcessLocationDestId(LocationDestId = '') {
     if (this.data['default_location'].value === 'location_dest_id') {
       this.AssignLocationId(this.data['id'], this.data['active_location_id'].id, 'location_dest_id');
-    // Escribo en todos los que no tengan la ubicación como hecha la que pone, y además la marco como hecha
-    // this.data.field_status_apk = this.stock.write_status(this.data.field_status_apk, 'location_dest_id', 'done')
     }
   }
 
@@ -749,7 +653,8 @@ export class MoveFormPage implements OnInit {
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
     this.audio.play('click');
-    const values = {id: MoveId, model: 'stock.move', filter_move_lines: this.Filter};
+    this.offset = 0;
+    const values = this.GetValuesMoveInfo(this.data['id'], {});
     this.stock.ActionAssign(values).then((data) => {
       if (data) {
         this.reset_scanner() ;
@@ -758,7 +663,7 @@ export class MoveFormPage implements OnInit {
     })
     .catch((error) => {
       this.cancelLoading(true);
-      this.presentAlert('Error al quitar la reserva del movimiento:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
 
@@ -776,11 +681,13 @@ export class MoveFormPage implements OnInit {
     })
     .catch((error) => {
       this.cancelLoading(true);
-      this.presentAlert('Error al quitar los lotes del movimiento:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
   DeleteMoveLine(SmlId){
-    const values = {sml_id: SmlId, filter_move_lines: this.Filter};
+    //Necesito volver a cargar los mismos
+    this.offset = this.offset - this.SmlCount;
+    const values = this.GetValuesMoveInfo(this.data['id'], {sml_id: SmlId, filter_move_lines: this.Filter});
     this.presentLoading();
     this.audio.play('click');
 
@@ -792,14 +699,15 @@ export class MoveFormPage implements OnInit {
     })
     .catch((error) => {
       this.cancelLoading(true);
-      this.presentAlert('Error al quitar la reserva de la línea:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
   ActionUnReserve(MoveId) {
     if (this.data['state'].value === 'done') {return; }
     this.presentLoading();
     this.audio.play('click');
-    const values = {id: MoveId, model: 'stock.move', filter_move_lines: this.Filter}
+    this.offset = 0;
+    const values = this.GetValuesMoveInfo(this.data['id'], {});
     this.stock.MoveUnReserve(values).then((data) => {
       if (data) {
         this.reset_scanner() ;
@@ -808,7 +716,7 @@ export class MoveFormPage implements OnInit {
     })
     .catch((error) => {
       this.cancelLoading(true);
-      this.presentAlert('Error al quitar la reserva del movimiento:', error.msg.error_msg);
+      this.presentAlert('Error:', error.msg.error_msg);
     });
   }
 
@@ -845,16 +753,6 @@ export class MoveFormPage implements OnInit {
   }
   ProcessLotId(){
     return this.ProcessSerialId();
-    if (this.data['state'].value === 'done') {return; }
-    const LotName = this.scanner_reading;
-    const SmlIds = this.data['move_line_ids'].filter( move => (move['lot_id'] && move['lot_id']['name'] === LotName));
-    if (SmlIds) {
-      for (const SmlId of SmlIds) {
-        SmlId['field_status_apk'] = this.stock.write_status(SmlId['field_status_apk'], 'lot_id', 'done');
-        const values = {field_status_apk: SmlId['field_status_apk']};
-        this.UpdateSmlIdField(SmlId, values);
-      }
-    }
   }
 
   ProcessSerialId() {
@@ -863,7 +761,7 @@ export class MoveFormPage implements OnInit {
     }
     if (this.data['state'].value === 'done') {return; }
     let LotsToAdd = [];
-    LotsToAdd.push(this.scanner_reading);
+    LotsToAdd.push(this.ScannerReading);
     if (!this.ShowLots){
       if (LotsToAdd.length > 0){
         this.ActionApplyLotNames(LotsToAdd);
@@ -927,7 +825,7 @@ export class MoveFormPage implements OnInit {
     let LotsToAdd = [];
     let LotNamesCount = this.LotNames.length;
     if (this.BarcodeLength === 0) {
-      if (this.LotNames){
+      if (LotNamesCount > 0){
         this.BarcodeLength = this.LotNames[LotNamesCount - 1].length;
       }
       else {
@@ -940,21 +838,22 @@ export class MoveFormPage implements OnInit {
         this.presentToast('El código ' + lot + ' no cumple la validación')
         continue;
       }
-      const idx = this.LotNames.indexOf(lot);
-      if (idx > -1 && this.NewLotNames[idx]) {
-        this.audio.play('error');
-        this.presentToast('El código ' + lot + ' ya está en la lista');
-        continue;
-      }
+      // const idx = this.LotNames.indexOf(lot);
+      // if (false && idx > -1 && this.NewLotNames[idx]) {
+      //  this.audio.play('error');
+      //  this.presentToast('El código ' + lot + ' ya está en la lista');
+      //  continue;
+      // }
       LotsToAdd.push(lot);
     }
     if (LotsToAdd.length > 0) {
       this.presentLoading();
-      const values = {id: this.data['id'],
+      let values = {id: this.data['id'],
                       lot_names: LotsToAdd,
                       active_location: this.data['default_location'].id,
                       filter_move_lines: this.Filter};
-
+      this.offset = this.offset - this.SmlCount;
+      values = this.GetValuesMoveInfo(this.data['id'], values);
       this.stock.CreateMoveLots(values).then((data) => {
         if (data) {
           this.reset_scanner() ;
@@ -966,7 +865,7 @@ export class MoveFormPage implements OnInit {
       .catch((error) => {
         this.audio.play('error');
         this.cancelLoading();
-        this.presentAlert('Error al añadir los lotes el albarán:', error.msg.error_msg);
+        this.presentAlert('Error:', error.msg.error_msg);
       });
     }
     return;
@@ -1011,7 +910,7 @@ export class MoveFormPage implements OnInit {
       .catch((error) => {
         this.audio.play('error');
         this.cancelLoading();
-        this.presentAlert('Error al añadir los lotes el albarán:', error.msg.error_msg);
+        this.presentAlert('Error:', error.msg.error_msg);
       });
     }
     return;
@@ -1022,7 +921,7 @@ export class MoveFormPage implements OnInit {
   reset_scanner() {
     this.WaitingQty = false;
     this.ActiveLine = {};
-    this.LastReading = this.scanner_reading;
+    this.LastReading = this.ScannerReading;
     this.ScannerFooter.ScanReader.controls.scan.setValue('');
     // this.scanner.reset_scan();
     // this.ScanReader.controls.scan.setValue =''
@@ -1041,7 +940,9 @@ export class MoveFormPage implements OnInit {
       return this.CheckOrder(execreg[0]);
     }
     this.audio.play('click');
-    if (this.data['state'].value === 'done') {this.SearchOtherMoveByScanner(); }
+    if (this.data['state'].value === 'done') {
+      this.SearchOtherMoveByScanner();
+     }
 
     else if (eval(this.data['barcode_re']).exec(val) || /[\.]\d{3}[\.]/.exec(val) ) {
       // Leo UBICACION
@@ -1055,7 +956,7 @@ export class MoveFormPage implements OnInit {
         this.reset_scanner();
         return;
       }
-      this.presentAlert('Error en los datos.', 'El valor introducido ' + val + 'no es válido');
+      this.presentAlert('Error:', 'El valor introducido ' + val + 'no es válido');
       return;
     }
     else if (this.data['tracking'].value === 'none' &&
@@ -1108,7 +1009,7 @@ export class MoveFormPage implements OnInit {
       this.stock.SetModelInfo('App', 'ActivePage', 'MoveFormPage');
       if (detail !== null && detail['data'].length > 0) {
         const values = {move_id: this.data['id'],
-                        location_id: this.data['active_location_id']['id'],
+                        location_id: this.data['active_location_id']['id'] || this.data['location_id']['id'],
                         product_id: PrId,
                         ean_ids: detail['data']};
         this.LoadEans(values);
@@ -1116,9 +1017,10 @@ export class MoveFormPage implements OnInit {
     });
     await modal.present();
   }
-  LoadEans(values){
+  LoadEans(vals){
     this.presentLoading();
-    let self = this;
+    const values = this.GetValuesMoveInfo(this.data['id'], vals);
+
     this.stock.LoadEansToMove(values).then((data) => {
       this.apply_move_data(data);
       this.loading.dismiss();
@@ -1135,6 +1037,10 @@ export class MoveFormPage implements OnInit {
   NavigateStockPicking(PickingId){
     this.router.navigateByUrl('/stock-picking/' + PickingId);
   }
+  GetRelativeMoveInfo(MoveId, Inc){
+    const values = {RelativeIndex: Inc, Filter: this.Filter};
+    return this.GetMoveInfo(MoveId, values);
+  }
   CheckOrder(order){
     // ActionAssign();
     // DoUnreserve();
@@ -1143,11 +1049,11 @@ export class MoveFormPage implements OnInit {
     const MoveId = this.data['id'];
     let res = false;
     if (order === '39'){
-      this.GetRelativeMoveInfo(MoveId, 1);
+      // this.GetRelativeMoveInfo(MoveId, 1);
       res = true;
     }
     if (order === '37'){
-      this.GetRelativeMoveInfo(MoveId, -1);
+      // this.GetRelativeMoveInfo(MoveId, -1);
       res = true;
     }
     if (order === '38'){
@@ -1168,8 +1074,17 @@ export class MoveFormPage implements OnInit {
       }
       res = true;
     }
+    const F1 = '112'; // Actualiza los nombres de los números de serie
+    const F2 = '113'; // Reserva los movimientos
+    const F3 = '114'; // Anula reservas
+    const F4 = '115'; // Borra números de serie
+    const F5 = '116'; // Alterna entre números de serie o move_lines
+    const F6 = '117'; // Nada
+    const F7 = '118'; // Nada
+    const F8 = '119'; // Nada
+    const F9 = '120'; // Nada
 
-    if (order === '112'){
+    if (order === F8){
       // F1
       let str = '<p>Atajos de teclado</p>';
       str += 'Cursor Dcha: Siguiente</br>';
@@ -1187,38 +1102,38 @@ export class MoveFormPage implements OnInit {
       this.presentAlert('TECLAS', str);
       res = true;
     }
-    if (order === '113'){
+    else if (order === F2){
       // F2
       this.ActionAssign(MoveId);
       res = true;
     }
-    if (order === '114'){
+    else if (order === F3){
       // F3
       this.ActionUnReserve(MoveId);
       res = true;
     }
-    if (order === '115'){
+    else if (order === F8){
       // F4
       // this.ResetQties();
       res = true;
     }
-    if (order === '116'){
+    else if (order === F8){
       // F5
       // this.ButtonValidate();
       // return true;
       res = true;
     }
-    if (order === '119'){
+    else if (order === F1){
       // F8
       this.PrevActionApplyLotNames();
       res = true;
     }
-    if (order === '120'){
+    else if (order === F4){
       // F9
       this.CleanLots(MoveId);
       res = true;
     }
-    if (order === '9'){
+    else if (order === F5){
       // F5
       this.AlternateShowLots();
       res = true;

@@ -23,6 +23,7 @@ export class AudioService {
     if (platform.is('cordova')){
       this.audioType = 'native';
     }
+    this.ActiveAudio = true;
   }
 
   async presentAlert(titulo, texto) {

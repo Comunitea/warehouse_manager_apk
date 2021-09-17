@@ -3,7 +3,7 @@
       <ion-buttons slot="start">
         <ion-menu-button></ion-menu-button>
       </ion-buttons>
-      <ion-title>Inventario</ion-title>
+      <ion-title>Albaranes</ion-title>
     </ion-toolbar>
   </ion-header>
   
@@ -14,9 +14,9 @@
         <ion-col col=2 class="ion-align-self-center ion-text-center" 
           (click)="GetPickingTypes('all' , null)">
             <ion-icon class="icon" name="book"></ion-icon>
-          <!--p>{{menu1.code.name}} </p-->
+          
         </ion-col>  
-        <ion-col size=10> 
+        <!--ion-col size=10> 
           <ion-row>
             <ion-col class="ion-text-center product-link" size=4 
                 [ngClass]="{'selected': Code == menu1.barcode}" 
@@ -25,7 +25,7 @@
                 {{menu1.name}}
             </ion-col>
           </ion-row>
-        </ion-col>
+        </ion-col-->
       </ion-row>
 
       <ion-row>
@@ -36,33 +36,21 @@
     </ion-card>
     
     <ion-card>
-      <ion-grid>
-        <ion-row>
-          <ion-col size-xs="12" size-sm="6" size-lg="4" *ngFor="let picking_type of picking_types">
-            <ion-card>
-              <ion-card-header style="padding-top: 5px; padding-bottom: 5px; min-height: 10px;">
-                <ion-card-title>{{picking_type.name}}</ion-card-title>
-              </ion-card-header>
-
-              <ion-card-content style="padding-top: 5px; padding-bottom: 5px; min-height: 10px;">
-                <ion-row>
-                  <ion-col style="text-align: center" [ngSwitch]="picking_type.code">
-                    <ion-button size="small" class="button-text cmnt-front" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_ready')">{{picking_type.count_picking_ready}} Por hacer</ion-button>
-                  </ion-col>
-                  <ion-col>
-                    <div class="link" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_waiting')">{{picking_type.count_picking_waiting}} en espera</div>
-                    <div class="link" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_late')" *ngIf="picking_type.count_picking_late">{{picking_type.count_picking_late}} retrasados</div>
-                    <ion-progress-bar *ngIf="picking_type.count_picking_late" color="primary" type="determinate" [value]="picking_type.rate_picking_late/100"></ion-progress-bar>
-                    <!--div class="link" (click)="OpenTypeId(picking_type.id, 'count_picking_backorders')" *ngIf="picking_type.count_picking_backorders">{{picking_type.count_picking_backorders}} pendientes</div-->
-                    <!--ion-progress-bar *ngIf="picking_type.count_picking_backorders" color="primary" type="determinate" [value]="picking_type.rate_picking_backorders/100"></ion-progress-bar-->
-                  </ion-col>
-                </ion-row>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-        </ion-grid> 
-      <!--app-picking-type-info [picking_types]="picking_types"></app-picking-type-info-->
+            <ion-row *ngFor="let picking_type of picking_types">
+              <ion-col size-xs="12" size-sm="6" size-lg="4">
+                <ion-button size="small" class="button-text cmnt-front" style="width: 100%" 
+                  (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_ready')">
+                  {{picking_type.barcode}}: 
+                  {{picking_type.count_picking_batch_ready}} de 
+                  {{picking_type.count_picking_ready}} preparados
+                </ion-button>
+              </ion-col>
+              <!--ion-col size-xs="3" size-sm="2" size-lg="1">
+                <div class="link" (click)="OpenTypeId(picking_type.barcode, picking_type.id, 'count_picking_waiting')">
+                  {{picking_type.count_picking_waiting}} En espera
+                </div>
+              </ion-col-->
+            </ion-row>
     </ion-card>
 
     <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">

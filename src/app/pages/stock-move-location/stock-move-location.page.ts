@@ -16,7 +16,7 @@ export class StockMoveLocationPage implements OnInit {
   location_id: string;
   location_dest_id: string;
   move_lines_info: Array<[]>;
-  scanner_reading: string;
+  ScannerReading: string;
   location_move_id: any;
   awaitting_origin: boolean;
   awaitting_destination: boolean;
@@ -52,7 +52,7 @@ export class StockMoveLocationPage implements OnInit {
   }
 
   onReadingEmitted(val: string) {
-    this.scanner_reading = val;
+    this.ScannerReading = val;
     this.process_reading();
   }
 
@@ -83,11 +83,11 @@ export class StockMoveLocationPage implements OnInit {
 
   process_reading() {
     if (this.awaitting_destination == true) {
-      this.change_location('destination', this.scanner_reading);
+      this.change_location('destination', this.ScannerReading);
     } else if (this.awaitting_origin == true) {
-      this.change_location('origin', this.scanner_reading);
+      this.change_location('origin', this.ScannerReading);
     } else if (this.awaitting_qty) {
-      this.change_qty(this.actual_line, this.scanner_reading);
+      this.change_qty(this.actual_line, this.ScannerReading);
     } else if (!this.location_id) {
       this.create_new_move_location();
     } else {
@@ -129,7 +129,7 @@ export class StockMoveLocationPage implements OnInit {
   }
 
   create_new_move_location() {
-    this.stock.create_new_move_location(this.scanner_reading).then((data)=>{
+    this.stock.create_new_move_location(this.ScannerReading).then((data)=>{
       this.update_data(data);
       this.audio.play('click');   
     })
@@ -139,7 +139,7 @@ export class StockMoveLocationPage implements OnInit {
   }
 
   create_new_move_location_line() {
-    this.stock.create_new_move_location_line(this.location_move_id, this.location_id['id'], this.location_dest_id['id'], this.scanner_reading).then((data:any)=>{
+    this.stock.create_new_move_location_line(this.location_move_id, this.location_id['id'], this.location_dest_id['id'], this.ScannerReading).then((data:any)=>{
       this.move_lines_info.push(data);
       this.audio.play('click');   
     })

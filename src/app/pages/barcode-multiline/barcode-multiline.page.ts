@@ -2,7 +2,7 @@ import { Component, OnInit, Input, ViewChild } from '@angular/core';
 import { NavController, ModalController, IonTextarea} from '@ionic/angular';
 import { OdooService } from '../../services/odoo.service';
 import { Keyboard } from '@ionic-native/keyboard/ngx';
-import { Timestamp } from 'rxjs';
+
 
 @Component({
   selector: 'app-barcode-multiline',
@@ -28,12 +28,12 @@ export class BarcodeMultilinePage implements OnInit {
    }
 
   ionViewWillEnter() {
-  setTimeout(() => {
-    this.EanList.setFocus();
     setTimeout(() => {
-      this.keyboard.hide();
-    }, 50);
-  }, 150);
+      this.EanList.setFocus();
+      setTimeout(() => {
+        this.keyboard.hide();
+      }, 50);
+    }, 150);
   }
   AfterViewInit() {
     setTimeout(() => {
@@ -42,7 +42,7 @@ export class BarcodeMultilinePage implements OnInit {
     }, 150);
   }
   ngOnInit() {
-    this.EanList.setFocus();
+    // this.EanList.setFocus();
   }
   goBack() {
     this.myDismiss();
@@ -52,6 +52,5 @@ export class BarcodeMultilinePage implements OnInit {
   }
   CalcRows(){
     const ElId = document.getElementById('eans');
-
   }
 }

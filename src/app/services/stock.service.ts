@@ -1,8 +1,8 @@
-import { Injectable, ɵSWITCH_COMPILE_DIRECTIVE__POST_R3__, ViewChild } from '@angular/core';
+import { Injectable, ViewChild } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { Storage } from '@ionic/storage';
 import { OdooService } from './odoo.service';
-import { format } from 'url';
+
 
 @Injectable({
   providedIn: 'root'
@@ -78,7 +78,7 @@ export class StockService {
   FilterMovesValues: {};
   FilterMoves: string;
   Parameter: {};
-  
+
 
   constructor(
     public odooCon: OdooService,
@@ -88,7 +88,7 @@ export class StockService {
     this.Domains = {};
     this.Parameter = {};
     this.SetDomainsStates();
-    // this.GetWhCodeFilter('crm.team', 'filter_crm_team');
+    // this.GetWhCodeFilter('crm.team', 'filter_2');
     // this.GetWhCodeFilter('delivery.carrier', 'filter_delivery_carrier');
     // this.GetWhCodeFilter('stock.picking.batch', 'filter_stock_picking_batch');
 
@@ -241,8 +241,9 @@ export class StockService {
 
   GetWhCodeFilter(Model, Filter, Field){
     const self = this;
-    const values = {field: Field, filter: Filter};
+    const values = {field: Field, filter: Filter, model: Model};
     self.odooCon.execute(Model, 'get_wh_code_filter', values).then((data) => {
+        console.log ('Escribo en ' + Model + ' el filtro ' + Filter + ' con datos ' + data);
         self.SetModelInfo(Model, Filter, data);
       })
       .catch((err) => {
@@ -291,6 +292,19 @@ export class StockService {
     });
     return promise;
   }
+  ResetMoves(values){
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.move.line', 'reset_moves', values).then((done) => {
+        resolve(done);
+      })
+      .catch((err) => {
+        reject(false);
+        console.log('Error al quitar la reserva del movimiento: ' + err.msg.error_msg);
+    });
+    });
+    return promise;
+  }
   CleanLots(values){
     const self = this;
     const promise = new Promise( (resolve, reject) => {
@@ -319,6 +333,7 @@ export class StockService {
     return promise;
   }
   DeleteMoveLine(values){
+    
     const self = this;
     const promise = new Promise( (resolve, reject) => {
     self.odooCon.execute('stock.move', 'delete_move_line', values).then((done) => {
@@ -567,24 +582,11 @@ export class StockService {
     });
     return promise;
   }
-
-  GetRelativeMoveInfo(values){
+ 
+  GetMoveInfo(Values= {}) {
     const self = this;
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.move', 'get_relative_move_info', values).then((data) => {
-          resolve(data);
-      })
-      .catch((err) => {
-        reject(err);
-    });
-    });
-    return promise;
-  }
-  GetMoveInfo(MoveId, index= 0, limit= this.TreeLimit, offset = 0, Filter = 'Todos') {
-    const self = this;
-    const values = {id: MoveId, index, model: 'stock.move', view: 'form', sml_limit: limit, sml_offset: offset, filter_move_lines: Filter};
-    const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.move', 'get_apk_object', values).then((data) => {
+      self.odooCon.execute('stock.move', 'get_apk_object', Values).then((data) => {
           resolve(data);
       })
       .catch((err) => {
@@ -612,6 +614,7 @@ export class StockService {
                      sml_ids: MoveLineId,
                      field_location: FieldLocation,
                      old_loc_id: OldLocationId,
+                     Timeout: 20000,
                      new_loc_id: NewLocationBarcode};
     const model = 'stock.move.line';
     const promise = new Promise( (resolve, reject) => {
@@ -639,7 +642,7 @@ export class StockService {
     return promise;
   }
   FindSerialForMove(LotId, PickingId, Remove){
-    const values = {lot_id: LotId, picking_id: PickingId, remove: Remove};
+    const values = {lot_id: LotId, picking_id: PickingId, remove: Remove, Timeout: 20000};
     const promise = new Promise( (resolve, reject) => {
     this.odooCon.execute('stock.picking.batch', 'find_serial_for_move', values).then((data) => {
           resolve(data);
@@ -653,7 +656,7 @@ export class StockService {
 
   CreateNewSmlId(MoveId) {
     const self = this;
-    const values = {id: MoveId};
+    const values = {id: MoveId, Timeout: 20000};
     const model = 'stock.move';
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(model, 'create_new_sml_id', values).then((data) => {
@@ -671,7 +674,8 @@ export class StockService {
       const values = {
       move_id: MoveId,
       sml_id: SmlId,
-      values: DictValues
+      values: DictValues,
+      Timeout: 20000
       };
       const promise = new Promise( (resolve, reject) => {
         self.odooCon.execute('stock.move.line', 'update_sml_field', values).then((done) => {
@@ -689,7 +693,8 @@ export class StockService {
     const self = this;
     const values = {
       id: move_id,
-      quantity_done: qty_done
+      quantity_done: qty_done,
+      Timeout: 20000
     };
 
     const model = 'stock.move';
@@ -811,7 +816,8 @@ export class StockService {
   force_set_assigned_qty_done(move_id, model= 'stock.move') {
     const self = this;
     const values = {
-      id: move_id
+      id: move_id,
+      Timeout: 20000
     };
 
     const promise = new Promise( (resolve, reject) => {
@@ -831,7 +837,8 @@ export class StockService {
     const self = this;
     const values = {
       id: move_id,
-      qty_done
+      qty_done,
+      Timeout: 20000
     };
 
     const model = 'stock.move.line';
@@ -853,7 +860,7 @@ export class StockService {
   force_set_reserved_qty_done(move_id, model= 'stock.move') {
     const self = this;
     const values = {
-      id: move_id
+      id: move_id,Timeout: 20000
     };
 
     const promise = new Promise( (resolve, reject) => {
@@ -1077,7 +1084,7 @@ export class StockService {
     });
     return promise;
   }
-
+  
   DeleteInventoryLine(values) {
     const self = this;
     const promise = new Promise( (resolve, reject) => {
@@ -1189,7 +1196,7 @@ export class StockService {
     const values = {
       show_stock: ShowStock,
       id: LocationId,
-      stock_inventory: inventory,
+      show_inventory: inventory,
       filter_inventory: filter,
       model: 'stock.location',
     };

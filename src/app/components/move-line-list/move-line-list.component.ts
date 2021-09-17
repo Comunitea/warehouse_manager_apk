@@ -10,7 +10,7 @@ import { AudioService } from '../../services/audio.service';
   styleUrls: ['./move-line-list.component.scss'],
 })
 export class MoveLineListComponent implements OnInit {
-  @Input() scanner_reading: string
+  @Input() ScannerReading: string
   @Input() move_lines: {}
   @Input() code: string;
   @Input() picking_fields: string;

@@ -9,6 +9,7 @@ import { VoiceService } from '../../services/voice.service';
 import { ScannerService } from '../../services/scanner.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
 import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
+import { ThrowStmt } from '@angular/compiler';
 
 
 
@@ -36,6 +37,7 @@ export class StockLocationPage implements OnInit {
   LastReading: string;
   Filter = {location_id: 0, product_id: 0};
   BarcodeLength: number;
+  ActiveInventory: number;
 
   @Input() ScannerReading: string;
   @ViewChild(ScannerFooterComponent) ScannerFooter: ScannerFooterComponent;
@@ -68,7 +70,7 @@ export class StockLocationPage implements OnInit {
   ) { }
 
   ionViewDidEnter(){
-    this.odoo.isLoggedIn().then((data)=>{
+    this.odoo.isLoggedIn().then((data) => {
       if (data === false) {
         this.router.navigateByUrl('/login');
       } else {
@@ -77,7 +79,18 @@ export class StockLocationPage implements OnInit {
         this.ShowInfo = false;
         this.ShowInventory = false;
         this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
-        const location = this.route.snapshot.paramMap.get('id');
+        const location = parseInt(this.route.snapshot.paramMap.get('id'));
+        this.ActiveProduct = parseInt(this.route.snapshot.paramMap.get('product_id'));
+        this.ActiveInventory = parseInt(this.route.snapshot.paramMap.get('inventory_id'));
+        if (this.ActiveProduct) {
+          this.Filter['product_id'] = this.ActiveProduct;
+        }
+        if (this.ActiveInventory) {
+          this.Filter['inventory_id'] = this.ActiveInventory;
+          this.ShowStock = false;
+          this.ShowInventory = true;
+        }
+
         this.voice.voice_command_refresh$.subscribe(data => {
           this.voice_command_check();
         });
@@ -127,6 +140,9 @@ export class StockLocationPage implements OnInit {
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
+    setTimeout(() => {
+      this.loading.dismiss();
+    }, 5000);
     await this.loading.present();
   }
   SetShow(Badge){
@@ -137,9 +153,18 @@ export class StockLocationPage implements OnInit {
     if (this.ShowInfo){return; }
     this.GetLocationInfo(this.location_data['id'], this.ShowInventory, this.Filter);
   }
-  NewInventory(Filter, Strat=''){
-    const values = {location_id: this.location_data['id'], filter: Filter, strat: Strat};
+  NewInventory(Filter, LocationId, ProductId){
+    const values = {location_id: LocationId, product_id: ProductId, create_inventory : true, filter: Filter};
     this.stock.NewInventory(values).then((data) => {
+      this.ApplyData(data[0]);
+    })
+    .catch((error) => {
+      this.presentAlert(error.title, error.msg.error_msg);
+    });
+  }
+  CancelInventory(){
+    const values = {cancel: true, location_id: this.location_data['id'], inventory_id: this.location_data['inventory_id']};
+    this.stock.ValidateInventory(values).then((data) => {
       this.ApplyData(data[0]);
     })
     .catch((error) => {
@@ -180,7 +205,7 @@ export class StockLocationPage implements OnInit {
 
   OnClickLocation(LocationId){
     if (this.Filter.location_id === LocationId) {
-      this.Filter.location_id = 0;
+      this.Filter['location_id'] = 0;
       this.ActiveLocation = 0;
     }
     else {
@@ -195,15 +220,17 @@ export class StockLocationPage implements OnInit {
   OnClickProduct(LocationIndex, ProductIndex){
     this.ActiveLineIndex = 0;
     const Product = this.location_data['inventory_location_ids'][LocationIndex]['product_ids'][ProductIndex];
+    const Location = this.location_data['inventory_location_ids'][LocationIndex]['id'];
     if (this.ActiveProduct === Product['id'] && this.ActiveLocation){
       return this.CheckProduct(Product['wh_code']);
     }
-    this.ActiveProduct = Product['id'];
-    this.Filter['product_id'] = this.ActiveProduct;
+    this.Filter['product_id'] = this.ActiveProduct = Product['id'];
+    // this.Filter['location_id'] = this.ActiveLocation =  this.location_data['inventory_location_ids']['id']
+    // this.Filter['inventory_id'] = this.ActiveInventory = this.location_data['inventory_id']
     this.BarcodeLength = 0;
     // this.Filter.product_id = true;
     const values = {inventory_id: this.location_data['inventory_id'],
-                    location_id: this.ActiveLocation,
+                    location_id: Location,
                     product_id: this.ActiveProduct,
                     filter: this.Filter};
     return this.GetInventoryId(values);
@@ -212,14 +239,8 @@ export class StockLocationPage implements OnInit {
     if (this.ActiveLineIndex === 0){
       this.ActiveLineIndex = LineIndex;
     }
-    else {this.ActiveLineIndex = 0}
-    return;
-    const Line = this.location_data['inventory_location_ids'][LocationIndex]['product_ids'][ProductIndex]['line_ids'][LineIndex];
-    if (this.ActiveLine !== LineIndex) {
-      this.ActiveLine = LineIndex;
-      }
     else {
-      this.ActiveLine = -1;
+      this.ActiveLineIndex = 0;
     }
   }
 
@@ -343,6 +364,7 @@ export class StockLocationPage implements OnInit {
           handler: (data) => {
             if ( Line['product_qty'] !== data['product_qty']) {
               const values = {id: Line['id'],
+                              line_id: Line['id'],
                               inventory_id: this.location_data['inventory_id'],
                               location_id: this.ActiveLocation,
                               product_id: this.ActiveProduct,
@@ -384,24 +406,57 @@ export class StockLocationPage implements OnInit {
       return this.LocationDiv.scrollToPoint(0, yOffset, 500);
     }
   }
-  DeleteInventoryLine(LineId){
 
+  VaciarUbicacionyProducto(){
+    return this.DeleteInventoryLine()
+  }
+
+  DeleteProductQties(ActiveProduct = 0, ActiveLocation = 0){
+    const values = {inventory_id: this.location_data['inventory_id'],
+                    location_id: ActiveLocation,
+                    product_id: ActiveProduct,
+                    product_qty : 0,
+                    filter: this.Filter
+                    };
+    if (this.ActiveLocation === 0){
+      this.presentToast("No tienes una ubicación definida")
+      return;
+    }
+    this.presentLoading('Actualizando ...')
+    let self = this;
+    this.stock.DeleteInventoryLine(values).then((data) => {
+      self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
+      // self.ActiveLocation =  data['ActiveLocation'];
+      // self.ActiveProduct = data['ActiveProduct'];
+      // self.ActiveLine = 0;
+      self.loading.dismiss();
+    })
+    .catch((error) => {
+      this.loading.dismiss();
+      this.presentAlert(error.title, error.msg.error_msg);
+    });
+    return;
+  }
+
+  DeleteInventoryLine(LineId = 0, NewQty = 0){
     const values = {inventory_id: this.location_data['inventory_id'],
                     location_id: this.ActiveLocation,
                     product_id: this.ActiveProduct,
                     filter: this.Filter,
                     line_id: LineId,
+                    product_qty : NewQty,
                     };
     if (this.ActiveLocation === 0){
-      return this.GetInventoryId(values);
+      this.presentToast("No tienes una ubicación definida")
+      return;
     }
-    this.presentLoading('Borrando serie ...')
+    this.presentLoading('Actualizando ...')
     let self = this;
     this.stock.DeleteInventoryLine(values).then((data) => {
       self.location_data['inventory_location_ids'] = data['inventory_location_ids'];
-      self.ActiveLocation =  data['ActiveLocation'];
-      self.ActiveProduct = data['ActiveProduct'];
-      self.ActiveLine = 0;
+      // self.ActiveLocation =  data['ActiveLocation'];
+      // self.ActiveProduct = data['ActiveProduct'];
+      // self.ActiveLine = 0;
       self.loading.dismiss();
     })
     .catch((error) => {
@@ -463,7 +518,7 @@ export class StockLocationPage implements OnInit {
         this.Filter.product_id = this.ActiveProduct;
         if (product['tracking'] === 'none'){
           const line = product['line_ids'][0];
-          const values = {line: line['id'],
+          const values = {line_id: line['id'],
                           inventory_id: this.location_data['inventory_id'],
                           location_id: this.ActiveLocation,
                           product_id: this.ActiveProduct,
@@ -586,7 +641,44 @@ export class StockLocationPage implements OnInit {
     }
     return;
   }
+  GetProductName(ProductId){
+    const Quants = this.location_data['quants']
+    for (const quant in Quants){
+      if (Quants[quant]['id'] === ProductId){
+        return {  index: quant,
+                  product_index: quant,
+                  default_code: Quants[quant]['default_code'],
+                  wh_code: Quants[quant]['wh_code']
+};
+      }
+    }
+    const LocIds = this.location_data['inventory_location_ids'];
+    // tslint:disable-next-line:forin
+    for (const Idx in LocIds){
+      for (const IdxP in LocIds[Idx]['product_ids']) {
+        if (ProductId === LocIds[Idx]['product_ids'][IdxP]['id']){
+          return {  index: Idx,
+                    product_index: IdxP,
+                    default_code: LocIds[Idx]['product_ids'][IdxP]['default_code'],
+                    wh_code: LocIds[Idx]['product_ids'][IdxP]['wh_code']
+          };
+        }
+      }
+    }
 
+  }
+  GetLocationName(LocationId){
+    const LocationIds = this.location_data['inventory_location_ids'];
+    for (const Idx in LocationIds){
+      if (LocationId === LocationIds[Idx]['id']){
+        return {index: Idx,
+                name: LocationIds[Idx]['name'],
+                barcode: LocationIds[Idx]['barcode'] }
+      }
+
+    }
+
+  }
   create_buttons() {
     // tslint:disable-next-line:prefer-const
     let buttons = [{
@@ -597,7 +689,6 @@ export class StockLocationPage implements OnInit {
         console.log('Cancel clicked');
       }
     }];
-    // <ion-icon style="margin: 3px" slot="end" name="flash-off-outline" (click)="GetLocationInfo(location_data.id, true)"></ion-icon>
     let Button = {
       text: 'Validar inventario',
       icon: 'checkmark-done-circle-outline',
@@ -607,6 +698,45 @@ export class StockLocationPage implements OnInit {
       }
     };
     buttons.push(Button);
+
+    if (this.ActiveLocation){
+      let msg = 'Vaciar ' + this.GetLocationName(this.ActiveLocation)['name'];
+      if (this.ActiveProduct){
+        msg += '[' + this.GetProductName(this.ActiveProduct)['default_code'] + ']';
+      }
+
+      Button = {
+        text: msg,
+        icon: 'share-outline',
+        role: '',
+        handler: () => {
+          this.VaciarUbicacionyProducto();
+        }
+      };
+      buttons.push(Button);
+    }
+
+    // <ion-icon style="margin: 3px" slot="end" name="flash-off-outline" (click)="GetLocationInfo(location_data['id'], true)"></ion-icon>
+    Button = {
+      text: 'Validar inventario',
+      icon: 'checkmark-done-circle-outline',
+      role: '',
+      handler: () => {
+        this.ValidateInventory();
+      }
+    };
+    buttons.push(Button);
+
+    Button = {
+      text: 'Cancelar  inventario',
+      icon: 'trash-outline',
+      role: '',
+      handler: () => {
+        this.CancelInventory();
+      }
+    };
+    buttons.push(Button);
+
     if (this.BarcodeLength) {
       Button = {
         text: 'Anular chequeo nº de serie',
@@ -619,7 +749,7 @@ export class StockLocationPage implements OnInit {
       buttons.push(Button);
     }
     // <!--ion-icon style="margin: 3px" slot="end" name="checkmark-done-circle-outline" (click)="ValidateInventory()"></ion-icon-->
-    // <!--ion-icon slot="end" name="reload-circle-outline" (click)="DeleteLocation(location_data.inventory_id, loc.id, 'reset')"></ion-icon-->
+    // <!--ion-icon slot="end" name="reload-circle-outline" (click)="DeleteLocation(location_data['inventory_id'], loc.id, 'reset')"></ion-icon-->
     if (this.ActiveLocation && false){
       Button = {
       text: 'Resetar datos',

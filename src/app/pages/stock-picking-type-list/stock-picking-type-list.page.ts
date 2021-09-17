@@ -17,7 +17,7 @@ export class StockPickingTypeListPage implements OnInit {
 
   offset: number;
   limit: number;
-  limit_reached: boolean;
+  LimitReached: boolean;
   picking_types: Array<{}>;
   picking_codes: {};
   TypeMenu: Array<{}>;
@@ -36,7 +36,7 @@ export class StockPickingTypeListPage implements OnInit {
 
     this.offset = 0;
     this.limit = 10;
-    this.limit_reached = false;
+    this.LimitReached = false;
     this.picking_codes = [
       'incoming',
       'outgoing',
@@ -45,10 +45,14 @@ export class StockPickingTypeListPage implements OnInit {
   }
   ionViewDidEnter(){
     this.FillMenuTypes();
-    this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
-    this.stock.GetWhCodeFilter('stock.picking.batch', 'filter_crm_team', 'team_id');
-    this.stock.GetWhCodeFilter('stock.picking.batch', 'filter_delivery_carrier', 'carrier_id');
-    this.stock.GetWhCodeFilter('stock.picking.batch', 'filter_batch_state', 'state');
+    //this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
+    // this.GetWhCodeFilter('crm.team', 'filter_2');
+    // this.GetWhCodeFilter('delivery.carrier', 'filter_delivery_carrier');
+    // this.GetWhCodeFilter('stock.picking.batch', 'filter_stock_picking_batch');
+    console.log ('Recupero los filtros');
+    // this.stock.GetWhCodeFilter('crm.team', 'filter_2', 'wh_code');
+    // this.stock.GetWhCodeFilter('delivery.carrier', 'filter_1', 'wh_code');
+    // this.stock.GetWhCodeFilter('stock.picking.batch', 'filter_3', 'state');
   }
 
   ngOnInit() {
@@ -105,7 +109,7 @@ export class StockPickingTypeListPage implements OnInit {
 
   GetPickingTypes(Code = null, search= null) {
     this.audio.play('click');
-    this.limit_reached = false;
+    this.LimitReached = false;
     if (Code) {
       this.search = null;
       this.stock.SetModelInfo('stock.picking.type', 'Code', Code);
@@ -114,7 +118,7 @@ export class StockPickingTypeListPage implements OnInit {
     this.stock.GetPickingTypes(Code, search, this.offset, this.limit).then((TypeIds: Array <{}>) => {
       self.picking_types = TypeIds;
       if (TypeIds.length < 10){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
 
     })
@@ -139,7 +143,7 @@ export class StockPickingTypeListPage implements OnInit {
 
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
-      if (this.limit_reached) {
+      if (this.LimitReached) {
         event.target.disabled = true;
       }
     }, 500);
@@ -149,7 +153,7 @@ export class StockPickingTypeListPage implements OnInit {
     this.offset += this.limit;
     this.stock.GetPickingTypes(this.Code, this.search, this.offset, this.limit).then((data: Array<{}>) => {
       if (data.length < 10){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       // if (data) {this.picking_types.push(data)};
       for (const type of data) {this.picking_types.push(type); }

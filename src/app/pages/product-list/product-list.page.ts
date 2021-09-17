@@ -13,14 +13,14 @@ import { StockService } from '../../services/stock.service';
 })
 export class ProductListPage implements OnInit {
 
-  @ViewChild(IonInfiniteScroll, {static:false}) infiniteScroll: IonInfiniteScroll;
+  @ViewChild(IonInfiniteScroll, {static: false}) infiniteScroll: IonInfiniteScroll;
 
   offset: number;
   limit: number;
-  limit_reached: boolean;
+  LimitReached: boolean;
   product_list: {};
   search: string;
-  scanner_reading: string;
+  ScannerReading: string;
 
   constructor(
     private odoo: OdooService,
@@ -31,7 +31,7 @@ export class ProductListPage implements OnInit {
   ) {
     this.offset = 0;
     this.limit = this.stock.TreeLimit;
-    this.limit_reached = false;
+    this.LimitReached = false;
   }
 
   ngOnInit() {
@@ -60,18 +60,18 @@ export class ProductListPage implements OnInit {
   onReadingEmitted(val: string) {
     // Cojo el ultimo valor del array
     const scan = val[val.length - 1];
-    this.scanner_reading = scan;
+    this.ScannerReading = scan;
     this.search = scan;
     this.get_product_list(scan);
   }
 
   get_product_list(search=null){
     this.offset = 0;
-    this.limit_reached = false;
+    this.LimitReached = false;
     this.stock.get_product_list(this.offset, this.limit, search).then((data:Array <{}> )=> {
       this.product_list = data;
       if(Object.keys(data).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       if (Object.keys(this.product_list).length == 1){
         this.router.navigateByUrl('/product/'+this.product_list[0]['id']);
@@ -98,7 +98,7 @@ export class ProductListPage implements OnInit {
 
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
-      if (this.limit_reached) {
+      if (this.LimitReached) {
         event.target.disabled = true;
       }
     }, 500);
@@ -109,7 +109,7 @@ export class ProductListPage implements OnInit {
     this.stock.get_product_list(this.offset, this.limit, this.search).then((data:Array<{}>)=> {
       let current_length = Object.keys(this.product_list).length;
       if(Object.keys(data).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       for(var k in data) this.product_list[current_length+Number(k)]=data[k];
     })

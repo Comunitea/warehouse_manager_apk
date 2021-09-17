@@ -1,22 +1,22 @@
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PickingListComponent } from './picking-list.component';
+import { NavegacionAlbaranesPage } from './navegacion-albaranes.page';
 
-describe('PickingListComponent', () => {
-  let component: PickingListComponent;
-  let fixture: ComponentFixture<PickingListComponent>;
+describe('NavegacionAlbaranesPage', () => {
+  let component: NavegacionAlbaranesPage;
+  let fixture: ComponentFixture<NavegacionAlbaranesPage>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ PickingListComponent ],
+      declarations: [ NavegacionAlbaranesPage ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(PickingListComponent);
+    fixture = TestBed.createComponent(NavegacionAlbaranesPage);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

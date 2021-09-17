@@ -22,7 +22,7 @@ export class MoveLineFormPage implements OnInit {
   move: BigInteger;
   qty_done: BigInteger;
   loading: any;
-  @Input() scanner_reading: string;
+  @Input() ScannerReading: string;
 
   constructor(
     private odoo: OdooService,
@@ -63,7 +63,7 @@ export class MoveLineFormPage implements OnInit {
     if (this.moves.includes(val)) {
       this.page_controller(val);
     } else {
-      this.scanner_reading = val;
+      this.ScannerReading = val;
     }
   }
 
@@ -83,7 +83,7 @@ export class MoveLineFormPage implements OnInit {
       if (this.data['ready_to_validate']){
         this.ButtonValidate(this.data['picking_id']['id']);
       } else {
-        // this.action_confirm();
+        // this.ActionConfirm();
       }
     } else if (direction === 'left') {
       console.log("left");
@@ -132,27 +132,27 @@ export class MoveLineFormPage implements OnInit {
     */
 
   }
-  /*
-  action_confirm(){
-    this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((lines_data) => {
-      console.log(lines_data);
+
+  ActionConfirm(Id= false){
+    this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((LinesData) => {
+      console.log(LinesData);
       this.get_move_line_info(this.data['id']);
     })
     .catch((error) => {
       this.presentAlert('Error al validar el albarán:', error);
     });
   }
-  */
+
   ButtonValidate(PickingId) {
     this.presentLoading();
-    this.stock.ButtonValidate(Number(PickingId)).then((lines_data) => {
-      if (lines_data && lines_data['err'] === false) {
+    this.stock.ButtonValidate(Number(PickingId)).then((LinesData) => {
+      if (LinesData && LinesData['err'] === false) {
         console.log('Reloading');
         this.loading.dismiss();
         this.location.back();
-      } else if (lines_data['err'] !== false) {
+      } else if (LinesData['err'] !== false) {
         this.loading.dismiss();
-        this.presentAlert('Error al validar el albarán:', lines_data['err']);
+        this.presentAlert('Error al validar el albarán:', LinesData['err']);
       }
     })
     .catch((error) => {
@@ -167,6 +167,9 @@ export class MoveLineFormPage implements OnInit {
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
+    setTimeout(() => {
+      this.loading.dismiss();
+    }, 5000);
     await this.loading.present();
   }
 

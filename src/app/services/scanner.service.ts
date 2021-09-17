@@ -1,5 +1,5 @@
 import { Injectable, HostListener } from '@angular/core';
-
+import { Storage } from '@ionic/storage';
 
 @Injectable({
   providedIn: 'root'
@@ -23,9 +23,9 @@ export class ScannerService {
   handleKeyboardEvent(event: KeyboardEvent) {
 
     }
-  constructor() {
+  constructor(public storage: Storage) {
     this.reset_scan();
-
+    console.log('Constructor de scanner')
   }
   reset_scan(){
     this.code = '';
@@ -36,46 +36,55 @@ export class ScannerService {
     this.fragment = '';
     this.MinLength = 4;
     this.state = true;
-    this.KeyTime = 150;
     this.Shift = false;
     this.whichs = [];
+    var self = this;
+    this.storage.get('KeyTime').then((value) => {
+      self.KeyTime = value * 1;
+    }).catch(() => {self.KeyTime = 400; });
+
   }
   on(){
+    console.log("Enciendo scanner")
     this.state = true;
     this.reset_scan();
     // this.odootools.presentToast(this.code)
   }
   off(){
+    console.log("Apago scanner")
     this.state = false;
     this.reset_scan();
     // this.odootools.presentToast(this.code)
   }
 
   GetIsOrder(Which){
-    const res = (Which === 16 || Which === 16|| Which >= 48 && Which < 112) || (Which >= 123 && Which < 222);
+    const res = (Which === 16 || Which >= 48 && Which < 112) || (Which >= 123 && Which < 222);
     console.log ('Get is order: ' + res + ' para which' + Which);
-    return res;
+    return !res;
   }
   key_press(event){
-
+    console.log("Detectada tecla con wichs " + this.whichs)
     if (!this.state || event.which === 0 || event.which === null){return; }
     clearTimeout(this.timeout);
     this.timeout = null;
+    this.KeyTime = 200;
     this.whichs.push(event.which);
-    const IsOrder = !this.GetIsOrder(event.which);
-    console.log('Recibo ' + event.which + '. con Wichs' + this.whichs + '. Es una order?' + IsOrder);
+    const IsOrder = this.GetIsOrder(event.which);
+    console.log('Recibo ' + event.which + '. con Wichs ' + this.whichs + '. Es una order? ' + IsOrder + '. KeyTime ' + this.KeyTime);
     this.timeout = new Promise ((resolve) => {
       setTimeout(() => {
-        if (this.whichs.length > 3 || IsOrder){
+        if (this.whichs.length > 4 || this.whichs.length > 3 && this.whichs[this.whichs.length - 1] === 13){
           const scans = this.whichs;
           this.whichs = [];
           const resolvs = this.SanitizeWhichs(scans, IsOrder);
-          if (resolvs.length > 0){resolve(resolvs); }
+          if (resolvs.length > 0){
+            resolve(resolvs);
+          }
         }
         else {
-          this.whichs = [];
+          // this.whichs = [];
         }
-      }, 100);
+      }, this.KeyTime);
     });
     this.timeStamp = new Date().getTime();
     if (this && this.timeout){return this.timeout; }
@@ -101,7 +110,6 @@ export class ScannerService {
 
       else if (keyCode > 111 && keyCode < 121 ) {
         // this.code = FunctionKeys
-        console.log('FUNCTION KEYS');
         code = '';
         scans.push('*' + keyCode + '*');
       }
@@ -145,14 +153,13 @@ export class ScannerService {
         }
       }
       if (keyCode !== 16){Shift = false; }
-      console.log('Actualizado a ' + code);
     }
     console.log("Devuelvo " + scans);
     this.whichs = [];
     return scans;
 
   }
-  key_press_2(event){
+  key_press_2_borrar(event){
 
     if (this.timeStamp > new Date().getTime()){return; }
     console.log("Me llega " + event.which + '[' + String.fromCharCode(event.keyCode) + ']' + " y tengo " + this.code);

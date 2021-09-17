@@ -9,36 +9,35 @@ declare let OdooApi: any;
 })
 export class OdooService {
 
-  context
-  uid
-  ip
-  CONEXION_local = { username: '', password: '', url: '', port: null, db: '', uid: 0, context: {}, user: {}, logged_in: false};
-    
+  context: {};
+  uid: number;
+  ip: string;
+  CONEXION_LOCAL = { username: '', password: '', url: '', port: null, db: '', uid: 0, context: {}, user: {}, logged_in: false};
+
 
   constructor(public storage: Storage, public router: Router) {
-    this.context = {'lang': 'es_ES', 'from_pda': true}
-    this.uid = 0
+    this.context = {lang: 'es_ES', from_pda: true}
+    this.uid = 0;
   }
 
-  login(user:string, password:string){
-    var method = method
-    var values = values
-    var self = this
-    var promise = new Promise( (resolve, reject) => {
-        self.storage.get('CONEXION').then((con_data) => {
-            var odoo = new OdooApi(con_data.url, con_data.db);
+  login(user: string, password: string){
+    // const method = method;
+    // var values = values
+    const self = this;
+    const promise = new Promise( (resolve, reject) => {
+        self.storage.get('CONEXION').then((ConData) => {
+            const odoo = new OdooApi(ConData.url, ConData.db);
             // this.navCtrl.setRoot(HomePage, {borrar: true, login: null});
-            if (con_data == null) {
-                var err = {'title': 'Error!', 'msg': 'No hay datos para establecer la conexión'}
-                reject(err);
+            if (ConData == null) {
+                reject ({title: 'Error!', msg: 'No hay datos para establecer la conexión'});
             } else {
-                odoo.login(con_data.username, con_data.password).then((uid) => {
+                odoo.login(ConData.username, ConData.password).then((uid) => {
                     if (uid['error']){
                         reject(uid['error_msg'])
                     } else {
-                        con_data['uid'] = uid;
-                        con_data['logged_in'] = true;
-                        this.storage.set('CONEXION', con_data).then(() => {
+                        ConData['uid'] = uid;
+                        ConData['logged_in'] = true;
+                        this.storage.set('CONEXION', ConData).then(() => {
                             self.uid = uid;
                             resolve(uid);
                         })
@@ -59,7 +58,7 @@ export class OdooService {
   logout() {
     var self = this
     var promise = new Promise( (resolve, reject) => {
-        self.storage.set('CONEXION', this.CONEXION_local).then(()=> {
+        self.storage.set('CONEXION', this.CONEXION_LOCAL).then(()=> {
             this.router.navigateByUrl('/login');
         })
         .catch( () => {
@@ -97,13 +96,13 @@ export class OdooService {
                               resolve(res);
                           })
                           .catch( (error) => {
-                                var err = {'title': 'Error!', 'msg': error}
-                                reject(err);
+                                error['error_msg'] = error['error_msg'].split('\n')[0];
+                                reject( {title: 'Error!', msg: error});
                           });
                   })
                   .catch( (error) => {
-                        var err = {'title': 'Error!', 'msg': error}
-                        reject(err);
+                        error['error_msg'] = error['error_msg'].split('\n')[0];
+                        reject( {title: 'Error!', msg: error});
                   });
               }
           });
@@ -112,7 +111,7 @@ export class OdooService {
   }
   /*domain=None, fields=None, offset=0, limit=None, order=None, context=None*/
   write (model, id, data){
-      
+
       var self = this
       var promise = new Promise( (resolve, reject) => {
           self.storage.get('CONEXION').then((con_data) => {

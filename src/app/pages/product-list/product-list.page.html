@@ -9,22 +9,23 @@
 </ion-header>
 
 <ion-content>
-  <ion-card-content>
     <ion-row>
       <ion-toolbar>
         <ion-searchbar type="text" (ionInput)="get_search_results($event)" autocomplete="on" showCancelButton="always"></ion-searchbar>
       </ion-toolbar>
     </ion-row>
 
+  <ion-card-content>
+  
     <app-product-list-info [products]="product_list"></app-product-list-info>
-    
+  </ion-card-content>
     <ion-infinite-scroll threshold="100px" (ionInfinite)="loadData($event)">
       <ion-infinite-scroll-content
         loadingSpinner="bubbles"
         loadingText="Cargando más productos...">
       </ion-infinite-scroll-content>
     </ion-infinite-scroll>
-  </ion-card-content>
+ 
 </ion-content>
 
-<app-scanner-footer (scanner_reading_changed)="onReadingEmitted($event)" [scanner_reading]="scanner_reading"></app-scanner-footer>
+<app-scanner-footer (ScannerReadingChanged)="onReadingEmitted($event)" [ScannerReading]="ScannerReading"></app-scanner-footer>

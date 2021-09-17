@@ -11,6 +11,10 @@ const routes: Routes = [
     path: 'login',
     loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
   },
+  {
+    path: 'login/:logout',
+    loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
+  },
   { path: 'logout',
     loadChildren: () => import('./pages/logout/logout.module').then(m => m.LogoutPageModule)
   },
@@ -41,6 +45,12 @@ const routes: Routes = [
    { path: 'stock-location/:id',
     loadChildren: () => import('./pages/stock-location/stock-location.module').then(m => m.StockLocationPageModule)
   },
+  { path: 'stock-location/:id/:product_id',
+    loadChildren: () => import('./pages/stock-location/stock-location.module').then(m => m.StockLocationPageModule)
+  },
+  { path: 'stock-location/:id/:product_id/:inventory_id',
+    loadChildren: () => import('./pages/stock-location/stock-location.module').then(m => m.StockLocationPageModule)
+  },
   { path: 'stock-quant-list/:id',
     loadChildren: () => import('./pages/stock-quant-list/stock-quant-list.module').then(m => m.StockQuantListPageModule)
   },
@@ -65,6 +75,15 @@ const routes: Routes = [
   { path: 'barcode-multiline/:inventory/:location/:product',
   loadChildren: () => import ('./pages/barcode-multiline/barcode-multiline.module').then(m => m.BarcodeMultilinePageModule)
   },
+  { path: 'navegacion-principal',
+  loadChildren: () => import ('./pages/navegacion-principal/navegacion-principal.module').then(m => m.NavegacionPrincipalPageModule)
+  },
+  { path: 'navegacion-albaranes', loadChildren: './pages/navegacion-albaranes/navegacion-albaranes.module#NavegacionAlbaranesPageModule' },
+  { path: 'listado-albaranes', loadChildren: './pages/listado-albaranes/listado-albaranes.module#ListadoAlbaranesPageModule' },
+  { path: 'listado-albaranes/:Id', loadChildren: './pages/listado-albaranes/listado-albaranes.module#ListadoAlbaranesPageModule' },
+  { path: 'move-list/:BatchId', loadChildren: './pages/move-list/move-list.module#MoveListPageModule' },
+  { path: 'inventory', loadChildren: './pages/inventory/inventory.module#InventoryPageModule' },
+
 ];
 
 @NgModule({

@@ -71,7 +71,6 @@ export class StockPickingPage implements OnInit {
     this.moves = ['up', 'down', 'left', 'right'];
   }
 
-
   OpenModal(Model, Id) {
     this.router.navigateByUrl('/info-sale-order/' + Model + '/' + Id);
     // return this.presentModal({Model: ModelO, Id: IdO});
@@ -87,7 +86,7 @@ export class StockPickingPage implements OnInit {
   }
 
   ionViewDidEnter(){
-    
+
     this.stock.SetModelInfo('App', 'ActivePage', 'StockPickingPage');
     this.ActiveOperation = false;
     this.picking = parseInt(this.route.snapshot.paramMap.get('id'));
@@ -358,7 +357,17 @@ CheckOrder(order){
     this.Navigate(0);
     return true;
   }
-  if (order === '112'){
+  const F1 = '112'; // Actualiza los nombres de los números de serie
+  const F2 = '113'; // Reserva los movimientos
+  const F3 = '114'; // Anula reservas
+  const F4 = '115'; // Resetea cantidades hechas
+  const F5 = '116'; // Valida albarán
+  const F6 = '117'; // Nada
+  const F7 = '118'; // Nada
+  const F8 = '119'; // Nada
+  const F9 = '120'; // Nada
+
+  if (order === F8){
     // F1
     let str = '<p>Atajos de teclado</p>';
     str += 'Cursor Dcha: Siguiente</br>';
@@ -373,27 +382,27 @@ CheckOrder(order){
 
     return true;
   }
-  if (order === '113'){
+  else if (order === F2){
     // F2
     this.ActionAssign();
     return true;
   }
-  if (order === '114'){
+  else if (order === F3){
     // F3
     this.DoUnreserve();
     return true;
   }
-  if (order === '115'){
+  else if (order === F6){
     // F4
     this.ResetQties();
     return true;
   }
-  if (order === '116'){
+  else if (order === F5){
     // F5
     this.ButtonValidate();
     return true;
   }
-  if (order === '9'){
+  if (order === F4){
     // F5
     this.GetFilteredMoves();
     return true;
@@ -524,12 +533,13 @@ CheckScanner(val) {
       this.audio.play('error');
       this.presentToast('Necesitas meter los paquetes');
       return;
-    }
+      }
     if (this.data['need_weight'] && this.data['carrier_weight'] === 0){
       this.audio.play('error');
       this.presentToast('Necesitas meter el peso');
       return;
-    }
+      }
+
     if (this.data['total_qty_done'] !== this.data['total_reserved_availability']){
       this.audio.play('error');
       const confirmation = await this.confirmationPrompt('No se han confirmado todos los movimientos, ¿quieres validar igualmente?')
@@ -585,6 +595,9 @@ CheckScanner(val) {
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
+    setTimeout(() => {
+      this.loading.dismiss();
+    }, 5000);
     await this.loading.present();
   }
 
@@ -601,7 +614,6 @@ CheckScanner(val) {
       setTimeout(() => {
         this.presentAlert('Aviso', data['notes']);
       }, 300);
-      
     }
 
   }
@@ -611,7 +623,7 @@ CheckScanner(val) {
     })
     .catch((error) => {
       this.loading.dismiss();
-      this.presentAlert('Error al recuperar el movimiento:', error);
+      this.presentAlert('Error al recuperar el movimiento:', error.msg.error_msg);
     });
   }
 

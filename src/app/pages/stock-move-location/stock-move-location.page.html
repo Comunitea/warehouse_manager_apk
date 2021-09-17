@@ -64,7 +64,7 @@
         </ion-row>
         <ion-row *ngFor="let line of move_lines_info">
           <ion-col>
-            <div class="link" (click)="open_link(line.product_id['id'])">{{line.product_id['name']}}</div>
+            <div class="link" (click)="open_link(line['product_id']['id'])">{{line['product_id']['name']}}</div>
           </ion-col>
         
           <ion-col>
@@ -76,15 +76,15 @@
           </ion-col>
           
           <ion-col>
-            <div class="link" (click)="edit_qty(line.id)">{{line.move_quantity}}</div>
+            <div class="link" (click)="edit_qty(line['id'])">{{line.move_quantity}}</div>
           </ion-col>
         
           <ion-col>
-            <div class="link" (click)="change_qty(line.id, line.max_quantity)">{{line.max_quantity}}</div>
+            <div class="link" (click)="change_qty(line['id'], line.max_quantity)">{{line.max_quantity}}</div>
           </ion-col>
         </ion-row>
     </ion-card-content>
   </ion-card>
 </ion-content>
 
-<app-scanner-footer (scanner_reading_changed)="onReadingEmitted($event)" [scanner_reading]="scanner_reading"></app-scanner-footer>
+<app-scanner-footer (ScannerReadingChanged)="onReadingEmitted($event)" [ScannerReading]="ScannerReading"></app-scanner-footer>

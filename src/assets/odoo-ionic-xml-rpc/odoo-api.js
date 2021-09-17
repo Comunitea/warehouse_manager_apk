@@ -235,7 +235,13 @@ function OdooApi (host, db) {
     this.call = function(model, method, values) {
         
         var odoo_api = this;
-        odoo_api.context = {'lang': 'es_ES'}
+        context = values['context'] || []
+        context['lang'] = 'es_ES'
+        context['from_pda'] = true
+
+        odoo_api.context = {'lang': 'es_ES', 'from_pda': true}
+
+        const TimeOut = values['Timeout'] || 10000
         var promise = new Promise(function(resolve, reject) {
             $.xmlrpc({
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
@@ -243,8 +249,9 @@ function OdooApi (host, db) {
                 methodName: 'execute',
                 params: [odoo_api.odoo_db, odoo_api.odoo_uid, odoo_api.odoo_password,
                         model, method, values, odoo_api.context],
-                timeout: 10000,
+                timeout: TimeOut,
                 context: odoo_api.context,
+                allow_none:true,
                 success: function(response, status, jqXHR) {
                     if (response[0]) {
                         resolve(response[0]);

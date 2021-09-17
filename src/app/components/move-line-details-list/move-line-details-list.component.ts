@@ -10,12 +10,12 @@ import { AlertController } from '@ionic/angular';
 })
 export class MoveLineDetailsListComponent implements OnInit {
 
-  @Input() scanner_reading: string
+  @Input() ScannerReading: string;
   @Input() move_line_ids: {}
   @Input() code: string;
   @Input() picking_fields: string;
-  @Input() hide_product: boolean
-  @Input() not_allowed_fields: {}
+  @Input() hide_product: boolean;
+  @Input() not_allowed_fields: string;
   move_line_ids_info: {};
   picking: string;
 
@@ -37,8 +37,8 @@ export class MoveLineDetailsListComponent implements OnInit {
   }
 
   ngOnChanges(changeRecord) {
-    if (changeRecord['scanner_reading'] && changeRecord['scanner_reading']['currentValue']) {
-      let code = changeRecord['scanner_reading']['currentValue'];
+    if (changeRecord['ScannerReading'] && changeRecord['ScannerReading']['currentValue']) {
+      let code = changeRecord['ScannerReading']['currentValue'];
       let picking = +this.picking
       this.stock.find_move_line_id(code, picking).then((move_id)=>{
           console.log(move_id)

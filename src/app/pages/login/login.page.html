@@ -83,6 +83,11 @@
           <ion-input [(ngModel)]="CONEXION.db" #db="ngModel" name="db" placeholder="Ingresa base de datos" required>
           </ion-input>
         </ion-item>
+       <ion-item>
+          <ion-label position="stacked" color="primary">Tiempo de teclas(100)</ion-label>
+          <ion-input [(ngModel)]="KeyTime" #db="ngModel" name="KeyTime" placeholder="Tiempo de teclas" required>
+          </ion-input>
+        </ion-item>
   
         <ion-text color="danger">
           <p [hidden]="db.valid || submitted == false" class="ion-padding-start">

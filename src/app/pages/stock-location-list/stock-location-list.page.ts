@@ -19,13 +19,13 @@ export class StockLocationListPage implements OnInit {
 
   offset: number;
   limit: number;
-  limit_reached: boolean;
+  LimitReached: boolean;
   locations: {};
   location_state: string;
   location_types: {};
   current_selected_type: string;
   search: string;
-  scanner_reading: string;
+  ScannerReading: string;
   loading: any;
 
   constructor(
@@ -37,18 +37,18 @@ export class StockLocationListPage implements OnInit {
     public loadingController: LoadingController,
   ) {
     this.location_types = [
-      //{
+      // {
       //  'value': 'all',
       //  'name': 'Todos',
       // 'icon': 'book',
       //  'size': 2
-      //}
-      //{
+      // }
+      // {
       //  'value': 'supplier',
       //  'name': 'Proveedor',
       //  'icon': 'boat',
       //  'size': 1
-      //},
+      // },
       {
         'value': 'view',
         'name': 'Ver',
@@ -61,24 +61,24 @@ export class StockLocationListPage implements OnInit {
         'icon': 'cube',
         'size': 1
       },
-      //{
+      // {
       //  'value': 'customer',
       //  'name': 'Cliente',
       //  'icon': 'cash',
       // / 'size': 1
-      //},
-      //{
+      // },
+      // {
       //  'value': 'inventory',
       //  'name': 'Inventario',
       //  'icon': 'clipboard',
       //  'size': 1
-      //},
-      //{
+      // },
+      // {
       //  'value': 'procurement',
       //  'name': 'Abastecimiento',
       //  'icon': 'log-in',
       //  'size': 1
-      //},
+      // },
       {
         'value': 'production',
         'name': 'Producción',
@@ -94,12 +94,12 @@ export class StockLocationListPage implements OnInit {
     ]
     this.offset = 0;
     this.limit = this.stock.TreeLimit;
-    this.limit_reached = false;
+    this.LimitReached = false;
   }
 
   ngOnInit() {
-    this.odoo.isLoggedIn().then((data)=>{
-      if (data==false) {
+    this.odoo.isLoggedIn().then((data) => {
+      if (data === false) {
         this.router.navigateByUrl('/login');
       } else {
         this.get_location_list('internal');
@@ -112,7 +112,7 @@ export class StockLocationListPage implements OnInit {
 
   onReadingEmitted(val: string) {
     const scan = val[val.length - 1];
-    this.scanner_reading = scan;
+    this.ScannerReading = scan;
     this.search = scan;
     this.get_location_list(this.current_selected_type, scan);
   }
@@ -126,16 +126,16 @@ export class StockLocationListPage implements OnInit {
     });
     await alert.present();
   }
-  
+
   get_location_list(location_state='internal', search=null){
     this.presentLoading();
     this.offset = 0;
-    this.limit_reached = false;
+    this.LimitReached = false;
     this.current_selected_type = location_state;
     this.stock.get_location_list(location_state, this.offset, this.limit, search).then((location_list)=> {
       this.locations = location_list;
       if(Object.keys(location_list).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       if (Object.keys(this.locations).length == 1){
         this.router.navigateByUrl('/stock-location/'+this.locations[0]['id']);
@@ -164,7 +164,7 @@ export class StockLocationListPage implements OnInit {
 
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
-      if (this.limit_reached) {
+      if (this.LimitReached) {
         event.target.disabled = true;
       }
     }, 500);
@@ -175,7 +175,7 @@ export class StockLocationListPage implements OnInit {
     this.stock.get_location_list(this.current_selected_type, this.offset, this.limit, this.search).then((data:Array<{}>)=> {
       let current_length = Object.keys(this.locations).length;
       if(Object.keys(data).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       for(var k in data) this.locations[current_length+Number(k)]=data[k];
     })
@@ -194,6 +194,9 @@ export class StockLocationListPage implements OnInit {
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
+    setTimeout(() => {
+      this.loading.dismiss();
+    }, 5000);
     await this.loading.present();
   }
 

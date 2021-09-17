@@ -17,7 +17,7 @@ export class ProductPage implements OnInit {
 
   offset: number;
   limit: number;
-  limit_reached: boolean;
+  LimitReached: boolean;
   quants: {};
   location_ids: boolean;
 
@@ -35,7 +35,7 @@ export class ProductPage implements OnInit {
   ) {
     this.offset = 0;
     this.limit = this.stock.TreeLimit;
-    this.limit_reached = false;
+    this.LimitReached = false;
   }
 
   ngOnInit() {
@@ -92,12 +92,12 @@ export class ProductPage implements OnInit {
 
   get_location_quants(search=null){
     this.offset = 0;
-    this.limit_reached = false;
+    this.LimitReached = false;
     this.stock.get_location_quants(null, this.offset, this.limit, search, 'form').then((quants_list:Array<{}>)=> {
       this.quants = quants_list;
       console.log(this.quants);
       if(Object.keys(quants_list).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       this.audio.play('click');
     })
@@ -116,7 +116,7 @@ export class ProductPage implements OnInit {
 
       // App logic to determine if all data is loaded
       // and disable the infinite scroll
-      if (this.limit_reached) {
+      if (this.LimitReached) {
         event.target.disabled = true;
       }
     }, 500);
@@ -127,7 +127,7 @@ export class ProductPage implements OnInit {
     this.stock.get_location_quants(null, this.offset, this.limit, this.product_data['default_code'], 'form').then((data:Array<{}>)=> {
       let current_length = Object.keys(this.quants).length;
       if(Object.keys(data).length < this.stock.TreeLimit){
-        this.limit_reached = true;
+        this.LimitReached = true;
       }
       for(var k in data) this.quants[current_length+Number(k)]=data[k];
     })

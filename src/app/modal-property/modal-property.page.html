@@ -12,8 +12,8 @@
 <ion-list >
   <!--ion-row *ngIf="{{data && data['image'] != false}}">
     <div class="product_img">
-      <ion-img *ngIf="data.base64" src="data:image/jpeg;base64,{{ data['image'] }}"></ion-img>
-      <ion-img *ngIf="!data.base64" src="{{ data['image'] }}"></ion-img>
+      <ion-img *ngIf="data['base64']" src="data:image/jpeg;base64,{{ data['image'] }}"></ion-img>
+      <ion-img *ngIf="!data['base64']" src="{{ data['image'] }}"></ion-img>
     </div>
   </ion-row-->
 
