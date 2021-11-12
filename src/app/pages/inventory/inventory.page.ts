@@ -6,8 +6,6 @@ import { ScannerService } from '../../services/scanner.service';
 import { StockFunctionsService } from '../../services/stock-functions.service';
 import { OdooService } from '../../services/odoo.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
-import { MoveFormPage } from '../move-form/move-form.page';
-import { QueryBindingType } from '@angular/compiler/src/core';
 
 
 type Product = {'id': number, 'default_code': string, 'name': string} ;
@@ -71,6 +69,7 @@ export class InventoryPage implements OnInit {
   timeout: any;
   LastMove: {};
 
+  Limit: number;
   WaitingNewLot: boolean;
 
   @HostListener('document:keydown', ['$event'])
@@ -90,6 +89,7 @@ export class InventoryPage implements OnInit {
     public odooCon: OdooService,
     public loadingController: LoadingController,
     public alertController: AlertController,
+    public actionSheetCtrl: ActionSheetController,
     public stock: StockFunctionsService,) { }
   
     async presentLoading(Message= '...') {
@@ -184,6 +184,9 @@ export class InventoryPage implements OnInit {
       return this.CreateSerial(this.MoveSelected, val)
     }
   }
+  async CreateSerial(MoveSelected, LotName){}
+  async CreateVirtual(MoveSelected, LotName){}
+
   async CreateLot(MoveSelected, LotName){
     
     let OdooModel = this.inventory_type === 'qty' ? "stock.inventory.line" : "stock.inventory.tracking"
@@ -525,46 +528,46 @@ export class InventoryPage implements OnInit {
         text: 'Resetear',
         icon: 'refresh-circle-outline',
         handler: () => {
-          this.ResetearMoves();
+          //this.ResetearMoves();
       }});
       Buttons.push({
         text: 'Reservar',
         icon: 'battery-charging-outline',
         handler: () => {
-          this.Reserve();
+          //this.Reserve();
       }});
       Buttons.push({
         text: 'Anular reserva',
         icon: 'battery-dead-outline',
         handler: () => {
-          this.UnReserve();
+          //this.UnReserve();
       }});
       Buttons.push({
         text: 'Duplicar línea',
         icon: 'git-network-outline',
         handler: () => {
-          this.AddNewSml();
+          //this.AddNewSml();
       }});
     }
     Buttons.push({
         text: 'Validar Batch',
         icon: 'checkmark-done-circle-outline',
         handler: () => {
-          this.ValidateBatch();
+          // this.ValidateBatch();
       }});
     Buttons.push({
       text: this.Limit === 0 ? 'Cargar todos' : 'Cargar ' + this.stock.Limit(),
       icon: '',
       handler: () => {
         this.Limit = this.Limit === 0 ? this.stock.Limit() : 0;
-        this.GetInfo();
+        //this.GetInfo();
     }});
     if (this.Selected > -1){
       Buttons.push({
-        text: this.ToDelete ? 'Borrar' : 'Añadir',
+        //text: this.ToDelete ? 'Borrar' : 'Añadir',
         icon: '',
         handler: () => {
-          this.ToDelete = !this.ToDelete;
+          //this.ToDelete = !this.ToDelete;
       }});
     }
 

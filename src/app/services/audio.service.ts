@@ -58,6 +58,7 @@ export class AudioService {
   }
 
   play(key){
+    this.ActiveAudio = true;
     if (this.ActiveAudio === true) {
       const audio = this.sounds.find((sound) => {
           return sound.key === key;

@@ -10,11 +10,11 @@
 
 <ion-content>
   
-    <ion-card *ngIf="TypeId && false">
+    <ion-card *ngIf="TypeId && true">
       <ion-card-header> {{TypeId['name']}} : {{TypeId['warehouse_id']['name']}}</ion-card-header>
       <ion-card-content style="padding: 0px; font-size: 9px">
         <ion-row>
-          <ion-col *ngFor="let f1 of [
+          <ion-col *ngFor="let f1 of ['ChangeQty',
             'allow_overprocess','bypass_tracking','location_barcode',
             'use_existing_lots', 'use_create_lots',
             'allow_change_location_dest_id', 'need_location_dest_id',
@@ -70,6 +70,7 @@
             
             <ion-col class="card" size="1">
               <ion-icon [name]="StateIcons[Move['state']['value']]" [ngClass]="Move['state']['value']"></ion-icon>
+              {{Move['ChangeQty']}}
             </ion-col>
             
             <ion-col class="card" size="1">
@@ -125,10 +126,11 @@
               </span>
             </ion-col>
           </ion-row>
-          <ng-template [ngSwitchCase]="'none'">
+
           
-              <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected">
-                  <ion-col class="button-qties border-qties p0px" size="3" (click)="OpenQtiesIndex(indice, -1, 0)">
+          <ng-template [ngSwitchCase]="'none'">
+              <ion-row class="card ion-text-center p0px" *ngIf="Move['ChangeQty'] && Move['indice'] === Selected">
+                <ion-col class="button-qties border-qties p0px" size="3" (click)="OpenQtiesIndex(indice, -1, 0)">
                   - 1
                 </ion-col>
                 <ion-col class="button-qties border-qties p0px"  (click)="InputQty(Move)" size="6">
@@ -137,24 +139,32 @@
                 <ion-col class="button-qties border-qties p0px" size="3" (click)="OpenQtiesIndex(indice, 1, 0)">
                   + 1
                 </ion-col>
+              </ion-row>
+              <ion-row class="card ion-text-center p0px" *ngIf="!Move['ChangeQty'] && Move['indice'] === Selected">
+                <ion-col class="button-qties border-qties p0px" size="12">
+                  {{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}}
+                </ion-col>
             </ion-row>
         </ng-template>
+
+
         <ng-template [ngSwitchCase]="'serial'">
           
-          <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected">
-              <!--ion-col  size="4">
-                SERIALS
-              </ion-col-->
-              <ion-col size=3></ion-col>
-              <ion-col class="button-qties p0px" size="6">
-                {{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}}
-              </ion-col>
-              <ion-col size=3></ion-col>
+            <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected">
+                <!--ion-col  size="4">
+                  SERIALS
+                </ion-col-->
+                <ion-col size=3></ion-col>
+                <ion-col class="button-qties p0px" size="6">
+                  {{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}}
+                </ion-col>
+                <ion-col size=3></ion-col>
             </ion-row>
-            <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected" >
+            <ion-row class="card ion-text-center p0px" *ngIf="Move['ChangeQty'] && Move['indice'] === Selected" >
               <ion-col size=3></ion-col>
               <ion-col size=6>
-                <ion-input class="button-qties border-qties" placeholder='Nº Serie' autocapitalize clearOnEdit type='text'
+                <ion-label *ngIf="WaitingSerials == 1" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Serie ...</ion-label>
+                <ion-input *ngIf="WaitingSerials == 2" class="button-qties border-qties" placeholder='Nº Serie' autocapitalize clearOnEdit type='text'
                   #NewAddSerialI
                   (ionFocus)='IonFocus(indice, true)'
                   (ionBlur)='IonFocus(indice, false)'
@@ -189,7 +199,8 @@
                 SERIALS
               </ion-col-->
               <ion-col size=6>
-                <ion-input class="button-qties border-qties p0px" placeholder='Nº Lote' autofocus autocapitalize clearOnEdit type='text'
+                <ion-label *ngIf="WaitingSerials == 1" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Lote ...</ion-label>
+                <ion-input *ngIf="WaitingSerials == 2" class="button-qties border-qties p0px" placeholder='Nº Lote' autofocus autocapitalize clearOnEdit type='text'
                   #NewAddLotI
                   (ionFocus)='IonFocus(indice, true)'
                   (ionBlur)='IonFocus(indice, false)'

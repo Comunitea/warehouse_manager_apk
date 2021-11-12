@@ -58,10 +58,13 @@ export class AppComponent {
     // private OdooService: OdooService
   ) {
     player.preload('click', 'assets/audio/click.mp3');
-    player.preload('ok', 'assets/audio/ok.mp3');
+    player.preload('ok1', 'assets/audio/ok.mp3');
+    player.preload('ok', 'assets/audio/bip-bip.wav');
+    player.preload('no_ok', 'assets/audio/biperror.mp3');
     player.preload('error', 'assets/audio/error.mp3');
     player.preload('barcode_ok', 'assets/audio/barcode_ok.mp3');
     player.preload('barcode_error', 'assets/audio/barcode_error.mp3');
+
     this.initializeApp();
   }
 
