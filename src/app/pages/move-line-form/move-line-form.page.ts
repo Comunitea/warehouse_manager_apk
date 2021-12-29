@@ -133,7 +133,7 @@ export class MoveLineFormPage implements OnInit {
 
   }
 
-  ActionConfirm(Id= false){
+  ActionConfirm(id= false){
     this.stock.set_qty_done_from_apk(this.data['id'], this.data['qty_done']).then((LinesData) => {
       console.log(LinesData);
       this.get_move_line_info(this.data['id']);

@@ -21,7 +21,6 @@ export class StockPickingTypeListPage implements OnInit {
   picking_types: Array<{}>;
   picking_codes: {};
   TypeMenu: Array<{}>;
-  Id: BigInteger;
   search: string;
   Code: {};
 

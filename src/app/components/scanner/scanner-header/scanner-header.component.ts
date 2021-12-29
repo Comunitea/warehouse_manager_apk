@@ -79,6 +79,7 @@ export class ScannerHeaderComponent implements OnInit {
   change_hide_scan_form() {
     this.scanner.ActiveScanner = !this.scanner.ActiveScanner;
     this.scanner_options['reader'] = this.scanner.ActiveScanner;
+    
     this.save_scanner_options();
   }
 
@@ -91,6 +92,8 @@ export class ScannerHeaderComponent implements OnInit {
     this.audio.ActiveAudio = this.scanner_options['sound'];
     this.voice.active_voice = this.scanner_options['microphone'];
     this.scanner.ActiveScanner = this.scanner_options['reader'];
+    this.scanner.ResetScan()
+    
   }
 
 }

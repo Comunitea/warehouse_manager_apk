@@ -1,0 +1,19 @@
+.x-small {
+    font-size: x-small;
+}
+.ionic-selectable {
+    display: block;
+    max-width: 100%;
+}
+.ionic-selectable {
+    &-icon {
+        &-inner {
+            top: 5px
+        }
+    }
+    
+}   
+.ionic-selectable-value {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}

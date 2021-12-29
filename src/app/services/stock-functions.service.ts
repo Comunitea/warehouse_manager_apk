@@ -3,6 +3,7 @@ import { Storage } from '@ionic/storage';
 import { OdooService } from './odoo.service';
 import { AudioService } from './audio.service';
 import { AlertController, ActionSheetController, ModalController , ToastController} from '@ionic/angular';
+import { StaticReflector } from '@angular/compiler';
 
 @Injectable({
   providedIn: 'root'
@@ -13,8 +14,17 @@ export class StockFunctionsService {
   loading: any;
   // CTES PARA EL FUNCIOANMIENTO DE LA APK
   LIMIT: 200;
-  Locations: {};
-
+  Locations: Array<{}>;
+  Products: Array<{}>;
+  PickingTypeIds: Array<{}>;
+  ProdBarcodes: {}
+  LocationIndexBarcode: {};
+  ProductIndexBarcode: {};
+  ImageProducts: {}
+  LocBarcodes: {}
+  LocNames: {}
+  ProductWriteDate: string;
+  
   constructor(
     public odooCon: OdooService,
     public alertCtrl: AlertController,
@@ -25,9 +35,10 @@ export class StockFunctionsService {
       this.SetModelInfo('stock.picking', 'limit', this.LIMIT);
       this.SetModelInfo('stock.picking.batch', 'limit', this.LIMIT);
       this.SetModelInfo('stock.move', 'limit', this.LIMIT);
-      // this.GetAppLocations();
+      // this.LoadPersistentData()
+      
     }
-
+  
   async Aviso(titulo, texto) {
       this.audio.play('error');
       const alert = await this.alertCtrl.create({
@@ -87,7 +98,7 @@ export class StockFunctionsService {
     OrderedArray.sort((a, b) =>  {
       iters += 1;
       const k = 0;
-      console.log ('Movimeintos: ' + a['Id'] + ' >> ' + b['Id']);
+      console.log ('Movimeintos: ' + a['id'] + ' >> ' + b['id']);
       return this.OrderByField(a, b, field, asc, k);
     } );
     console.log ('Nº iteracciones:' + iters);
@@ -202,19 +213,201 @@ export class StockFunctionsService {
     });
     return promise;
   }
+  LoadPersistentData(refresh=false){
+    this.presentToast("Recargando Maestros", "ESTADO")
+    if (refresh){
+      console.log("Reseteo 0")
+      this.storage.set('Locations', false)
+      this.storage.set('Products', false)
+      this.storage.set('ImageProducts', false)
+      this.storage.set('PickingTypeIds',false)
+
+    }
+
+    this.storage.get('ImageProducts').then((value) => {
+      if (value){
+        this.ImageProducts = value
+      } 
+      else {
+        console.log("RECARGANDO IMAGENES")
+        this.GetAppImageProducts()}
+    }).catch(() => {
+      //   
+    });
+    
+    this.storage.get('Locations').then((value) => {
+      if (value){
+        this.Locations = value
+        this.ApplyLocBusquedas()} 
+      else {
+        console.log("RECARGANDO UBICACIONES")
+        this.GetAppLocations()}
+    }).catch(() => {
+      //   
+    });
+    
+    this.storage.get('Products').then((value) => {
+        if (value){
+          this.Products = value
+          this.ApplyProdBusquedas()} 
+        else {
+          console.log("RECARGANDO ARTIUCLOS")
+          this.GetAppProducts()}
+      }).catch(() => {
+        // 
+      });
+
+    this.storage.get('PickingTypeIds').then((value) => {
+      if (value){
+        this.PickingTypeIds = value} 
+      else {
+        console.log("RECARGANDO tIPOS")
+        this.GetAppPickingTypeIds()}
+      }).catch(() => {
+      //
+    });
+    
+    
+  }
+  ApplyLocBusquedas(){
+    this.presentToast("Recargando Buscadores", "ESTADO")
+    this.LocBarcodes = this.GetAllBarcodesxId(this.Locations)
+    this.LocationIndexBarcode = this.GetIndexBarcode(this.Locations)
+    this.LocNames = this.GetAllNamesxId(this.Locations)
+  }
+  ApplyProdBusquedas(){
+    this.presentToast("Recargando Buscadores", "ESTADO")
+    this.ProdBarcodes = this.GetAllBarcodesxId(this.Products)
+    this.ProductIndexBarcode = this.GetIndexBarcode(this.Products)
+  }
   GetAppLocations(){
     const self = this;
-    const values = {domain : []};
+    let values = {};
+    values = {domain: [['barcode', '!=', false]]};
+    console.log('Conectando a Odoo para recuperar las ubicaciones');
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.location', 'get_apk_locations', values).then((Locations) => {
-        self.Locations = Locations;
-        })
-        .catch((err) => {
-        });
-      return promise;
+      self.odooCon.execute('stock.location', 'LocationData', values).then((Res: Array<{}>) => {
+        self.Locations = Res;
+        self.ApplyLocBusquedas()
+        self.presentToast("Cargadas Ubicaciones", "Proceso de carga")
+        self.storage.set('Locations', Res).then ((data)=>{})
+      })
+      .catch((error) => {
+        //
     });
+    });
+    return promise;
+  }
+  GetAppImageProducts(){
+    const self = this;
+    let values = {};
+    let domain = [['default_code', '!=', false], ['type', '=', 'product']]
+    values = {domain: domain, 'Timeout': 30000};
+    console.log('Conectando a Odoo para recuperar las imagenes');
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('product.product', 'ImageData', values).then((Res: {}) => {
+        self.ImageProducts = Res;
+        self.storage.set('ImageProducts', Res).then ((data)=>{})
+        self.presentToast("Cargados Imagenes Articulos", "Proceso de carga")
+      })
+      .catch((error) => {
+        self.Aviso('Error al cargar articulos', error)
+    });
+    });
+    return promise;
+  }
+  GetAppProducts(){
+    const self = this;
+    let values = {};
+    let domain = [['default_code', '!=', false], ['type', '=', 'product']]
+    values = {domain: domain, 'Timeout': 30000};
+    console.log('Conectando a Odoo para recuperar las productos');
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('product.product', 'ProductData', values).then((Res: Array<{}>) => {
+        self.Products = Res;
+        self.ApplyProdBusquedas()
+        self.storage.set('Products', Res).then ((data)=>{})
+        self.presentToast("Cargados Articulos", "Proceso de carga")
+      })
+      .catch((error) => {
+        self.Aviso('Error al cargar articulos', error)
+    });
+    });
+    return promise;
+  }
+  GetIndexBarcode(Objects){
+    let Barcodes = {}
+    for (var Indice in Objects){
+      Barcodes[Object['barcode']] = Indice
+    }
+    return Barcodes
+  }
+  GetAllNamesxId(Objects){
+    let Barcodes = {}
+    for (var Object of Objects){
+      Barcodes[Object['name']] = Object['id']
+    }
+    return Barcodes
   }
 
+  GetAllBarcodesxId(Objects){
+    let Barcodes = {}
+    for (var Object of Objects){
+      Barcodes[Object['barcode']] = Object['id']
+    }
+    return Barcodes
+  }
+  GetObjectByName(Objects, name){
+    // Intento devolver el id del primer varcode la lista
+    const Obj = Objects.filter(x => x['name'] == name)
+    try {
+      return Obj[0]
+    }
+    catch (error) {
+      return 0
+    }
+
+  }
+
+  GetObjectById(Objects, id){
+    // Intento devolver el id del primer varcode la lista
+    const Obj = Objects.filter(x => x['id'] == id)
+    try {
+      return Obj[0]
+    }
+    catch (error) {
+      return 0
+    }
+
+  }
+  GetObjectByBarcode(Objects, barcode){
+    // Intento devolver el id del primer varcode la lista
+    const Obj = Objects.filter(x => x['barcode'] == barcode)
+    try {
+      return Obj[0]
+    }
+    catch (error) {
+      return 0
+    }
+
+  }
+  GetAppPickingTypeIds(){
+    const self = this;
+    let values = {};
+    values = {domain: [['usage', '=', 'product']]};
+    console.log('Conectando a Odoo para recuperar las tipos');
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.picking.type', 'TypeData', values).then((Res: Array<{}>) => {
+        self.PickingTypeIds = Res;
+        self.presentToast("Cargados Tipos de Albaranes", "Proceso de carga")
+        self.storage.set('PickingTypeIds', Res).then ((data)=>{})
+      })
+      .catch((error) => {
+        //
+    });
+    });
+    return promise;
+  }
 ResetMoves(values){
   const self = this;
   const promise = new Promise( (resolve, reject) => {
@@ -258,5 +451,19 @@ ButtonValidate(PickId) {
     });
     return promise;
   }
-
+  IsFalse(val){
+    // esta funcion devuielve false si está vacío
+    if (val.constructor === Array){
+      return val.length === 0
+    }
+    if (val.constructor === String){
+      return val === ''
+    }
+    if (val.constructor === Number){
+      return val === 0
+    }
+    if (val.constructor === Object){
+      return Object.keys(val).length === 0
+    }
+  }
 }

@@ -119,9 +119,9 @@ export class StockPickingListPage implements OnInit {
     this.offset = 0;
     this.GetPickingList(this.search, this.offset, this.limit);
   }
-  OpenModal(Model, Id) {
-    this.router.navigateByUrl('/info-sale-order/' + Model + '/' + Id);
-    // return this.presentModal({Model: ModelO, Id: IdO});
+  OpenModal(Model, id) {
+    this.router.navigateByUrl('/info-sale-order/' + Model + '/' + id);
+    // return this.presentModal({Model: ModelO, id: IdO});
   }
 
   GetPickingList(search = null, offset, limit){

@@ -115,7 +115,7 @@ export class MoveFormPage implements OnInit {
     return this.GetMoveInfo(this.data['id']);
   }
   CreateButtons() {
-    const Id = this.data['id'];
+    const id = this.data['id'];
     const State = this.data['state'].value;
     const Tracking = this.data['tracking'].value;
 
@@ -163,7 +163,7 @@ export class MoveFormPage implements OnInit {
           icon: 'battery-charging-outline',
           role: '',
           handler: () => {
-            this.ActionAssign(Id);
+            this.ActionAssign(id);
           }
         };
         buttons.push(button);
@@ -174,7 +174,7 @@ export class MoveFormPage implements OnInit {
           icon: 'battery-dead-outline',
           role: '',
           handler: () => {
-            this.ActionUnReserve(Id);
+            this.ActionUnReserve(id);
           }
         };
         buttons.push(button);
@@ -197,7 +197,7 @@ export class MoveFormPage implements OnInit {
           icon: 'trash-bin-outline',
           role: '',
           handler: () => {
-            this.CleanLots(Id);
+            this.CleanLots(id);
           }
         };
         buttons.push(button);
@@ -544,7 +544,7 @@ export class MoveFormPage implements OnInit {
     this.stock.RemoveMoveLineId(values).then((data) => {
       this.cancelLoading();
       if (data) {
-        this.reset_scanner() ;
+        this.ResetScanner() ;
         if (data['warning']) {this.presentAlert('Odoo', data['warning']); }
       }
       })
@@ -570,7 +570,7 @@ export class MoveFormPage implements OnInit {
       // Escribo el producto y l aubicación con ok. y ademas le sumo una a la cantidad
       this.ChangeQty(SmlId, 1);
     }
-    this.reset_scanner() ;
+    this.ResetScanner() ;
     // this.cancelLoading();
   }
   GetMovesToChangeLoc(moves, confirm=false) {
@@ -607,7 +607,7 @@ export class MoveFormPage implements OnInit {
     this.stock.AssignLocationToMoves(values)
       .then((data) => {
         if (data) {
-          this.reset_scanner() ;
+          this.ResetScanner() ;
           this.apply_move_data(data);
           if (data['warning']) {this.presentAlert('Odoo', data['warning']); }
         }
@@ -627,7 +627,7 @@ export class MoveFormPage implements OnInit {
     const values = this.GetValuesMoveInfo(this.data['id'], vals);
     this.stock.AssignLocationId(values).then((data) => {
       if (data) {
-        this.reset_scanner() ;
+        this.ResetScanner() ;
         this.apply_move_data(data); }
       else {this.cancelLoading(); }
     })
@@ -657,7 +657,7 @@ export class MoveFormPage implements OnInit {
     const values = this.GetValuesMoveInfo(this.data['id'], {});
     this.stock.ActionAssign(values).then((data) => {
       if (data) {
-        this.reset_scanner() ;
+        this.ResetScanner() ;
         this.apply_move_data(data); }
       else {this.cancelLoading(); }
     })
@@ -675,7 +675,7 @@ export class MoveFormPage implements OnInit {
     const values = {id: MoveId, model: 'stock.move', filter_move_lines: this.Filter};
     this.stock.CleanLots(values).then((data) => {
       if (data) {
-        this.reset_scanner() ;
+        this.ResetScanner() ;
         this.apply_move_data(data); }
       else {this.cancelLoading(); }
     })
@@ -693,7 +693,7 @@ export class MoveFormPage implements OnInit {
 
     this.stock.DeleteMoveLine(values).then((data) => {
       if (data) {
-        this.reset_scanner() ;
+        this.ResetScanner() ;
         this.apply_move_data(data); }
       else {this.cancelLoading(); }
     })
@@ -710,7 +710,7 @@ export class MoveFormPage implements OnInit {
     const values = this.GetValuesMoveInfo(this.data['id'], {});
     this.stock.MoveUnReserve(values).then((data) => {
       if (data) {
-        this.reset_scanner() ;
+        this.ResetScanner() ;
         this.apply_move_data(data); }
       else {this.cancelLoading(); }
     })
@@ -856,7 +856,7 @@ export class MoveFormPage implements OnInit {
       values = this.GetValuesMoveInfo(this.data['id'], values);
       this.stock.CreateMoveLots(values).then((data) => {
         if (data) {
-          this.reset_scanner() ;
+          this.ResetScanner() ;
           this.apply_move_data(data); }
         else {
           this.cancelLoading();
@@ -901,7 +901,7 @@ export class MoveFormPage implements OnInit {
 
       this.stock.CreateMoveLots(values).then((data) => {
         if (data) {
-          this.reset_scanner() ;
+          this.ResetScanner() ;
           this.apply_move_data(data); }
         else {
           this.cancelLoading();
@@ -918,7 +918,7 @@ export class MoveFormPage implements OnInit {
 
   SearchOtherMoveByScanner(){}
 
-  reset_scanner() {
+  ResetScanner() {
     this.WaitingQty = false;
     this.ActiveLine = {};
     this.LastReading = this.ScannerReading;
@@ -928,7 +928,7 @@ export class MoveFormPage implements OnInit {
   }
   CheckScanner(val) {
     if (val === ''){
-      this.reset_scanner();
+      this.ResetScanner();
     }
     // Primero buscon en el formulario si coincide con algo y despues decido que hacer
     // Caso 1. EAN 13
@@ -953,7 +953,7 @@ export class MoveFormPage implements OnInit {
     else if (this.WaitingQty && this.ActiveLine && this.ActiveLine['id']){
       if (typeof val) {
         this.ActiveLine['qty_done'] = val;
-        this.reset_scanner();
+        this.ResetScanner();
         return;
       }
       this.presentAlert('Error:', 'El valor introducido ' + val + 'no es válido');
@@ -972,7 +972,7 @@ export class MoveFormPage implements OnInit {
     else {
       this.presentAlert('Aviso', 'No se ha encontrado nada para ' + val);
     }
-    this.reset_scanner() ;
+    this.ResetScanner() ;
     /*
     if (this.data['tracking'] == 'none' && Number(val)) {
       this.data['quantity_done'] = Number(val);
@@ -991,10 +991,10 @@ export class MoveFormPage implements OnInit {
 
   OpenBarcodeMultiline(ProductId, PName, LName){
     this.scanner.ActiveScanner = false;
-    this.stock.SetModelInfo('App', 'ActivePage', '');
     this.openModalBarcodeMulti(ProductId, PName, LName);
   }
   async openModalBarcodeMulti(PrId, pname, lname){
+    this.scanner.ActiveScanner = true;
     const modal = await this.modalController.create({
       component: BarcodeMultilinePage,
       componentProps: { LocationId: this.data['active_location_id']['id'],
@@ -1007,7 +1007,11 @@ export class MoveFormPage implements OnInit {
     });
     modal.onDidDismiss().then((detail: OverlayEventDetail) => {
       this.stock.SetModelInfo('App', 'ActivePage', 'MoveFormPage');
-      if (detail !== null && detail['data'].length > 0) {
+      this.scanner.ActiveScanner = false;
+      if (detail['data'] == -1){
+        return this.loading.dismiss();
+      }
+      else if (detail !== null && detail['data'].length > 0) {
         const values = {move_id: this.data['id'],
                         location_id: this.data['active_location_id']['id'] || this.data['location_id']['id'],
                         product_id: PrId,
@@ -1139,7 +1143,7 @@ export class MoveFormPage implements OnInit {
       res = true;
     }
     this.audio.play('error');
-    this.reset_scanner();
+    this.ResetScanner();
     return res;
   }
 }

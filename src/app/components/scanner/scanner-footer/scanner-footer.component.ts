@@ -34,7 +34,6 @@ export class ScannerFooterComponent implements OnInit {
   ngOnInit() {}
 
   resetScan(){
-    this.ScanReader.value['scan'] = '';
     this.ScanReader.controls.scan.setValue('');
   }
 
@@ -48,9 +47,9 @@ export class ScannerFooterComponent implements OnInit {
     if (this.ScanReader) {
       this.audio.play('barcode_ok');
       const ScannerReading = [this.ScanReader.value['scan']];
-      this.ScanReader.value['scan'] = '';
+      this.ScanReader.controls.scan.setValue('');
       this.ScannerReadingChanged.emit(ScannerReading);
-
+      
     }
   }
 

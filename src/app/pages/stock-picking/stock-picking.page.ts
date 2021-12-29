@@ -71,9 +71,9 @@ export class StockPickingPage implements OnInit {
     this.moves = ['up', 'down', 'left', 'right'];
   }
 
-  OpenModal(Model, Id) {
-    this.router.navigateByUrl('/info-sale-order/' + Model + '/' + Id);
-    // return this.presentModal({Model: ModelO, Id: IdO});
+  OpenModal(Model, id) {
+    this.router.navigateByUrl('/info-sale-order/' + Model + '/' + id);
+    // return this.presentModal({Model: ModelO, id: IdO});
   }
 
 
@@ -337,7 +337,7 @@ CheckSerial(val){
   return false;
 }
 
-reset_scanner() {
+ResetScanner() {
   this.LastReading = this.ScannerReading;
   this.ScannerFooter.ScanReader.controls.scan.setValue('');
   // this.scanner.reset_scan();
@@ -412,7 +412,7 @@ CheckOrder(order){
 }
 CheckScanner(val) {
   if (val === ''){
-    this.reset_scanner();
+    this.ResetScanner();
   }
   const execreg = /\d+/.exec(val);
   if (execreg && val[0]  === '*' && val[val.length - 1] === '*'){
@@ -438,7 +438,7 @@ CheckScanner(val) {
   else {
     this.CheckSerial(val);
   }
-  this.reset_scanner();
+  this.ResetScanner();
   return;
  }
 

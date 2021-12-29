@@ -1,5 +1,5 @@
 
-import { Component, OnInit, ViewChild, Input, HostListener} from '@angular/core';
+import { Component, OnInit, ViewChild, Input, HostListener, ComponentFactoryResolver} from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ScannerService } from '../../services/scanner.service';
 import { StockFunctionsService } from '../../services/stock-functions.service';
@@ -8,8 +8,6 @@ import { ModalController, AlertController, IonInfiniteScroll, ActionSheetControl
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
 import { OverlayEventDetail } from '@ionic/core';
 import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
-import { timeStamp } from 'console';
-import { pid } from 'process';
 
 
 @Component({
@@ -39,11 +37,10 @@ export class MoveListPage implements OnInit {
 
   Batch: {};
   Moves: Array<{}>;
-  Filters: Array<{}>;
-
+  AllMoves: Array<{}>;
+  
   TypeId: {};
-  FiltersChecked: {};
-  Id: number;
+  id: number;
   BatchId: number;
 
   ngSwitch: any;
@@ -51,6 +48,12 @@ export class MoveListPage implements OnInit {
   // DEFAULT
   StateDomain: any ;
   BatchDomain: any;
+
+  //FILTROS
+  AvailableStates: {};
+  AvailableQties: {};
+  FilterStates: {};
+  FilterQties: {};
 
   //
   Selected: number; // -1 si no hay ninguno, si no es el indice del que está seleccionado
@@ -63,26 +66,36 @@ export class MoveListPage implements OnInit {
   Lots: {};
   Serials: {};
   SerialsxProduct: {};
-  SerialsxProductStr: {};
   Barcodes: {};
-  Locations: {};
+  // Locations: {};
   AvailableLotsForMove: Array<any>;
   AvailableLotsForMoveStr: string;
   SelectedLotsForMoveStr: string;
   ToDelete: boolean;
   StockLocation: {}; // Listado de todas las ubicaciones disponibles en el sistema y leibles por la pistola (internas)
   WaitingSerials: number; //=True solo lee serials/Lotes
-  ChangeQty: integer; // Si es false no permite cambiar cantidades
-
-
+  ChangeQty: boolean; // Si es false no permite cambiar cantidades
+  LastSerial: string; // último código escaneado
+  ZIndex: number
+  TouchTimeout: any;
+  AllowTouch: Boolean;
+  AllowScanner: Boolean; 
+  PrevId: number; //Id previo al que se ha creado, y el que se carga si está establecido 
+  
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if (!this.scanner.ActiveScanner && this.stock.GetModelInfo('App', 'ActivePage') === 'MoveList' && event.which !== 0) {
-      console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
+    clearTimeout(this.TouchTimeout)
+    this.AllowTouch = true;
+    
+    if (!this.AllowScanner || this.scanner.ActiveScanner || event.which == 0){return}
+    console.log("PASO 1: Pulsación: >>" + " Code:< "+ event.code + " >: Which:< " + event.which + " >. Letra: <" +  String.fromCharCode(event.which) +">")
+    
+    if (this.stock.GetModelInfo('App', 'ActivePage') === 'MoveList') {
       this.scanner.key_press(event);
       this.scanner.timeout.then((val) => {
         this.onReadingEmitted(val);
-    });
+      });
+
   }
   }
   constructor(// public audio: AudioService,
@@ -97,12 +110,15 @@ export class MoveListPage implements OnInit {
     public odooCon: OdooService) { }
 
   onReadingEmitted(val: string) {
-    const delay = 200;
-    if (this.scanner.TECLAS.indexOf(val)>-1){return this.KeyOrder(val)}
+    const delay = 75;
+    
     let index = 0;
     console.log("ANALIZO EN MOVELIST:" + val);
     for (const scan of val){
       if (scan !== '') {
+        if (this.scanner.TECLAS.indexOf(scan)>-1){
+          return this.KeyOrder(scan)
+        }
         index += 1;
         setTimeout(() => {
           this.ScannerReading = scan;
@@ -128,11 +144,25 @@ export class MoveListPage implements OnInit {
       picked: 'battery-charging-outline',
       assigned: 'battery-full-outline',
       done: 'battery-full-outline'};
-    this.FiltersChecked = {state: {checked: ['assigned', 'partially_available']}};
     this.ToDelete = false
     this.scanner.ActiveScanner = false;
+    this.FilterQties = {to_do:'Incompletas'}
+    this.FilterStates ={}
+
+    this.AvailableQties = {zero:'Por hacer', to_do:'Incompletas', done: 'Completas'}
+    this.AvailableStates = {
+      confirmed: 'Por hacer', 
+      waiting: 'En espera', 
+      partially_available: 'Incompleta', 
+      assigned:'Reservada',
+      done: 'Hecha'}
+    
+  }
+  ionViewWillLeave(){
+    this.AllowScanner = false
   }
   ionViewDidEnter(){
+    this.AllowScanner = true
     this.stock.SetModelInfo('App', 'ActivePage', 'MoveList');
     this.Selected = -1;
     console.log ('Entra en listado de albaranes');
@@ -140,125 +170,77 @@ export class MoveListPage implements OnInit {
     this.BatchDomain = ['picking_id.batch_id', '=', this.BatchId];
     this.Lots = {};
     this.Barcodes = {};
-    this.Locations = {};
+    // this.Locations = this.stock.Locations;
     this.Serials = {};
     this.SerialsxProduct = {};
-    this.SerialsxProductStr = '';
     this.AvailableLotsForMove = [];
     this.scanner.ActiveScanner = false;
+    
     this.WaitingSerials = 0;
     this.GetInfo();
+    console.log("Rellenando StockLocation")
+    this.StockLocation = {}
+    //for (let loc in this.stock.Locations){
+    //  let location = this.stock.Locations[loc]
+    //  this.StockLocation[location['name']] = loc
+    //}
+    if (!this.stock.Locations){
+      this.stock.LoadPersistentData()
+    }
   }
 
   TabNavegarA(URL){
     this.router.navigateByUrl(URL);
   }
 
-  // Esta función no se usa ....
-  LoadReturnMoves(Res, SmlId, indice){
-
-    const MoveId = Res[0]['move_id'];
-    const ResLeng = Res.length;
-
-
-    // Elimino los Barcode al Move['id']. Si devuelvo más de 1 sml_id elimino los del movimeinto
-    const barcode = this.Moves[indice]['product_id']['barcode'];
-
-    if (ResLeng === 1){
-      const MoveIdIndex = this.Barcodes[barcode]['move_id'].indexOf(SmlId);
-      if (MoveIdIndex >= 0){
-        this.Barcodes[barcode]['move_id'].splice(MoveIdIndex, 1);
-      }
-    }
-    else {
-      for (const Move of this.Moves.filter(item => item['move_id'] === MoveId)) {
-        const MoveIdIndex = this.Barcodes[barcode]['move_id'].indexOf(Move['Id']);
-        if (MoveIdIndex >= 0){
-          this.Barcodes[barcode]['move_id'].splice(MoveIdIndex, 1);
-        }
-      }
-    }
-    // Meto los nuevos
-    for (const smlid of Res){
-      this.Barcodes[barcode].push(smlid['Id']);
-    }
-
-    if (Res.length > 1){
-      // Me cargo todos los move lines de el movimiento
-      this.Moves = this.Moves.filter(Move => Move['move_id'] !== MoveId);
-      for (const res of Res) {
-        this.Moves.push(res);
-      }
-    }
-    else {
-      // Actualizo el move line
-      const SmlId = this.Moves.filter(Move => Move['Id'] === Res[0]['Id']);
-      for (const field in ['location_id', 'location_dest_id', 'lot_id', 'qty_done']){
-        if (SmlId[field] !== Res[0][field]){
-          this.Moves[SmlId['indice']][field] = Res[0][field];
-        }
-      }
-    }
-    // REGENERO LOTS ES MAS RAPIDO QUE SOLO UNA PARTE
-    this.Lots = {};
-    for (const Move of this.Moves) {
-      if (Move['lot_id']){
-        const lot = Move['lot_id']['name'];
-        if (!this.Lots.hasOwnProperty(lot)){
-          this.Lots[lot] = {move_id: [Move['Id']]};
-        }
-      }
-    }
-
-
-
-  }
-
   ApplyGetInfo(Res, values){
-    const self = this;
+    
     this.LimitReached = Res['Moves'].length < this.Limit;
     if (this.LimitReached) {
       this.infiniteScroll.disabled = true;
     }
     if (values['load_type'] === 'load') {
       this.Batch = Res['Moves'][0]['batch_id'];
-      this.Moves = Res['Moves'];
-      this.Filters = Res['Filter'];
+      this.AllMoves = Res['Moves'];
       this.TypeId = Res['Type'];
       this.Barcodes = {};
+      for (const Move of this.AllMoves) {
+        this.CheckIfWaitingSerials(Move);
+      }
       // tslint:disable-next-line:forin
     }
     else {
       // Tengo que insertar. Siempre debería de recibir los movimientos de un stock move line o de un scroll
-
       // NO SCROLL.
       if (values['delete_move']){
         const MoveId = values['delete_move'];
-        const MovesFiltered = this.Moves.filter(field => (field['move_id'] === MoveId));
+        const MovesFiltered = this.AllMoves.filter(field => (field['move_id'] === MoveId));
         for (const SmlId of MovesFiltered) {
-          this.Moves.splice(SmlId['indice'], 1);
+          this.AllMoves.splice(SmlId['indice'], 1);
         }
       }
 
       for (const k of Res['Moves']) {        
-        self.Moves.push(self.CheckIfWaitingSerials(k));
+        this.AllMoves.push(this.CheckIfWaitingSerials(k));
       }
     }
-    self.Moves = self.stock.OrderArrayOfDict(self.Moves, true, ['removal_priority', 'product_id', 'picking_id'], [true, true, true]);
+    this.Moves = this.FilterMoves(this.AllMoves)
+    
     this.Selected = -1;
-    self.UpdateAsyncLots(self.Moves, values);
-    self.loading.dismiss();
+    if (this.PrevId){
+      const MoveSelected = this.Moves.filter(x => x['id'] == this.PrevId)
+      if (!this.stock.IsFalse(MoveSelected)) {
+        this.SelectedMove = MoveSelected[0]
+        this.Selected = MoveSelected[0]['indice']
+      }
+    }
+    this.UpdateAsyncLots(this.Moves, values);
+    this.loading.dismiss();
   }
 
   GetInfoDomain(Domain = []){
     if (this.BatchId){
       Domain.push(this.BatchDomain);
-    }
-    const FilterDomain = this.GetDomainFromActiveFilter();
-    if (FilterDomain){
-      for (const dom of FilterDomain){
-        Domain.push(dom);
-      }
     }
     return Domain;
   }
@@ -270,10 +252,9 @@ export class MoveListPage implements OnInit {
     if (this.Offset === 0){this.LimitReached = false;  this.infiniteScroll.disabled = false; }
     values = {domain: Domain, offset: this.Offset, limit: this.Limit, model: Model, load_type: LoadType};
     console.log('Conectando a Odoo para recuperar' + values['domain']);
-    self.presentLoading('Cargando albaranes del tipo ' + this.Id);
+    self.presentLoading('Cargando movimeintos');
     const promise = new Promise( (resolve, reject) => {
         self.odooCon.execute('stock.move.line', 'get_apk_tree', values).then((Res: Array<{}>) => {
-          this.Locations = Res['Locs'];
           if (Res['Moves'].length > 0){
             Domain = [];
             Domain.push(self.BatchDomain);
@@ -281,8 +262,8 @@ export class MoveListPage implements OnInit {
             self.ApplyGetInfo(Res, values);
           }
           else {
-            this.LimitReached = true;
-            this.infiniteScroll.disabled = true;
+            self.LimitReached = true;
+            self.infiniteScroll.disabled = true;
           }
           // self.UpdateAsyncLots(Res['Moves'], values);
           self.loading.dismiss();
@@ -295,8 +276,16 @@ export class MoveListPage implements OnInit {
     return promise;
   }
   AlternateWaitingSerials(){
-    if (this.WaitingSerials == 1){this.WaitingSerials = 2}
-    else if (this.WaitingSerials == 2){this.WaitingSerials = 1}
+
+    if (this.WaitingSerials == 1){
+      this.WaitingSerials = 2
+      
+    
+    }
+    else if (this.WaitingSerials == 2){
+      this.WaitingSerials = 1
+      
+    }
     
 
   }
@@ -307,7 +296,6 @@ export class MoveListPage implements OnInit {
     });
   }
   UpdateAsyncLots(Moves, values){
-
     const self = this;
     setTimeout(() => {
       console.log ('ACTUALIZANDO BUSQUEDAS. Barcodes con Movimeintos');
@@ -319,17 +307,14 @@ export class MoveListPage implements OnInit {
         const barcode = Move['product_id'] && Move['product_id']['barcode'];
         if (barcode){
           if (!self.Barcodes.hasOwnProperty(barcode)){
-            self.Barcodes[barcode] = {move_id: [Move['Id']]};
+            self.Barcodes[barcode] = {move_id: [Move['id']]};
           }
           else {
-            self.Barcodes[barcode]['move_id'].push(Move['Id']);
+            self.Barcodes[barcode]['move_id'].push(Move['id']);
           }
         }
         if (Move['lot_id']){
-          const lot = Move['lot_id']['name'];
-          if (!self.Lots.hasOwnProperty(lot)){
-            self.Lots[lot] = {move_id: [Move['Id']]};
-          }
+          self.Lots[Move['lot_id']['name']] = Move['id']
         }
 
       }
@@ -339,21 +324,9 @@ export class MoveListPage implements OnInit {
         self.UpdateAsyncSerials(values);
       }
     }, 50);
-    this.UpdateLocations({})
+    
   }
-  UpdateLocations(values = {}){
-    const self = this;
-    const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.location', 'get_apk_location_list', values).then((Res: {}) => {
-       self.StockLocation = Res
-      })
-      .catch((error) => {
-        self.loading.dismiss();
-        self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
-      });
-    });
-    return promise;
-  }
+  
   UpdateAsyncSerials(values){
     const self = this;
     const promise = new Promise( (resolve, reject) => {
@@ -410,24 +383,32 @@ export class MoveListPage implements OnInit {
     const self = this;
     let msg = '';
     const Model = 'stock.move';
-    const move = this.Moves[this.Selected];
-    if (!(move['state'][0] in ['confirmed', 'assigned'])){
-        msg += '<hr/>' + move['name'] + ': Estado incorrecto';
+    const Move = this.Moves[this.Selected];
+    if (!(Move['state'][0] in ['confirmed', 'assigned'])){
+        msg += '<hr/>' + Move['name'] + ': Estado incorrecto';
         msg += '<hr/>No se reserva nada';
         this.stock.play('error');
         this.stock.presentToast(msg, 'AVISO:');
       }
     else {
-      console.log('Se van a reservar ' + move['move_id']);
+      console.log('Se van a reservar ' + Move['move_id']);
       this.stock.play('click');
-      const values = {id: [move['move_id']]};
-      this.odooCon.execute(Model, 'action_assign_apk', values).then((done) => {
-        console.log(done);
-        self.GetInfo();
+      const values = {id: [Move['move_id']]};
+      this.PrevId = Move['id'];
+      this.odooCon.execute('stock.move.line', 'action_assign_apk', values).then((Res:Array<{}>) => {
+        Move['qty_done'] = Res[0]['qty_done']
+        Move['lot_id'] = Res[0]['lot_id']
+        Move['product_uom_qty'] =  Res[0]['product_uom_qty']
+        for (let NewMove of Res){
+          if (NewMove['id'] !== Move['id'])
+            this.AllMoves.push(NewMove)
+            this.Moves = this.FilterMoves(this.AllMoves, true)
+        }
+        this.loading.dismiss();
       })
       .catch((error) => {
-        self.loading.dismiss();
-        self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+        this.loading.dismiss();
+        this.stock.Aviso(error.title, error.msg && error.msg.error_msg);
       });
     }
   }
@@ -438,7 +419,8 @@ export class MoveListPage implements OnInit {
     let msg = '';
     const Model = 'stock.move';
     const move = this.Moves[this.Selected];
-    if (!(move['state'][0] in ['waiting', 'confirmed', 'assigned'])){
+    
+    if (['in_progress', 'waiting', 'confirmed', 'assigned'].indexOf(move['state']['value']) == -1){
       msg += '<hr/>' + move['name'] + ': Estado incorrecto';
       msg += '<hr/>No se reserva nada';
       this.stock.play('error');
@@ -461,7 +443,7 @@ export class MoveListPage implements OnInit {
   }
   ValidateBatch(){
     this.stock.ButtonValidateApk(this.BatchId);
-    this.TabNavegarA('/listado-albaranes/' + this.TypeId['Id']);
+    this.router.navigateByUrl('/listado-albaranes/' + this.TypeId['id']);
   }
   // ToMove
 
@@ -480,6 +462,8 @@ export class MoveListPage implements OnInit {
       this.Selected += -1;
       if (this.Selected < 0){this.Selected = this.Moves.length -1}
     }
+    const Move = this.Moves[this.Selected];
+    this.CheckIfWaitingSerials(Move);
   }
 
   // BOTONES DE ACCION
@@ -548,22 +532,31 @@ export class MoveListPage implements OnInit {
     });
     await actionSheet.present();
   }
-
+  // FILTROS
   // BOTONES DE FILTERS
   // primero creo un botón para cada filtro y esto abre el ratio conlos filtros para ese botón
   async CreateFilterButtons() {
     const Buttons = [];
-    for (const Filter of this.Filters){
-      Buttons.push ({
-        text: Filter['name'],
-        icon: !(Filter['field'] in this.FiltersChecked) ? 'add-circle-outline' : 'funnel-outline',
+    // Boton de Estado
+    Buttons.push ({
+        text: 'Estado',
+        icon: this.FilterStates ? 'add-circle-outline' : 'funnel-outline',
         handler: () => {
           actionSheet.dismiss().then(() => {
-            this.CreateFilterRadios(Filter['field']);
+            this.CreateFilterRadios('Estado');
           });
         }
       });
-    }
+    Buttons.push ({
+        text: 'Cantidades',
+        icon: this.FilterQties ? 'add-circle-outline' : 'funnel-outline',
+        handler: () => {
+          actionSheet.dismiss().then(() => {
+            this.CreateFilterRadios('Cantidades');
+          });
+        }
+      });
+
     const actionSheet = await this.actionSheetCtrl.create({
         header: 'FILTRO',
         buttons: Buttons
@@ -574,24 +567,27 @@ export class MoveListPage implements OnInit {
     const Radios = [];
     let FilterHeader = 'Valores';
     const self = this;
-    for (const Filter of this.Filters.filter(field => field['field'] === FilterField)){
-      FilterHeader = Filter['name'];
-      const ActiveFilter = self.FiltersChecked[Filter['field']];
-      let FilterChecked = [];
-      if (ActiveFilter) {FilterChecked = ActiveFilter['checked']; }
-      else {FilterChecked = []; }
-
-      for (const Val of Filter['values']){
-        if (Val !== false){
-          Radios.push ({
-            name: 'Nombre_' + Val,
-            type: 'checkbox',
-            label: Val['name'],
-            value: Val['value'],
-            checked: FilterChecked.length > 0 && (FilterChecked.indexOf(Val['value']) !== -1),
-          });
-        }
-      }
+    let FilterList
+    let FilterApplied
+    if (FilterField == 'Estado') {
+      FilterList = this.AvailableStates;
+      FilterApplied = this.FilterStates;
+    }
+    else if (FilterField == 'Cantidades'){
+      FilterList = this.AvailableQties;
+      FilterApplied = this.FilterQties;
+    }
+    let Active: boolean = false;
+    for (let key in FilterList){
+      FilterHeader = FilterField;
+      Active = FilterApplied.hasOwnProperty(key)
+      Radios.push ({
+        name: 'Nombre_' + key,
+        type: 'checkbox',
+        label: FilterList[key],
+        value: key,
+        checked: Active,
+      });
     }
     console.log(Radios);
     const actionSheet = await this.alertController.create({
@@ -619,7 +615,74 @@ export class MoveListPage implements OnInit {
         ]
       });
     await actionSheet.present();
+  }
 
+  ApplyFilter(Filter, data){
+    console.log(data)
+    console.log(Filter)
+    
+    if (Filter == 'Estado') {
+      this.FilterStates = {}
+      for (let key of data){
+        this.FilterStates[key] = this.AvailableStates[key]
+      }
+    }
+    else if (Filter == 'Cantidades'){
+      this.FilterQties = {}
+      for (let key of data){
+        this.FilterQties[key] = this.AvailableQties[key]
+      }
+    }
+    this.Moves = this.FilterMoves(this.AllMoves)
+  }
+
+  //
+  // this.AvailableQties = {zero:'Por hacer', to_do:'Pendientes', done: 'Hechas'}
+  // this.AvailableStates = {
+    // confirmed: 'Por hacer', 
+    // waiting: 'En espera', 
+    // partially_available: 'Incompleta', 
+    // assigned:'Reservada',
+    // done: 'Hecha'}
+
+  //
+  FilterMoves(Moves, Reorder=true){
+    const filterqties = this.stock.IsEmpty(this.FilterQties)
+    const filterstates = this.stock.IsEmpty(this.FilterStates)
+    if (filterqties && filterstates){return Moves}
+    let Filtered: Array<{}> = []
+    let to_add    
+    for (const Move of Moves){
+      to_add = true
+      if (!filterqties){
+        for (let key in this.FilterQties){
+          if (key == 'zero' && Move['qty_done']> 0) {
+            to_add = false
+            continue
+          }
+          if (key == 'to_do' && Move['qty_done'] >= Move['product_uom_qty']) {
+            to_add = false
+            continue
+          }
+          if (key == 'done' && Move['qty_done'] < Move['product_uom_qty']) {
+            to_add = false
+            continue
+          }
+        }
+      }
+      if (!to_add && !filterstates && !this.FilterStates.hasOwnProperty(Move['state']['value'])){
+        continue
+      }
+      if (to_add){
+
+        Filtered.push(Move)
+      }
+    }
+    if (Reorder) {
+      console.log("REORDENANDO ...")
+      Filtered = this.stock.OrderArrayOfDict(Filtered, true, ['removal_priority', 'product_id', 'picking_id'], [true, true, true]);
+    }
+    return Filtered
   }
   //
   DeSeleccionar(){
@@ -630,13 +693,13 @@ export class MoveListPage implements OnInit {
     let Moves = []
     let Ids = []; 
     if (this.Selected !== -1){
-      Ids.push(this.Moves[this.Selected]['Id'])
+      Ids.push(this.Moves[this.Selected]['id'])
       Moves.push(this.Moves[this.Selected])
     }
     else {
       let Ids = []
       for (const Move1 of this.Moves){
-        Ids.push(Move1['Id']);
+        Ids.push(Move1['id']);
       }
       Moves = this.Moves
     }
@@ -686,63 +749,6 @@ export class MoveListPage implements OnInit {
     }
     return splice;
   }
-
-  ApplyQtiesFilterx1(Move){
-    if (this.FiltersChecked['filterqties']){
-      const NewMoves = [];
-      const value = this.FiltersChecked['filterqties'];
-      const splice = this.CheckMoveVisibilityByQty(Move['indice'], value);
-      if (splice){
-        // Si he modificado, tengo que reordenar
-        this.Moves = this.stock.OrderArrayOfDict(this.Moves, true, ['removal_priority', 'product_id', 'picking_id'], [true, true, true]);
-      }
-    }
-    return;
-  }
-
-  ApplyQtiesFilter(){
-    // Esta función aplica el filtro de cantidades sin llamar a odoo
-    // Debería de llamarse siempre que se modifque la cantidad hecha
-    if (this.FiltersChecked['filterqties']){
-      const NewMoves = [];
-      const value = this.FiltersChecked['filterqties'];
-      let splice = false;
-      // tslint:disable-next-line:forin
-      for (const Index in this.Moves){
-        splice = splice || this.CheckMoveVisibilityByQty(Index, value);
-      }
-      if (splice){
-        // Si he modificado, tengo que reordenar
-        this.Moves = this.stock.OrderArrayOfDict(this.Moves, true, ['removal_priority', 'product_id', 'picking_id'], [true, true, true]);
-      }
-    }
-    return this.Moves;
-  }
-
-  // FILTROS DOMAIN
-  GetDomainFromActiveFilter(){
-    // Filtros activos
-    // const F1 = this.FiltersChecked.filter(f1 => f1['field']['checked']);
-    const domain = [];
-    // tslint:disable-next-line:forin
-    for (const F1 in this.FiltersChecked){
-      const F2 = this.FiltersChecked[F1];
-      const nd = [F1, 'in', F2['checked']];
-      domain.push(nd);
-    }
-    return domain;
-  }
-  ApplyFilter(field, data){
-    console.log('Voy a aplicar los filtros ' + data + ' al campo: ' + field);
-    if (data.length > 0) {
-      this.FiltersChecked[field] = {checked: data}; }
-    else {
-      delete this.FiltersChecked[field];
-    }
-    this.Offset = 0;
-    this.Limit = 0;
-    this.GetInfo();
-  }
   // UBICACIONES
   async InputLocation(indice, field, subheader = ''){
     let Header;
@@ -779,7 +785,7 @@ export class MoveListPage implements OnInit {
             this.scanner.ActiveScanner = false;
             // if (eval(this.TypeId['location_barcode']).exec(data['barcode'])) {
             if (/[\.]\d{2}[\.]/.exec(data['barcode'])) {
-              this.UpdateLoc(indice, field, Move['Id'], data['barcode']);
+              this.UpdateLoc(indice, field, Move['id'], data['barcode']);
             }
             else {
               this.stock.play('error');
@@ -825,7 +831,7 @@ export class MoveListPage implements OnInit {
             if (true) {
               let values = {}
               values[LocationNeed] = this.TypeId[LocationNeed] || Move[LocationNeed]
-              this.WriteAsyn('stock.move.line', Move['Id'], values);
+              this.WriteAsyn('stock.move.line', Move['id'], values);
               Move[LocationNeed] = this.TypeId[LocationNeed]
               this.CheckIfWaitingSerials(Move)
               
@@ -838,31 +844,31 @@ export class MoveListPage implements OnInit {
           handler: (data: number) => {
             // Activo el scanner
             
-            const barcode = data['barcode']
-            
+            let barcode = data['barcode']
+            if (!barcode){barcode = Move[LocationField]['barcode']}
             // Si el que leo es el mismo que hay ... CONFIRMO y EScribo en odoo
             if (Move[LocationField]['barcode'] === barcode){
               Move[LocationNeed] = false;
               let values = {}
               values[LocationNeed] = false              
-              this.WriteAsyn('stock.move.line', Move['Id'], values);
+              this.WriteAsyn('stock.move.line', Move['id'], values);
               this.stock.play('click');
               this.CheckIfWaitingSerials(Move)
               this.scanner.ActiveScanner = false;
             }
             // Si leo una ubicación permitida pero disinta
-            else if (barcode in this.Locations){
+            else if (barcode in this.stock.Locations){
               // Permito cambiar. => Cambio
               if (AllowChange){
                 // Reseteo la lectura y cambio la ubicación. Necesita una 2ª lectura para modificarlo
                 const values = {}
                 values[LocationNeed] = this.TypeId[LocationNeed]
-                values[LocationField] = this.Locations[barcode]['Id']
-                this.WriteAsyn('stock.move.line', Move['Id'], values);
+                values[LocationField] = this.stock.Locations[barcode]['id']
+                this.WriteAsyn('stock.move.line', Move['id'], values);
                 Move[LocationNeed] = this.TypeId[LocationNeed]
-                // Move[LocationField]= this.Locations[barcode]
-                Move[LocationField] = {'Id': this.Locations[barcode]['Id'],
-                                       'name': this.Locations[barcode]['name'],
+                // Move[LocationField]= this.stock.Locations[barcode]
+                Move[LocationField] = {'id': this.stock.Locations[barcode]['id'],
+                                       'name': this.stock.Locations[barcode]['name'],
                                        'barcode': barcode}
                 this.CheckIfWaitingSerials(Move)
                 this.stock.play('click');
@@ -908,7 +914,7 @@ export class MoveListPage implements OnInit {
           role: 'cancel',
           cssClass: 'secondary',
           handler: () => {
-            this.WriteAsyn('stock.move.line', Move['Id'], {need_location_dest_id: false});
+            this.WriteAsyn('stock.move.line', Move['id'], {need_location_dest_id: false});
             console.log('Confirm Cancel');
             this.scanner.ActiveScanner = false;
           }
@@ -921,7 +927,7 @@ export class MoveListPage implements OnInit {
             //  this.UpdateDestLoc(Move, data['barcode']);
             if (Move['location_dest_id']['barcode'] === data['barcode']){
               Move['need_location_dest_id'] = false;
-              this.WriteAsyn('stock.move.line', Move['Id'], {need_location_dest_id: false});
+              this.WriteAsyn('stock.move.line', Move['id'], {need_location_dest_id: false});
               this.CheckIfWaitingSerials(Move)
               this.scanner.ActiveScanner = false;
             }
@@ -963,7 +969,7 @@ export class MoveListPage implements OnInit {
   UpdateDestLoc(Move, Barcode){
     const self = this;
     const Model = 'stock.move.line';
-    const values = {sml_id: Move['Id'], barcode: Barcode, domain: this.GetInfoDomain()};
+    const values = {sml_id: Move['id'], barcode: Barcode, domain: this.GetInfoDomain()};
 
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(Model, 'update_dest_loc', values).then((Res: Array<{}>) => {
@@ -988,7 +994,7 @@ export class MoveListPage implements OnInit {
       return;
     }
     const self = this;
-    const values = {Id: Move['Id'], serial_names: LotNames};
+    const values = {id: Move['id'], serial_names: LotNames};
     const promise = new Promise( (resolve, reject) => {
       this.odooCon.execute('stock.move.line', 'load_multi_serials', values).then((Res: Array<{}>) => {
         //
@@ -1008,38 +1014,38 @@ export class MoveListPage implements OnInit {
       return this.UpdateQties(Move, 1, 0);
     }
     const self = this;
-    const values = {Id: Move['Id'], serial_names: LotName};
+    const values = {id: Move['id'], serial_names: LotName};
     const promise = new Promise( (resolve, reject) => {
       this.odooCon.execute('stock.move.line', 'load_multi_serials', values).then((Res: Array<{}>) => {
         // Miro si tengo el id del movimiento, si no es que es uno nuevo.
         // Si es nuevo tengo
-        if (Move['Id'] == Res[0]['Id']){
+        if (Move['id'] == Res[0]['id']){
           // Lo igualo pq reinicio todos los datos
           Res[0]['indice'] = Move['indice'];
           self.Moves[Move['indice']] = Res[0];
         }
         else {
           // Es uno nuevo
-          // Tengo que quedarme con el Id
-          const Id = Res[0]['Id']
+          // Tengo que quedarme con el id
+          const id = Res[0]['id']
           self.Moves.push(Res[0])
           self.Moves = self.stock.OrderArrayOfDict(self.Moves, true, ['removal_priority', 'product_id', 'picking_id'], [true, true, true]);
-          const SelectedMove = self.Moves.filter(x => x['Id'] === Id);
+          const SelectedMove = self.Moves.filter(x => x['id'] === id);
           if (SelectedMove){
             this.Selected = SelectedMove[0]['indice']
           }
           
         }
        
-        self.Lots[LotName] = {move_id: [Move['Id']]};
-        const product_id = Move['product_id']['Id']
+        self.Lots[LotName] = Move['id'];
+        const product_id = Move['product_id']['id']
         let ProdObj = {}
         let SerialObj = {}
 
         let SerialVals = {
-            Id: Res[0]['lot_id']['Id'], 
+            id: Res[0]['lot_id']['id'], 
             inherit: false, 
-            product_id: Move['product_id']['Id'], 
+            product_id: Move['product_id']['id'], 
             virtual_tracking: false}
         
         ProdObj[product_id] = SerialVals
@@ -1056,67 +1062,30 @@ export class MoveListPage implements OnInit {
   onEnter(event, indice){
     const ReadedSerial = event.target.value;
     event.target.value = ''
+    this.CheckScanner(ReadedSerial)
+    this.scanner.ActiveScanner = false
+    return
     const Move = this.Moves[indice];
-    return this.LotToMove(ReadedSerial, Move)
+    let Serial = this.Serials[ReadedSerial];
+    
+    this.ScannedSerial(Move, Serial, ReadedSerial);
+    this.scanner.ActiveScanner = false
+    // return this.LotToMove(ReadedSerial, Move)
   }
 
-  LotToMove(ReadedSerial, Move){
-    if (!Move['ChangeQty']){
-      this.stock.presentToast("No se que hacer con " + ReadedSerial, "Aviso !!!!", 3000)
-      return}
-    this.NewSerial = ReadedSerial
-    const PId = Move['product_id']['Id'];
-    const InList = this.SerialsxProduct[PId].indexOf(this.NewSerial) !== -1;
-    if (this.NewSerial.length < 4){
-      this.NewSerial = '';
-      return; }
-    if (!(this.TypeId['use_create_lots'] || InList)){
-      return this.stock.presentToast('El Nº de serie ' + this.NewSerial + ' no se encuentra disponible');
-      }
-
-    if (Move['tracking'] === 'serial') {
-      if (InList){
-        let AvSerial = this.Serials[this.NewSerial];
-        if (AvSerial.length > 1){
-          AvSerial = AvSerial.filter(x => x['product_id'] === PId);
-          if (AvSerial.length === 0){
-            AvSerial = AvSerial.filter(x => x['inherit'] === PId);
-          }
-
-        }
-        return this.ScannedSerial(Move, AvSerial[0], this.NewSerial);
-      }
-
-      return this.AddSerials(Move, [this.NewSerial]);
-    }
-    if (Move['tracking'] === 'lot') {
-      if (this.NewSerial === Move['lot_id']['name']){
-        let values = {need_confirm_lot_id: false}
-        Move['need_confirm_lot_id'] = false
-        if (this.TypeId['allow_overprocess'] || Move['qty_done'] +1 <= Move['product_uom_qty']){
-          Move['qty_done'] += 1
-          values['qty_done'] = Move['qty_done'] 
-        }
-        this.WriteAsyn('stock.move.line', Move['Id'], {values})
-
-      }
-      else {
-        
-        return this.AddLot(Move, this.NewSerial);
-      }
-    }
-    return;
-  }
   IonFocus(indice, action){
     this.scanner.ActiveScanner = action;
     //REVISAR
-    this.scanner.ActiveScanner = false;
+    // this.scanner.ActiveScanner = false;
+    if (!action){
+      this.WaitingSerials = 1;
+    }
   }
-  AddNewSerialEvent(event){
+  AddNewSerialEvent(event, indice){
     const value = event.target.value;
-    this.NewSerial = value;
+    this.NewSerial = value
   }
-
+  ToDoToday(){}
   // LOTES Y SERIES
   SendSerials(LotName){
     const self = this;
@@ -1141,6 +1110,7 @@ export class MoveListPage implements OnInit {
   CheckIfWaitingSerials(Move){
     //Esta funcion define si permite cambiar las cantidades.
     // Si necesita chequear ubicaciones 
+
     let ChangeQty = true
     
     let NeedLocBeforeQty = this.TypeId['need_loc_before_qty']
@@ -1155,7 +1125,8 @@ export class MoveListPage implements OnInit {
     if (!(this.TypeId['allow_overprocess'] || Move['qty_done'] < Move['product_uom_qty'])){ ChangeQty = false}
     // Si no puedo cambiar la cantidad
     if (!ChangeQty) {
-      this.WaitingSerials = 0}
+      this.WaitingSerials = 0
+      }
     else {
       // Si puedo cambiar la cantidad, muestro el label (esperando lotes)
       this.WaitingSerials = 1
@@ -1178,15 +1149,21 @@ export class MoveListPage implements OnInit {
     }
 
   }
-  UpdateSelected(indice){
-    this.Selected = indice;
+  UpdateSelectedFromId(Id){
+    const SelectedIds = this.Moves.filter(x=> x['id'] == Id)
+    if (SelectedIds){
+      this.Selected = SelectedIds[0]['indice'];
+    }
+    else{
+      this.Selected = -1
+    }
+    
   }
-
   // Rellenar INFO LOTS AND SERIALS
   FillTrackingInfo(Move){
     if (Move['product_id'] && Move['tracking'] !== 'none'){
       // Si el movimiento tiene producto y tracking entonces.
-      const PId = Move['product_id']['Id'];
+      const PId = Move['product_id']['id'];
 
       // Relleno los serials ya seleccionados
       this.SelectedLotsForMoveStr = Move['lot_ids'].map(x => x['name']).join('\n');
@@ -1195,19 +1172,21 @@ export class MoveListPage implements OnInit {
       this.AvailableLotsForMove = [];
 
       // tslint:disable-next-line:forin
-      for (const LotDict of this.SerialsxProduct[PId]){
-        const lot = this.Serials[LotDict][PId];
-        let product_qty = 0.00;
-        if (lot['virtual_tracking']){
-          product_qty = 1.00;
+      if (this.SerialsxProduct[PId]) {
+        for (const LotDict of this.SerialsxProduct[PId]){
+          const lot = this.Serials[LotDict][PId];
+          let product_qty = 0.00;
+          if (lot['virtual_tracking']){
+            product_qty = 1.00;
+          }
+          else {
+            product_qty = lot['product_qty'];
+          }
+          let item = lot;
+          item['name'] = LotDict;
+          item['product_qty'] = product_qty;
+          this.AvailableLotsForMove.push(item);
         }
-        else {
-          product_qty = lot['product_qty'];
-        }
-        let item = lot;
-        item['name'] = LotDict;
-        item['product_qty'] = product_qty;
-        this.AvailableLotsForMove.push(item);
       }
     }
 
@@ -1216,7 +1195,7 @@ export class MoveListPage implements OnInit {
   ClickQty(Move){
 
     const indice = Move['indice'];
-    const MoveId = Move['Id'];
+    const MoveId = Move['id'];
     this.FillTrackingInfo(Move);
     if (this.Selected !== indice){
       this.Selected = indice;
@@ -1233,13 +1212,20 @@ export class MoveListPage implements OnInit {
 
   async InputQty(Move, subheader = '')
   {
-    if (Move['tracking'] == 'serial') {return}
+    if (Move['tracking'] === 'virtual' || Move['tracking'] === 'serial') {return}
     // Este if me permite llamar desde la vista independientemente del Movieminto
     if (Move['tracking'] === 'lot' && !Move['lot_id']){
       this.stock.presentToast('No hay lote asignado', 'Sin lote');
       return;
     }
-    const Qty = Move['qty_done'];
+    this.scanner.ActiveScanner = true;
+    let Qty = ''
+    if (!this.TypeId['empty_qty_done']){
+      Qty = Move['qty_done'];
+    }
+    else {
+      Qty = Move['product_uom_qty'];
+    }
     subheader = subheader || Move['product_id']['name'];
     const alert = await this.alertController.create({
       header: 'Cantidad en ' + Move['uom_id']['name'] ,
@@ -1254,15 +1240,18 @@ export class MoveListPage implements OnInit {
           role: 'cancel',
           cssClass: 'secondary',
           handler: () => {
+            this.scanner.ActiveScanner = false;
             console.log('Confirm Cancel');
           }
         }, {
           text: 'Aplicar',
           handler: (data: number) => {
+            this.scanner.ActiveScanner = false;
             const QtyDone = Number(data['qty_done']);
             if (Number(QtyDone) >= 0) {
               this.UpdateQties(Move, 0, QtyDone);
               this.stock.play('ok');
+
             }
             else {
               this.stock.play('no_ok');
@@ -1283,6 +1272,15 @@ export class MoveListPage implements OnInit {
   }
   CheckIfNext(Move){
     if (Move['qty_done'] >= Move['product_uom_qty'] && !Move['need_location_dest_id'] && !Move['need_location_id'] && this.TypeId['next_move_on_qty_done']){
+      
+      let Del = this.FilterMoves([Move], false)
+      if (this.stock.IsEmpty(Del)){
+        let indice = Move['indice']
+        this.Moves.splice(indice,1)
+        for (const Move of this.Moves){
+          if (Move['indice'] > indice){Move['indice'] -= 1}
+        }
+      }
       return this.ToMove(0,1);
     }
   }
@@ -1294,7 +1292,7 @@ export class MoveListPage implements OnInit {
 
     let write = false;
     let QtyDone = Move['qty_done'];
-    if (Move['tracking']=== 'lot' && Move['need_confirm_lot_id']){
+    if (Move['tracking'] === 'lot' && Move['need_confirm_lot_id']){
       this.stock.play('error');
       this.stock.presentToast ('Debes primero confirmar el lote', 'Aviso !!');
       return;
@@ -1327,54 +1325,14 @@ export class MoveListPage implements OnInit {
       Move['qty_done'] = QtyDone;
       // Escribo asíncrono la cantidad. No necesito esperar respuesta
       // this.stock.presentToast ('Cant: ' + QtyDone, Move['name'], 27);
-      this.WriteAsyn('stock.move.line', Move['Id'], {qty_done: QtyDone}) ;
+      this.WriteAsyn('stock.move.line', Move['id'], {qty_done: QtyDone}) ;
       return this.CheckIfNext(Move)
     }
 
     return
-    // Si la nueva cantidad es = a la pedida y necesito confirmar destino, entonces lo pido. SOLO SI write = product_uom_qty
-    if (Move['qty_done'] >= Move['product_uom_qty'] && this.TypeId['need_location_dest_id']){
-
-      if (this.Selected !== -1){
-        this.Selected = -1;
-      }
-      this.OpenGetLocation(Move, 'location_dest_id');
-    }
-    else if (write){
-      this.ApplyQtiesFilterx1(Move);
-    }
+   
   }
-  // SELECCIONAR NUEVO LOTE EN UN MOVIEMINTO
-  AssignLot(Move, LotId, unreserve= true){
-    const self = this;
-    let values = {};
-    const MoveId = Move['move_id'];
-    // const values = {domain: Domain, offset: this.Offset, limit: this.Limit, model: Model};
-    self.presentLoading('Cambiando reserva en Odoo y recuperando movimientos...');
-    values = {move_id: MoveId, lot_id: LotId, unreserve: false, offset: 0, limit: this.Moves.length + 1, domain: this.GetInfoDomain()};
-
-    console.log('Conectando a Odoo para actualizar la reserva de un movimiento con values: ' + values);
-    const promise = new Promise( (resolve, reject) => {
-        self.odooCon.execute('stock.move', 'action_assign_apk', values).then((Res: Array<{}>) => {
-          values = {domain: [].push(self.BatchDomain), delete_move: MoveId, load_type: 'upload'};
-          // Si cambio el lote, tengo que refrescar todos los movimientos
-          self.ApplyGetInfo(Res, values);
-          // Cargo unos cuantos movimientos pero todos los lotes y serials
-          // self.UpdateAsyncLots(Res['Moves'], values);
-          // Busco el primer movimineto para este Move_id
-
-          const SmlId = self['Moves'].filter(x => x['move_id'] === MoveId)[0];
-          this.Selected = SmlId['indice'];
-          self.loading.dismiss();
-      })
-      .catch((error) => {
-        self.loading.dismiss();
-        self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
-    });
-    });
-    return promise;
-  }
-
+  
   // ESCRITURA EN SML ASYNCRONA > NO NECESITA RECARGAR
   WriteAsyn(model, ids= [], vals= {}){
     const self = this;
@@ -1405,7 +1363,7 @@ export class MoveListPage implements OnInit {
     }
     if (Move['tracking'] === 'serial'){
       for (const Lot in Move['lot_ids']){
-        if (Lot['Id'] === Serial['Id']) {
+        if (Lot['id'] === Serial['id']) {
           Serial = {};
         }
       }
@@ -1414,7 +1372,7 @@ export class MoveListPage implements OnInit {
         this.SelectedLotsForMoveStr = Move['lot_ids'].map(x => x['name']).join('\n');
         Move['qty_done'] += 1;
         // this.stock.presentToast ('Cant: ' + QtyDone, Move['name'], 25);
-        this.WriteAsyn('stock.move.line', Move['Id'], {qty_done: QtyDone, lot_ids: [[4, Serial['Id']]] }) ;
+        this.WriteAsyn('stock.move.line', Move['id'], {qty_done: QtyDone, lot_ids: [[4, Serial['id']]] }) ;
         this.ApplyQtiesFilterx1(Move['indice']);
       }
     }
@@ -1430,7 +1388,7 @@ export class MoveListPage implements OnInit {
     }
     if (MoveSelected['tracking'] === 'lot') {
       // SI EL LOTE QUE CLICKEO ES EL MISMO DEL MOVIMIENTO. ENTONCES ABROC CANTIDADES
-      if (MoveSelected['lot_id']['Id'] === Lot['Id']){
+      if (MoveSelected['lot_id']['id'] === Lot['id']){
         this.InputQty(MoveSelected);
 
       }
@@ -1443,10 +1401,10 @@ export class MoveListPage implements OnInit {
   */
 
   // SCANNER FUNCITONS
-  reset_scanner() {
+  ResetScanner() {
     this.LastReading = this.ScannerReading;
-    // this.ScannerFooter.ScanReader.controls.scan.setValue('');
-    // this.scanner.reset_scan();
+    this.ScannerFooter.ScanReader.controls.scan.setValue('');
+    this.scanner.ResetScan();
     // this.ScanReader.controls.scan.setValue =''
   }
   UpdateTrackMoveQtyDone(Move = {}, Serial = {}, val = ''){
@@ -1477,17 +1435,18 @@ export class MoveListPage implements OnInit {
     if (Serial === {}){return}
     // Tracking Virtual.
     // Si llego aquí escribo
-    lot_id = {'Id': Serial['Id'], 'name': val}
-    if (Move['tracking'] === 'serial'){
-      const move_lot_id = Move['lot_ids'].filter(x => x['Id'] === lot_id['Id'])
+    lot_id = {'id': Serial['id'], 'name': val}
+    if (Move['tracking'] === 'virtual'){
+      const move_lot_id = Move['lot_ids'].filter(x => x['id'] === lot_id['id'])
       if (!this.ToDelete){
         //Añadir
         if (move_lot_id.length === 0) {
           this.stock.play('ok')
-          Move['lot_ids'].push(move_lot_id[0]);
+          Move['lot_ids'].push(Serial);
           Move['qty_done'] = Move['lot_ids'].length;
-          const values =  {qty_done: Move['qty_done'], lot_ids: [[4, lot_id['Id']]] };
-          this.WriteAsyn('stock.move.line', Move['Id'], values) ;
+          const values =  {qty_done: Move['qty_done'], lot_ids: [[4, Serial['id']]] };
+          this.WriteAsyn('stock.move.line', Move['id'], values);
+          this.CheckIfNext(Move)
           return
         }
         else {
@@ -1497,11 +1456,12 @@ export class MoveListPage implements OnInit {
       else {
         //Eliminar
         if (move_lot_id > 0) {
-          Move['lot_ids'].pop(move_lot_id[0]);
+          Move['lot_ids'].pop(Serial);
           Move['qty_done'] = Move['lot_ids'].length;
           this.stock.play('ok')
-          const values =  {qty_done: Move['qty_done'], lot_ids: [[3, move_lot_id[0]['Id']]] };
-          this.WriteAsyn('stock.move.line', Move['Id'], values) ;
+          const values =  {qty_done: Move['qty_done'], lot_ids: [[3, Serial['id']]] };
+          this.WriteAsyn('stock.move.line', Move['id'], values) ;
+          this.CheckIfNext(Move)
           return
         }
         else {
@@ -1512,35 +1472,39 @@ export class MoveListPage implements OnInit {
     if (Move['tracking'] === 'lot'){
       // Si es un lote, primero tengo que mirar si está puesto
       let move_lot_id = Move['lot_id']
-      if (!move_lot_id['Id']){
+      if (!move_lot_id['id']){
         Move['lot_id'] =lot_id
         Move['qty_done'] = 1;
-        const values = {qty_done: 1, lot_id: Serial['Id']}
+        const values = {qty_done: 1, lot_id: Serial['id']}
         this.stock.play('ok')
-        this.WriteAsyn('stock.move.line', Move['Id'], values) ;
+        this.WriteAsyn('stock.move.line', Move['id'], values) ;
       }
-      else if (move_lot_id['Id'] !== Serial['Id']){
+      else if (move_lot_id['id'] !== Serial['id']){
         //Cambio el número de serie
+
+        delete(this.Lots[Move['lot_id']['name']])
         Move['lot_id'] = lot_id
         Move['qty_done'] = 0;
-        const values = {qty_done: 0, lot_id: Serial['Id']}
+        const values = {qty_done: 0, lot_id: Serial['id']}
         this.stock.play('ok')
-        this.WriteAsyn('stock.move.line', Move['Id'], values) ;
+        this.Lots[Serial['name']] = Move['id'];
+        this.WriteAsyn('stock.move.line', Move['id'], values) ;
       }
-      else if (move_lot_id['Id'] === Serial['Id']){
+      else if (move_lot_id['id'] === Serial['id']){
         //Sumo uno
         Move['qty_done'] = QtyDone;
         const values = {qty_done: QtyDone}
         this.stock.play('ok')
-        this.WriteAsyn('stock.move.line', Move['Id'], values) ;
+        this.WriteAsyn('stock.move.line', Move['id'], values) ;
       }
+      this.CheckIfNext(Move)
       return
 
     }
 
   }
-  ScannedSerial(MoveSelected={}, Serials=[], val){
-    const op = 122;
+
+  ScannedSerial(MoveSelected={}, Serials={}, val){
     let MovesSelected = []
     if (!Serials){
       Serials = this.Serials[val]
@@ -1549,24 +1513,25 @@ export class MoveListPage implements OnInit {
       }
     }
     // Tengo un movimiento seleccionado pero no coincide con el que me llega, solo cambio la seleccion pero NO HAGO NADA
-    if (MoveSelected['indice'] && MoveSelected['indice'] !== this.Selected){
+    if (MoveSelected && MoveSelected['indice'] !== this.Selected){
       this.stock.play('ok1')
       this.Selected = MoveSelected['indice'];
+      this.CheckIfWaitingSerials(MoveSelected)
       return
     }
 
-    // Si no me llega movimiento pero tengo uno seleccionado, lo cojo como ese
-    if (!MoveSelected['Id'] && this.Selected > -1){
+    // Si no me llega movimiento pero tengo uno seleccionado, lo cojo como ese. ESTO NO TINE LOGICA
+    if (!MoveSelected && this.Selected > -1){
       MoveSelected = this.Moves[this.Selected]
     }
 
-    if (!MoveSelected['Id']){
+    
+    if (!MoveSelected){
       const product_ids = Object.keys(this.Serials[val])
       if (product_ids.length > 1){
         return this.stock.presentToast('Varios productos para el número de serie ' + val, 'Error');
       }
-      MovesSelected = this.Moves.filter(x => x['product_id']['Id'] === product_ids[0])
-
+      MovesSelected = this.Moves.filter(x => x['product_id']['id'] === product_ids[0])
       if (MovesSelected.length > 1){
         this.stock.play('ok1')
         this.Selected = MovesSelected[0]['indice'];
@@ -1576,41 +1541,24 @@ export class MoveListPage implements OnInit {
         return ;
       }
     }
-    // Ya llego con un solo movimiento
-    const product_id = MoveSelected['product_id']['Id']
-    let Serial = Serials[product_id]
-    this.ScrollToId(MoveSelected['Id']);
-    this.UpdateTrackMoveQtyDone(MoveSelected, Serial, val);
-    return
-    // Tengo un serial (solo uno) pero no hay movimiento seleccionado >> VISTA LISTA
-    if (!MoveSelected['Id']){
-      let MovesSelected = this.Moves.filter(x => x['product_id']['Id'] === Serial['product_id'])
-      if (!MovesSelected){
-        return this.stock.presentToast('No se ha conseguido definir un movmiento para este lote/serie ' + val, 'Error de usuario');
-      }
-      // Si hay varios, abro el primero pero no hago nada
-      if (MovesSelected.length > 1){
-        MoveSelected = MovesSelected[0];
-        this.Selected = MoveSelected['indice'];
-        return ;
-      }
-      if (MovesSelected.length === 1){
-        MoveSelected = MovesSelected[0];
-      }
-    }
-    if (MoveSelected['Id']){
-      this.ScrollToId(MoveSelected['Id']);
-      // NO abro el mov ...
-      // this.Selected = MoveSelected['indice']
-      this.UpdateTrackMoveQtyDone(MoveSelected, Serial, val);
+      // Si no hay movimiento seleccionado, no puedo pasar de aquí
+    if (!MoveSelected){
+      this.stock.play('error')
       return
     }
+    // Ya llego con un solo movimiento
+   // const product_id = MoveSelected['product_id']['id']
+    //let Serial = Serials[product_id]
+    this.CheckIfWaitingSerials(MoveSelected)
+    this.ScrollToId(MoveSelected['id']);
+    this.UpdateTrackMoveQtyDone(MoveSelected, Serials, val);
+    return
   }
   /*
     // Busco el primer movimiento que tenga ese artículo
     
     
-    MoveSelected = this.Moves.filter(x => x['product_id']['Id'] === Serial['product_id'])
+    MoveSelected = this.Moves.filter(x => x['product_id']['id'] === Serial['product_id'])
     if (MoveSelected)
     // Hay uin movimiento seleccionado, el producto debe ser el mismo para el serie que para el movimiento
     // pero puede haber varios serials
@@ -1623,13 +1571,13 @@ export class MoveListPage implements OnInit {
       
       // Miro si ese serial se ha metido en un sml como lote o como virtual
       // como lote/serie de odoo
-      MoveSelected = this.Moves.filter(x => (Serial_Ids.indexOf(x['lot_id']['Id']) >= 0))
+      MoveSelected = this.Moves.filter(x => (Serial_Ids.indexOf(x['lot_id']['id']) >= 0))
       // COmo virtual
       if (!MoveSelected){
 
         for (let _serial in Serial_Ids){
           for (_lot_id in )
-          MoveSelected = this.Moves.filter(x => (x['lot_ids']['Ids'].indexOf(x['lot_id']['Id']) >= 0))
+          MoveSelected = this.Moves.filter(x => (x['lot_ids']['Ids'].indexOf(x['lot_id']['id']) >= 0))
         }
         MoveSelected = this.Moves.filter(x => (
 
@@ -1640,10 +1588,10 @@ export class MoveListPage implements OnInit {
     }
     if (this.Selected > -1){
       MoveSelected = this.Moves[this.Selected]
-      let product_id = MoveSelected['product_id']['Id']
+      let product_id = MoveSelected['product_id']['id']
       // Busco entre los posible serials uno para ese producto
       Serial = Serials.filter(x => (x['product_id'] === product_id))
-      if (!Serial['Id']){
+      if (!Serial['id']){
         return this.stock.presentToast('El articulo del movimiento no se corresponde con el serie leido ' + val, 'Error de usuario');
       }
       
@@ -1653,9 +1601,9 @@ export class MoveListPage implements OnInit {
     }
 
     
-    if (!Move['Id']){
+    if (!Move['id']){
       // busco el primer movimiento para ese artículo
-      MoveSelected = this.Moves.filter(x => (x['product_id']['Id'] === Serial['product_id']));
+      MoveSelected = this.Moves.filter(x => (x['product_id']['id'] === Serial['product_id']));
       if (MoveSelected){
         this.Selected = MoveSelected[0]['indice'];
         // si hay solo uno vuelvo a llamar a la función con movimiento
@@ -1681,12 +1629,12 @@ export class MoveListPage implements OnInit {
       if (MovesFiltered.length !== 1){
         this.stock.presentToast('Solo puedes tener uno seleccionado');
       }
-      Serial = Serial['lot_ids'].filter(x => (x['product_id'] === MoveFiltered['product_id']['Id']));
+      Serial = Serial['lot_ids'].filter(x => (x['product_id'] === MoveFiltered['product_id']['id']));
       MoveFiltered = MovesFiltered[0];
     }
     else {
       Serial = Serial[0];
-      MovesFiltered = this.Moves.filter(x => (x['product_id']['Id'] === Serial['product_id']));
+      MovesFiltered = this.Moves.filter(x => (x['product_id']['id'] === Serial['product_id']));
       if (MovesFiltered.length !== 1){
         MovesFiltered = MovesFiltered.filter(field => (field['selected'] === true));
       }
@@ -1709,18 +1657,20 @@ export class MoveListPage implements OnInit {
   
   }
   */
-  ScannedLot(Move, Serial, val){
+  ScannedLot(Move, Lot, val){
     // Compruebo si el Movimeinto puedo sumarle 1 si puedo no hago nada más
     // Para ello: El lote tiene que ser el mismo y la cantidad menor que product_uom_qty
-    this.ScrollToId(Move['Id']);
+    
+    this.ScrollToId(Move['id']);
+    this.CheckIfWaitingSerials(Move)
     // Si hay solo un movimiento, y ese serial coincide. Si puedo sumo cantidad 1 y actualizo
-    if (Move['lot_id']['Id'] === Serial['Id']){
+    if (Move['lot_id']['id'] === Lot['id']){
       if ((Move['qty_done'] + 1) <= Move['product_uom_qty'] || this.TypeId['allow_overprocess']){
         this.stock.play('ok')
         const QtyDone = Move['qty_done'] + 1;
         Move['qty_done'] = QtyDone;
         // this.stock.presentToast ('Cant: ' + QtyDone, Move['name'], 27);
-        this.WriteAsyn('stock.move.line', Move['Id'], {qty_done: QtyDone}) ;
+        this.WriteAsyn('stock.move.line', Move['id'], {qty_done: QtyDone}) ;
         if (Move['qty_done'] === Move['product_uom_qty'] && this.TypeId['need_location_dest_id']){
           // return this.OpenGetBoxId(Move);
         }
@@ -1731,18 +1681,21 @@ export class MoveListPage implements OnInit {
       }
     }
     // Si ya está seleccionado y es un lote disponible para ese movimiento, entonces lo cambio
-    if (Move['indice'] === this.Selected){
-      return this.AssignLot(Move, Serial['Id'], true);
+    else {
+      // return this.AssignLot(Move, Lot['id'], true);
     }
     this.ClickQty(Move);
   }
 
   // ESCANEO UN BARCODES
+
+
   ScannedBarcode(val){
     // Busco el primer movimiento para este artículo y lo ordeno por qty_done, si hay más de uno no sumo cantidades, solo lo selecciono
     
     // tslint:disable-next-line:max-line-length
     if (this.Selected >-1){
+      this.CheckIfWaitingSerials(this.Moves[this.Selected])
       // Ya hay uno seleccionado 
       if (this.Moves[this.Selected]['product_id']['barcode'] !== val) {
         // Pero no coincide con el leido >> ERROR
@@ -1750,7 +1703,7 @@ export class MoveListPage implements OnInit {
       }
       // Coincide, entonces puedo sumar uno si no tiene tracking
       if (this.Moves[this.Selected]['tracking'] === 'none'){
-        this.ChangeQty && this.UpdateQties(this.Moves[this.Selected], 1);
+        this.Moves[this.Selected]['ChangeQty'] && this.UpdateQties(this.Moves[this.Selected], 1);
       }
       // NO hago nada: Estamos leyendo un artículko con tracking dentro de un movimeinto. RETURN
       return
@@ -1762,29 +1715,30 @@ export class MoveListPage implements OnInit {
       // No hay ningún movimiento poara esta lectura
       return this.stock.presentToast('No se ha encuentrado un artículo para el código ' + val, 'ERROR');
     }
-    const MoveSelected = MovesSelected[0];
     if (num > 1){
       // Hay más de 1 movimiento para este artículo, por lo tanto la selección debe de ser manual
       // Quito la selección y hago scroll al movmiento
       this.Selected = -1;
-      this.ScrollToId(MovesSelected[0]['Id']);
+      this.ScrollToId(MovesSelected[0]['id']);
       this.stock.play('ok')
       return;
     }
     
     // Selecciono al elemento ....
-    this.Selected = MoveSelected['indice'];
+    this.Selected = MovesSelected[0]['indice'];
     // Hago scroll al elemento ....
-    this.ScrollToId(MoveSelected['Id']);
-    // Vuelvo a llamar a la función pero con la selección hecha, y debería entrar por la promera opción
+    this.ScrollToId(MovesSelected[0]['id']);
+    // Vuelvo a llamar a la función pero con la selección hecha, y debería entrar por la prImera opción ???
+    // SI NO VUELVO A LLAMAR NO SUMA UNO, SI VUELVO A LLAMAR SUMARÁ UNO
     return this.ScannedBarcode(val)
   }
   
   // Escaneo Ubicación
-  ScannedLocation(Move, location = 'location_id', val){
+  ScannedLocation(Move, location = 'location_id', Location_Id){
+    let val = Location_Id['name']
     // Tengo que entrar con un movimiento
-    if (!Move['Id']){
-      let MoveSelected = this.Moves.filter(x => (x['location_id']['Id'] === Location['Id'] || x['location_dest_id']['Id'] === Location['Id']));
+    if (!Move['id']){
+      let MoveSelected = this.Moves.filter(x => (x[location]['id'] === Location_Id['id']));
       if (MoveSelected){
         this.Selected = MoveSelected[0]['indice'];
         this.stock.play('ok');
@@ -1799,8 +1753,8 @@ export class MoveListPage implements OnInit {
       return this.stock.presentToast('Se ha entrado en ScannedLocation sin un código leido', 'Error de código');
     }
     // y además la ubicación en las posibles
-    let Location = this.Locations[val];
-    if (!Location['Id']){
+    let Loc = this.stock.Locations[val];
+    if (!Loc['id']){
       this.stock.play('error');
       this.stock.presentToast('No se ha encontrado ninguna ubicación para el código ' + val, 'Error de lectura');
       return;
@@ -1811,26 +1765,26 @@ export class MoveListPage implements OnInit {
     if (!this.TypeId[AllowChange] && !this.TypeId[LocationNeed]){return; }
     
     // leo la ubicación del movimiento >> COnfirmo locationneed
-    if (Location && Move[location]['Id'] === Location['Id'] && Move[LocationNeed]){
+    if (Loc && Move[location]['id'] === Loc['id'] && Move[LocationNeed]){
       Move[LocationNeed] = false;
       let values = {}
       
       this.CheckIfWaitingSerials(Move)
       values[LocationNeed] = false
       values['need_loc_before_qty'] = Move['need_loc_before_qty']
-      this.WriteAsyn('stock.move.line', Move['Id'], values);
+      this.WriteAsyn('stock.move.line', Move['id'], values);
       this.stock.play('ok');
       return this.CheckIfNext(Move)
     }
-    else if (AllowChange && Location){
+    else if (AllowChange && Loc){
       // Permito cambiar. => Cambio
       // Reseteo la lectura y cambio la ubicación. Necesita una 2ª lectura para modificarlo
       const values = {}
       values[LocationNeed] = this.TypeId[LocationNeed]
-      values[location] = this.Locations[val]['Id']
-      this.WriteAsyn('stock.move.line', Move['Id'], values);
+      values[location] = this.stock.Locations[val]['id']
+      this.WriteAsyn('stock.move.line', Move['id'], values);
       Move[LocationNeed] = this.TypeId[LocationNeed]
-      Move[location]= this.Locations[val]
+      Move[location]= this.stock.Locations[val]
       this.stock.play('ok');
     }  
       // No permito cambiar. No hago nada y tiro error
@@ -1840,7 +1794,54 @@ export class MoveListPage implements OnInit {
     
 
   }
+  CheckScannerForSelect(val){
+    const Barcode = this.Barcodes[val] ;
+    let MovesSelected = []
+    if (Barcode){
+      console.log ('Has leido un codigo de barras')
+      MovesSelected = this.Moves.filter(field => (field['product_id']['barcode'] === val));
+      if (this.stock.IsEmpty(MovesSelected)){
+        return this.stock.presentToast('No se ha encuentrado el código ' + val + ' en el albaran', 'ERROR');
+      }
+      else {
+        // Hay 1 o más movimientos
+        // Quito la selección y hago scroll al movmiento
+        this.Selected = MovesSelected[0]['indice']
+        this.ScrollToId(MovesSelected[0]['id']);
+        this.stock.play('ok')
+        return;
+      }
+    }
+    let Loc = false
+    let LocationId = 0
+    LocationId = this.stock.LocNames[val];
+    if (LocationId){
+      Loc = this.stock.GetObjectById(this.stock.Locations, LocationId)
+    }
+    if (!Loc){
+      // Caso 2. Ubicación, pero solo si hay un movimiento cargado
+      LocationId = this.stock.LocBarcodes[val]
+      if (LocationId){
+        Loc = this.stock.GetObjectById(this.stock.Locations, LocationId)
+      }
+    }
+    if (Loc){
+      const default_location = this.TypeId['default_location']
+      MovesSelected = this.Moves.filter(x => x[default_location]['id'] == Loc['id'])
+      if (this.stock.IsEmpty(MovesSelected)){
+        return this.stock.presentToast('No se ha encuentrado el código ' + val + ' en el albaran', 'ERROR');
+      }
+      else {
+        // Hay 1 o más movimientos
+        // Quito la selección y hago scroll al movmiento
+        this.Selected = MovesSelected[0]['indice']
+        this.ScrollToId(MovesSelected[0]['id']);
+        this.stock.play('ok')
+        return;
+      }
+    }
 
+  }
   CheckScanner(val) {
 
     // AQUI DETECTO LO QUE SE HA LEIDO
@@ -1849,93 +1850,92 @@ export class MoveListPage implements OnInit {
     // LOTE >> DETECTO ARTICULO + LOTE
     // SERIAL >> DETECTO ARTICULO + LOTE
     // LOCATION >> DETECTO UBICACION Y ACTUO SI PROCEDE
-
-    console.log('ANALIZO + ' + val);
+    
+    console.log('CHECK SCANNER: ' + val + '. Movimiento Seleccionado ' + this.Selected );
     if (val === ''){
-      this.reset_scanner();
+      this.ResetScanner();
     }
     // Primero buscon en el formulario si coincide con algo y despues decido que hacer
     let MoveFiltered = {};
     let MovesFiltered = [];
-    let MoveSelected = {};
-    if (this.Selected > -1) {
-      MoveSelected = this.Moves[this.Selected];
+
+    //Si no tengo selección, la lectura debe seleccionar
+    if (this.Selected == -1) {
+      return this.CheckScannerForSelect(val)
+    }
+    let MoveSelected = this.Moves[this.Selected];
+
+    // Si leo 2 veces, es un serial y leo lo mismo 2 veces abro multicode
+    if (this.LastSerial == val && MoveSelected['tracking'] == 'virtual'){
+        // abro multicode
+        return this.OpenVirtualBarcodeMultiline(MoveSelected)
     }
 
-    let LocationName = this.StockLocation[val];
-    if (LocationName){
-      console.log ('Has leido una ubicación por el nombre')
-      return this.CheckScanner(LocationName)
-    }
-    // Caso 2. Ubicación, pero solo si hay un movimiento cargado
-    let Location = this.Locations[val];
-    if (Location){
-      console.log ('Has leido una ubicación')
-    }
-    // Si escaneo una ubicación, no tengo que ir al movimiento
-    if (this.Selected > -1 && Location){
-      // Solo puedo leer ubicación si estoy con uno seleccionado
-      // Si necesita MoveLocation   
-      if (MoveSelected['need_location_id'] && MoveSelected['need_location_dest_id']){
-        return this.stock.presentToast('Debes indicar manualmente la ubicación que estás leyendo (origen o destino)', 'ERROR');
-      }
-      else if (MoveSelected['need_location_id']) {
-        return this.ScannedLocation(MoveSelected, 'location_id', val);
-      }
-      else if (MoveSelected['need_location_dest_id']){
-        return this.ScannedLocation(MoveSelected, 'location_dest_id', val);
-      }
-      else {
-        return this.stock.presentToast('Debes indicar la ubicación que estás leyendo', 'ERROR');
-      }
-    }
-    
-    // Caso 1. EAN 13
-    const Barcode = this.Barcodes[val] ;
-    if (Barcode){
-      console.log ('Has leido un codigo de barras')
-      // Escaneo un artículo
+
+    // Si lo que leo coincide con algo del movimiento seleccionado
+    let Object
+    Object = MoveSelected['product_id']
+    if (Object && Object['barcode'] == val){
       return this.ScannedBarcode(val);
     }
-    // Caso 2. Es un lote/serie de Odoo.
-    // Lots Lista de stock_move_line.lot_id con un id a el movimiento
-    const Lot = this.Lots[val];
-    if (Lot){
-      console.log ('Has leido un lote o serie de odoo')
-      // tslint:disable-next-line:max-line-length
-      if (this.Selected > -1) {
-        const lot = this.Serials[val][MoveSelected['product_id']['Id']]
-        // Si hay un movimiento seleccionado, es del mismo artículo pero no corresponde el lote:
-        if (lot && MoveSelected['lot_id']['name'] === val){
-          return this.ScannedLot(MoveSelected, lot, val);
-        }
-        this.stock.presentToast('Lote: ' + val + ' no válido para el movimiento seleccionado');
-        return;
-      }
-      else {
-        // Si no hay uno seleccionado
-        const SelectedMove = this.Moves.filter(x => x['Id'] == Lot['move_id'][0])
-        if (SelectedMove.length == 1){
-          this.Selected = SelectedMove[0]['indice']
-          return // this.CheckScanner(val)
-        }
-        return this.stock.presentToast('Lote: ' + val + ' . Información insuficiente');
-        MovesFiltered = this.Moves.filter(field => (field['lot_id']['name'] === val && field['product_id']['Id'] === this.Serials[val]['product_id']) );
-        // Solo debería de tener 1, si hay 2 o más debería de venir con el MoveSelected a True
-        if (MovesFiltered.length > 1){
-          MovesFiltered = MovesFiltered.filter(field => (field['selected'] === true));
-        }
-        const MFL = MovesFiltered.length;
-        if (MFL !== 1){
-          this.stock.presentToast('Lote: ' + val + ' Se han encontrado ' + MFL + ' opciones.');
-          return;
-        }
-        return this.ScannedLot(MovesFiltered[0], this.Serials[val], val);
+    Object = MoveSelected['lot_id']
+    if (Object['name'] === val){
+      return this.ScannedLot(MoveSelected, Object, val);
+    }
+    const product_id = MoveSelected['product_id']['id']
+    // Miro si una ubicación. Pudo ser por barcode o por nombre
+    let Loc = false
+    let LocationId = 0
+    this.LastSerial = ''
+    LocationId = this.stock.LocNames[val];
+    if (LocationId){
+      Loc = this.stock.GetObjectById(this.stock.Locations, LocationId)
+    }
+    if (!Loc){
+      // Caso 2. Ubicación, pero solo si hay un movimiento cargado
+      LocationId = this.stock.LocBarcodes[val]
+      if (LocationId){
+        Loc = this.stock.GetObjectById(this.stock.Locations, LocationId)
       }
     }
+    if (Loc){
+        console.log ('Has leido una ubicación')
+        // Solo puedo leer ubicación si estoy con uno seleccionado
+        // Si necesita MoveLocation   
+        if (MoveSelected['need_location_id'] && MoveSelected['need_location_dest_id']){
+          return this.stock.presentToast('Debes indicar manualmente la ubicación que estás leyendo (origen o destino)', 'ERROR');
+        }
+        else if (MoveSelected['need_location_id']) {
+          return this.ScannedLocation(MoveSelected, 'location_id', Loc);
+        }
+        else if (MoveSelected['need_location_dest_id']){
+          return this.ScannedLocation(MoveSelected, 'location_dest_id', Loc);
+        }
+        else {
+          return this.stock.presentToast('Debes indicar la ubicación que estás leyendo', 'ERROR');
+        }
+    }
+    // Si escaneo una ubicación, no tengo que ir al movimiento
+    
+    // Caso 1. EAN 13, pero no es del movimioento seleccionado
+    const Barcode = this.Barcodes[val] ;
+    if (Barcode){
+      //Quito la selección y vuelvo a entrar para que seleccione uno nuevo
+      console.log ('Has leido un codigo de barras')
+      return this.CheckScannerForSelect(val)
+    }
+
+    const Lot = this.Lots[val];
+    if (Lot){
+      console.log ('Has leido un lote o serie de odoo, que no es el del movimiento')
+      return this.ScannedLot(MoveSelected, Lot, val);
+      }
+      //this.stock.presentToast('Lote: ' + val + ' no válido para el movimiento seleccionado');
+      // return;
 
     // Caso 3 Serial/Lote
-    let Serial = this.Serials[val];
+
+    let Serial = this.Serials[val] && this.Serials[val][product_id];
     if (Serial){
       this.ScannedSerial(MoveSelected, Serial, val);
       return;
@@ -1949,12 +1949,12 @@ export class MoveListPage implements OnInit {
         if (MovesFiltered.length !== 1){
           this.stock.presentToast('Solo puedes tener uno seleccionado');
         }
-        Serial = Serial['lot_ids'].filter(x => (x['product_id'] === MoveFiltered['product_id']['Id']));
+        Serial = Serial['lot_ids'].filter(x => (x['product_id'] === MoveFiltered['product_id']['id']));
         MoveFiltered = MovesFiltered[0];
       }
       else {
         Serial = Serial[0];
-        MovesFiltered = this.Moves.filter(x => (x['product_id']['Id'] === Serial['product_id']));
+        MovesFiltered = this.Moves.filter(x => (x['product_id']['id'] === Serial['product_id']));
         if (MovesFiltered.length !== 1){
           MovesFiltered = MovesFiltered.filter(field => (field['selected'] === true));
         }
@@ -1979,19 +1979,82 @@ export class MoveListPage implements OnInit {
    
     // Busco
     // console.log('Process Reading: para checquear ' + val);
-    // this.reset_scanner();
+    // this.ResetScanner();
     //Caso 5
     // Permite crear lotes/series, hay movimiento seleccionado y es de tipo lote yo tracking
     //Entonces creo el lote y lo añado a la lista de disponibles.
-    if (this.TypeId['use_create_lots'] && !MoveSelected['need_location_id'] && MoveSelected['tracking'] === 'lot') {
-      return this.LotToMove(val, MoveSelected)
+    if (this.TypeId['use_create_lots'] && !MoveSelected['need_location_id'] && (MoveSelected['tracking'] != 'none')) {
+      return this.CreateNewMoveLines(MoveSelected, val)
     }
-    if (this.TypeId['use_create_lots'] && !MoveSelected['need_location_id'] && MoveSelected['tracking'] === 'serial') {
-      return this.LotToMove(val, MoveSelected)
+    if (MoveSelected['tracking'] != 'none' && !this.TypeId['use_create_lots']){
+      this.stock.presentToast("Código " + val + " no válido", "Aviso !!!")  
     }
-   
     this.stock.play('no_ok');
   }
+
+
+  async CreateNewMoveLines(Move, LotName, confirm=false){
+    // const values = {'id': Move['id'], 'lot_name': LotName}
+    if (!confirm && (Move['tracking'] == 'serial' || Move['tracking'] == 'lot')){
+      const alert = await this.alertController.create({
+        header:LotName,
+        message: "Se añadirá al albarán",
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            cssClass: 'secondary',
+            handler: (blah) => {
+              console.log('Confirm Cancel: blah');
+            },
+          },
+          {
+            text: 'Aceptar',
+            handler: ()=> {
+              
+              this.CreateNewMoveLines(Move, LotName, true)}
+          },
+        ],
+      });
+      await alert.present();
+      return;
+    }
+    this.stock.presentToast("Creando un nuevo lote/serie")
+    this.PrevId = Move['id'];
+    const values = {
+      'product_id': Move['product_id']['id'], 
+      'id': Move['id'],
+      'lot_name': LotName}
+    this.presentLoading('Generando nuevo lote/movimiento');
+    this.odooCon.execute('stock.move.line', 'action_assign_apk', values).then((Res:Array<{}>) => {
+        // Move.qty_done = Res[0]['qty_done']
+        // Move.lot_id = Res[0]['lot_id']
+        for (let ResMove of Res){
+          if (ResMove['id'] !== Move['id']){
+            // Si hay un nuevo movimiento
+            this.AllMoves.push(ResMove)
+            this.Moves = this.FilterMoves(this.AllMoves, true)
+            this.UpdateSelectedFromId( ResMove['id'])
+          }
+          else {
+            Move.lot_id = ResMove['lot_id']
+            Move['product_uom_qty'] =  ResMove['product_uom_qty']
+          }
+        }
+        this.loading.dismiss();
+      })
+      .catch((error) => {
+        this.loading.dismiss();
+        this.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+      });
+    return;
+  
+
+
+
+
+  }
+
 
 
   KeyOrder(val){
@@ -2000,7 +2063,7 @@ export class MoveListPage implements OnInit {
     if (val == 'ArrowUp' || val == 'ArrowDown'){
       if (this.Selected > -1) {
         const Move = this.Moves[this.Selected];
-        if (Move['tracking'] == 'none'){
+        if (Move['tracking'] == 'none' || (Move['lot_id'] && Move['tracking'] == 'lot')){
           const IncQty = val == 'ArrowUp' ? 1 :-1;
           return this.UpdateQties(Move, IncQty, 0)
         }
@@ -2025,33 +2088,73 @@ export class MoveListPage implements OnInit {
     // }
 
   }
+
+  async OpenVirtualBarcodeMultiline(Move){
+    this.scanner.ActiveScanner = true;
+    const self = this;
+    const indice = Move['indice']
+    const modal = await this.modalController.create({
+      component: BarcodeMultilinePage,
+      cssClass: 'barcode-modal-css',
+      componentProps: {
+                        ProductId: Move['product_id']['id'],
+                        LName: Move['product_id']['name'],
+                        L2Name: Move['qty_done'] + "  Nº de serie",
+                        PName: "",
+                      },
+    });
+    modal.onDidDismiss().then((detail: OverlayEventDetail) => {
+      self.scanner.ActiveScanner = false;
+      if (detail['data'] == -1){
+        return self.loading.dismiss();
+      }
+      if (detail['data'] && detail['data'].length > 0) {
+        const values = {id: Move['id'],
+                        domain: self.GetInfoDomain(),
+                        serial_names: detail['data']};
+        this.presentLoading('Cargando números de serie ...');
+        this.odooCon.execute('stock.move.line', 'load_multi_serials', values).then((data: Array<{}>) => {
+          self.UpdateQTYAndLots(indice, data[0]);
+          self.loading.dismiss();
+        })
+        .catch((error) => {
+          self.loading.dismiss();
+          self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+        });
+      }
+    });
+    await modal.present();
+  }
+
+
   async OpenBarcodeMultiline(Move, indice){
     this.scanner.ActiveScanner = true;
-    this.stock.SetModelInfo('App', 'ActivePage', '');
     const self = this;
     const modal = await this.modalController.create({
       component: BarcodeMultilinePage,
       cssClass: 'barcode-modal-css',
       componentProps: {
-                        ProductId: Move['product_id']['Id'],
+                        ProductId: Move['product_id']['id'],
                         LName: Move['product_id']['name'],
                         PName: Move['product_uom_qty'] + ' ' + Move['uom_id']['name']
                       },
     });
     modal.onDidDismiss().then((detail: OverlayEventDetail) => {
-      self.stock.SetModelInfo('App', 'ActivePage', 'MoveList');
       self.scanner.ActiveScanner = false;
+      if (detail['data'] == -1){
+        return self.loading.dismiss();
+      }
       if (detail['data'] && detail['data'].length > 0) {
         const values = {Index: indice,
-                        Id: Move['Id'],
+                        id: Move['id'],
                         domain: self.GetInfoDomain(),
                         serial_names: detail['data']};
         this.presentLoading('Cargando números de serie ...');
         this.odooCon.execute('stock.move.line', 'load_multi_serials', values).then((data: Array<{}>) => {
-          if (Move.tracking === 'serial' || data.length === 1){
+          if (Move.tracking === 'virtual' || data.length === 1){
             self.UpdateQTYAndLots(indice, data[0]);
           }
-          else if (Move.tracking === 'lot'){
+          else if (Move.tracking === 'lot' || Move.tracking === 'serial'){
             self.Moves.splice(indice, 1);
             for (const item of data){
               self.Moves.push(item);
@@ -2074,8 +2177,8 @@ export class MoveListPage implements OnInit {
 
   }
   CreateNewLot(Move, LotName, AddQty=true){
-    let vals = {product_id: Move['product_id']['Id'], 
-                alternative_tracking: Move['tracking'] === 'serial',
+    let vals = {product_id: Move['product_id']['id'], 
+                alternative_tracking: Move['tracking'] === 'virtual',
                 name: LotName,
                 ref: LotName}
     
@@ -2118,31 +2221,14 @@ export class MoveListPage implements OnInit {
     await alert.present();
   }
   AddNewSml(values = {}){
-    this.presentLoading('Generando nuevo movimiento ...');
-    const self = this;
-    let Indice = this.Selected;
-    const SmlId = this.Moves[Indice]['Id'];
-    const MoveId = this.Moves[Indice]['MoveId'];
-    values['move_id'] = MoveId;
-    values['id'] = SmlId;
-
-    this.odooCon.execute('stock.move.line', 'add_move_line', values).then((data: Array<{}>) => {
-      const s1 = self.Moves.slice(0, Indice);
-      const s2 = data;
-      const s3 = self.Moves.slice(Indice);
-      s2[0]['indice'] = Indice;
-      const s0 = s1.concat(s2);
-      for (const s of s3){
-        Indice += 1;
-        s['indice'] = Indice;
-      }
-      self.Moves = s0.concat(s3);
-      self.loading.dismiss();
-    })
-    .catch((error) => {
-      self.loading.dismiss();
-      self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
-    });
-
+    const MoveSelected = this.Moves[this.Selected]
+    if (!MoveSelected['qty_done']){
+      return this.stock.presentToast("No puedes duplicar una línea a 0", "Aviso")
+    }
+    return this.CreateNewMoveLines(MoveSelected, '', true)
+  }
+  allow_touch(){
+    this.AllowTouch = true
+    this.TouchTimeout = setTimeout(()=>{this.AllowTouch = false; },10000);
   }
 }

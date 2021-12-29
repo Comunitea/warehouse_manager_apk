@@ -6,11 +6,12 @@ import { ScannerService } from '../../services/scanner.service';
 import { StockFunctionsService } from '../../services/stock-functions.service';
 import { OdooService } from '../../services/odoo.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
+import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
+import { OverlayEventDetail } from '@ionic/core';
 
-
-type Product = {'id': number, 'default_code': string, 'name': string} ;
+type Product = {'id': number, 'default_code': string, 'name': string, 'display_name': string} ;
 type Location = {'id': number, 'barcode': string, 'name': string, 'display_name': string, 'usage': string};
-type Lot = {'id': number, 'name': string, 'location_id': Location, 'virtual_tracking': boolean};
+type Lot = {'id': number, 'name': string, 'real_location_id': Location, 'location_id': Location, 'virtual_tracking': boolean};
 
 type Line = { 'id': number,
               'product_id': Product,
@@ -20,6 +21,7 @@ type Line = { 'id': number,
               'to_delete': boolean,
               'theoretical_qty': number,
               'product_qty': number,
+              'acl': boolean,
               'product_uom_id': {'id': number, 'name': string}
             }
 type Inventory = {'id': number, 
@@ -48,9 +50,10 @@ export class InventoryPage implements OnInit {
   SelectedLine: {};
   MoveSelectedId: number;
   MoveSelected: Line;
+  Indice: number;
+  InventoryProductId: Product // Producto del inventario (si existe)
+  InventoryLocationId: Location // Ubicación del inventario (Existe)
 
-  inventory_type: string
-  inventory_type_str = {'qty': 'Cantidad', 'serial': 'Nº de Serie'}; // qty o serial / Cantidad o Nº Serie
   product_id: Product; // id de producto seleccionado
   location_id: Location; // id de producto seleccionado
   product_ids: Array<Product>
@@ -72,8 +75,15 @@ export class InventoryPage implements OnInit {
   Limit: number;
   WaitingNewLot: boolean;
 
+  FilterAcl : boolean; // Si está marcado filtramos por pendientes
+  Filter0 : boolean // Si está marcado, filteramos por no existencias
+
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
+    if (this.scanner.ActiveScanner){
+      console.log("Escaner Desactivado")
+    }
+    else {console.log("Escaner Activado")}
     if (!this.scanner.ActiveScanner && this.stock.GetModelInfo('App', 'ActivePage') === 'Inventory' && event.which !== 0) {
         console.log('ENVIANDO TECLAS A ' + this.stock.GetModelInfo('App', 'ActivePage'));
         this.scanner.key_press(event);
@@ -90,6 +100,7 @@ export class InventoryPage implements OnInit {
     public loadingController: LoadingController,
     public alertController: AlertController,
     public actionSheetCtrl: ActionSheetController,
+    private modalController: ModalController,
     public stock: StockFunctionsService,) { }
   
     async presentLoading(Message= '...') {
@@ -135,16 +146,63 @@ export class InventoryPage implements OnInit {
   CheckScanner(val) {
     console.log("Escaneo " + val)
     // NO HAY UN MOVIMIENTO SELECCIONADO
+    
+
     if (this.MoveSelectedId === 0){
       // Busco un movimiento y lo selecciono. NO hago nada mas
-      const MoveSelected = this.line_ids.filter(x=> (this.type==='product' && x['prod_lot_id']['name'] === val || x['product_id']['default_code'] === val) || x['location_id']['barcode'] === val) 
+
+      const MoveSelected = this.inventory['line_ids'].filter(x=> (x['prod_lot_id']['name'] === val || x['product_id']['default_code'] === val) || x['location_id']['barcode'] === val) 
+      if (this.stock.IsFalse(MoveSelected)){
+        //nO HAGO NADA
+        return
+      }
+      if (MoveSelected.length != this.inventory['line_ids'].length){
+        this.line_ids = MoveSelected
+      }
       if (MoveSelected.length === 1){
         this.MoveSelectedId = MoveSelected[0]['id']
         this.MoveSelected = MoveSelected[0]
+        this.InventoryLocationId = this.MoveSelected['location_id']
+        this.InventoryProductId = this.MoveSelected['product_id']
+        // this.ApplyFilterMoves()
         return
+      }
+      else {
+        // Tengo que saber si he leido un lote, una ubicación o un artículo
+        // Es lote?
+        const lot = MoveSelected.filter(x=>x['prod_lot_id']['name'] === val)
+        if (!this.stock.IsFalse(lot)){
+          this.InventoryLocationId = null
+          this.InventoryProductId = null
+          return
+
+          // No hago nada, porque no puedo saber si hay varios articulos/ubicaciones
+        }
+        else {
+          // Si lo que leo es una ubicación, filtro por ubicación
+          const loc = MoveSelected.filter(x=>x['location_id']['barcode'] === val)
+          if (!this.stock.IsFalse(loc)){
+            this.InventoryLocationId = loc[0]['location_id']
+            this.InventoryProductId = null
+            this.ApplyFilterMoves()
+          }
+          else {
+            const prod = MoveSelected.filter(x=>x['product_id']['default_code'] === val)
+            if (!this.stock.IsFalse(prod)){
+              this.InventoryLocationId = null
+              this.InventoryProductId = prod[0]['product_id']
+              this.ApplyFilterMoves()
+          }
+
+          }
+          return
+        }
+        
+
       }
       this.MoveSelectedId = 0
       this.MoveSelected = null
+      this.ApplyFilterMoves()
       return
     }  
     const LeoProd = this.MoveSelected['product_id']['default_code'] === val
@@ -173,7 +231,12 @@ export class InventoryPage implements OnInit {
     
     // Espero Lote si, 
      
-    // Si espero lote 
+    // Si espero lote
+    if (this.MoveSelectedId != 0 && (TrackLot || TrackSerial)){
+      if (this.MoveSelected['prod_lot_id']['name'] !== val){
+        return this.stock.presentToast("El lote/serie " + val + " no es válido", "Error de lote/serie")
+      }
+    }
     if (this.WaitingNewLot && TrackVirtual){
       return this.CreateVirtual(this.MoveSelected, val)
     }
@@ -183,18 +246,37 @@ export class InventoryPage implements OnInit {
     if (this.WaitingNewLot && TrackSerial){
       return this.CreateSerial(this.MoveSelected, val)
     }
+    const MoveSelected = this.inventory['line_ids'].filter(x=> (x['prod_lot_id']['name'] === val || x['product_id']['default_code'] === val) || x['location_id']['barcode'] === val) 
+    if (MoveSelected){
+      this.MoveSelectedId = 0
+      this.MoveSelected = null
+      return this.CheckScanner(val)
+    }
   }
   async CreateSerial(MoveSelected, LotName){}
   async CreateVirtual(MoveSelected, LotName){}
 
+  CheckCreateLot(MoveSelected, Lotname){
+
+    const MoveLot = MoveSelected['prod_lot_id']
+    if (this.stock.IsFalse(MoveLot)){
+      return this.CreateLot(MoveSelected, Lotname)
+    }
+    if (MoveLot['name'] == Lotname){
+      return this.ChangeQty(MoveSelected, 1)
+    }
+    else if (!MoveSelected['lot_id']['name'] != Lotname){
+      return this.stock.Aviso('Error', 'Esta línea ya tiene el lote: ' + MoveLot['name'] + ". No puedes cambiarlo")
+    }
+
+  }
   async CreateLot(MoveSelected, LotName){
     
-    let OdooModel = this.inventory_type === 'qty' ? "stock.inventory.line" : "stock.inventory.tracking"
+    let OdooModel = "stock.inventory.line"
     const values = {
       product_id: MoveSelected['product_id']['id'],
       line_id: MoveSelected['id'], 
       lot_name: LotName, model:OdooModel}
-
     const self = this;
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(OdooModel, 'create_apk_prod_lot', values).then((Res: {}) => {
@@ -210,7 +292,7 @@ export class InventoryPage implements OnInit {
     return promise;
   }
   async DeleteLine(Move){
-    let OdooModel = this.inventory_type === 'qty' ? "stock.inventory.line" : "stock.inventory.tracking"
+    let OdooModel = "stock.inventory.line"
     const values = {id: Move['id'], model:OdooModel}
     const self = this;
     // this.presentLoading('Actualizando cantidades ...')
@@ -230,7 +312,12 @@ export class InventoryPage implements OnInit {
     return promise;
   }
   async ChangeQty(Move: Line, inc, qty=0){
-    let OdooModel = this.inventory_type === 'qty' ? "stock.inventory.line" : "stock.inventory.tracking"
+    
+    if (Move['tracking'] == 'virtual' && qty== 0){
+      const DeleteOld = inc == -1;
+      return this.OpenBarcodeMultiline(Move, DeleteOld)
+    }
+    let OdooModel = "stock.inventory.line"
     const values = {id: Move['id'], inc: inc, qty: qty, model:OdooModel}
     if (qty === 0) {
       Move['product_qty'] += inc
@@ -241,9 +328,9 @@ export class InventoryPage implements OnInit {
     const self = this;
     // this.presentLoading('Actualizando cantidades ...')
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.inventory', 'write_apk_qties', values).then((Res: Line) => {
+      self.odooCon.execute('stock.inventory.line', 'write_apk_qties', values).then((Res: Line) => {
         Move = Res; 
-        self.ApplyFilterMoves()
+        // self.ApplyFilterMoves()
         // self.loading.dismiss();
       })
       .catch((error) => {
@@ -264,11 +351,10 @@ export class InventoryPage implements OnInit {
   }
 
   ngOnInit() {
-    this.product_id = {'id': 0, 'default_code': 'Todos', 'name': ""};
+    this.product_id = {'id': 0, 'default_code': 'Todos', 'display_name': "Todos", 'name': ""};
     this.location_id = {'id': 0, 'barcode': "Stock", 'name': 'Stock', 'display_name': 'Stock', 'usage': 'view'}
-    this.inventory_type = 'qty';
     // this.location_id = {'id': 0, 'barcode': '', 'name': "Stock"}
-    this.product_ids = [{'id': 0, 'default_code': "Todos", 'name': ''}]
+    this.product_ids = [this.product_id]
     this.location_ids = [this.location_id]
     this.WaitingNewLot = false;
     this.inventory = {'id': 0, 
@@ -281,51 +367,97 @@ export class InventoryPage implements OnInit {
     this.Selected = -1
     this.LastMove = {}
   }
-  AlternateSelected(id){
+   // ToMove
+
+  ToMove(Pos, Inc){
+    this.stock.play("click")
+    let indice = this.Indice
+    const max =  this.line_ids.length - 1;
+    if (Pos === 1){
+      indice = 0
+    }
+    else if (Pos === -1){
+      indice = max;
+      
+    }
+    else if (Inc === 1){
+      if (indice + 1 > max){indice = 0}
+      else {indice +=1}
+    }
+    else if (Inc === -1){
+      if (indice - 1 < 0){indice = max}
+      else {indice -= 1}
+    }
+    this.line_ids[indice]['acl'] = true
+    this.MoveSelected = this.line_ids[indice];
+    this.MoveSelectedId = this.line_ids[indice]['id'];
+    this.Indice = indice
+  }
+
+  AlternateSelected(id,indice=0){
+    this.stock.play("click")
     this.MoveSelectedId = this.MoveSelectedId === id ? 0 : id;
     if (this.MoveSelectedId === 0){
       this.MoveSelected = null
     }
     else {
       this.MoveSelected = this.line_ids.filter(x=> x['id'] === this.MoveSelectedId)[0]
+      this.MoveSelected.acl = true
     }
+
+    this.Indice = indice
+      //
+    this.WaitingNewLot = this.MoveSelected && (this.MoveSelected['tracking'] == 'virtual' || this.MoveSelected['tracking'] == 'lot' || this.MoveSelected['tracking'] == 'serial')
+    //if (this.MoveSelected){
+    //  this.InventoryProductId = this.MoveSelected['product_id']
+    // }
   }
 
   ClickLot(Line){
+    if (Line.tracking=='virtual'){
+      return this.OpenBarcodeMultiline(Line, true)
+    }
+    if (Line.tracking == 'lot' || Line.tracking == 'serial') {
+      if (!Line['prod_lot_id']['id']){
+        return this.InputLotName(Line)
+      if (this.MoveSelected){
+        if (Line['prod_lot_id']['id']){}
+      }}
+    }
+
     if (!this.MoveSelectedId){
-      return this.AlternateSelected(Line['id'])
+      return this.AlternateSelected(Line['id'], this.Indice)
     }
   }
   generateName(){
     this.inventory['name'] = this.product_id['default_code'] + ' - ' + this.location_id.name
   }
   locationChange(event: { component: IonicSelectableComponent, value: any}) {
-    if (this.inventory['id'] == 0) {this.generateName()}
+
+    // Si cambio la ubicación.
+
+    // Tengo que buscar un inventario con esta ubicación
+
+    
+    if (this.inventory['id'] == 0) {
+      this.generateName()
+    }
     this.ApplyFilterMoves()
   }
-  locationSearch(event: { component: IonicSelectableComponent, value: any}) {
-    const SearchStr = event.component._searchText
-    if (SearchStr.length >2){
-      // this.GetLocations(SearchStr)
-    }
-  }
-  SelectSearch(event: { component: IonicSelectableComponent, value: any}, field='product_ids'){
-    const SearchStr = event.component._searchText
-    if (SearchStr.length >2){
-      this.GetSearchs(SearchStr, field)
-    }
-  }
+  
   NewLine(){
-    if (this.location_id['usage'] !== 'internal'){
-      return this.stock.Aviso('No tienes una ubicación definida', 'Error')
+
+    
+    if (this.InventoryLocationId && this.InventoryLocationId['usage'] !== 'internal'){
+      return this.stock.Aviso('No tienes una ubicación definida o no es valida', 'Error')
     }
-    if (this.product_id['id'] === 0){
+    if (!this.InventoryProductId){
       return this.stock.Aviso('No tienes un artículo definido', 'Error')
     }
     const values = {
       'inventory_id': this.inventory['id'],
-      'product_id': this.product_id['id'],
-      'location_id': this.location_id['id'],
+      'product_id': this.InventoryProductId['id'],
+      'location_id': this.InventoryLocationId['id'],
       'lot_name': ''}
     const self = this;
       
@@ -347,11 +479,45 @@ export class InventoryPage implements OnInit {
       return promise;
 
   }
+  SelectSearch(event: { component: IonicSelectableComponent, value: any}, field='product_ids'){
+    const SearchStr = event.component._searchText
+    if (SearchStr.length >2){
+      this.GetSearchs(SearchStr, field)
+    }
+  }
+  GetSearchs(search='', field='', id=0){
+    let values = {}
+    values = {'search': search, 'id': id} 
+    if (!this.stock.IsFalse(this.inventory)){
+      values['inventory_id'] = this.inventory.id; //, 'inventory_id': this['inventory'] && this['inventory']['id']}
+    }
+    const self = this;
+    
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.inventory', 'get_apk_' +field, values).then((Res: Array<{}>) => {
+        self[field] = Res
+        self.ComputeInvType()
+        self.stock.presentToast('OK', 'Carga completa de ' + Res.length, 10);
+      })
+      .catch((error) => {
+      self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+      });
+    });
+    return promise;
+  }
+  
+  GetSelects(){
+    this.GetSearchs('', 'location_ids')
+    this.GetSearchs('', 'product_ids')
+    return
+  }
 
   productChange(event: {component: IonicSelectableComponent, value: any}) {
+
     if (this.inventory['id'] == 0) {
       this.generateName()
     }
+    // this.InventoryProductId = this.
     this.ApplyFilterMoves()
     // OPciones 
     // Si el tipo de albarán tiene producto, es distinto, entonces no puedo cambiarlo
@@ -366,62 +532,82 @@ export class InventoryPage implements OnInit {
     }
 
   }
-  GetSearchs(search='', field='', id=0){
-    let values = {}
-    values = {'search': search, 'id': id, 'inventory_id': this['inventory'] && this['inventory']['id']}
-    
-   
-    const self = this;
-    
-    const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.inventory', 'get_apk_' +field, values).then((Res: Array<{}>) => {
-        self[field] = Res[field]
-        self.stock.presentToast('OK', 'Carga completa', 10);
-      })
-      .catch((error) => {
-      self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
-      });
-    });
-    return promise;
-  }
-  
-  GetSelects(){
-    this.GetSearchs('', 'location_ids')
-    this.GetSearchs('', 'product_ids')
-    return
+  OnSearchFocus(val: boolean){
+    console.log("Poneindo Active Sacanner a " + val)
+    this.scanner.ActiveScanner = val ;    
   }
   ComputeInvType(){
     const location_id = this.inventory && this.inventory['location_id']['id'] || 0
     const product_id = this.inventory && this.inventory['product_id']['id'] || 0
-    
-    this.ShowLocationSearch = location_id['usage'] !== 'internal'
-    this.ShowProductSearch = product_id === 0
-
-    this.type = 'all'
-    if (location_id == 0) {
-      if (product_id == 0) {
-        this.type = 'none'
-      }
-      else {this.type='product'}
+    if (product_id != 0 && this.stock.IsFalse(this.inventory)) {
+      this.ShowProductSearch = false  
     }
-    else if (product_id == 0) {
-      this.type='location'}
-  
-      console.log(this.type)
+    else {
+      this.ShowProductSearch = true
+    }
+    this.ShowLocationSearch = true
+  }
+  GetInventoryLinesDomain(id = 0, ProductId = 0, LocationId = 0){
+    if (!id){
+      this.stock.presentToast ('No se ha seleccionado inventario de búsqueda')
+      return
+    }
+    if (!ProductId){
+      this.stock.presentToast ('No se ha seleccionado ningún artículo')
+      return
+    }
+    if (!LocationId){
+      this.stock.presentToast ('No se ha seleccionado ninguna ubicación')
+      return
+    }
+    return [
+      ['inventory_id', '=', id],
+      ['product_id', '=', ProductId], 
+      ['location_id', '=', LocationId]]
+  }
+  ValidateInventory(){
+    if (this.stock.IsFalse(this.inventory)){
+      return this.stock.presentToast("No hay ningún inventario cargado")
+    }
+    const values = {'id': this.inventory['id']}
+    const InvName = this.inventory.name
+    const self = this
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.inventory', 'action_validate_apk', values).then((Res: Inventory) => {
+        self.stock.presentToast("Se ha validado el inventario: " + InvName)
+        
+      })
+      .catch((error) => {
+        self.stock.presentToast("Se ha excedido el tiempo de espera");
+        // self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+      });
+    });
+    return this.LoadInventory (0);
   }
   LoadInventory(id=0){
-    const values = {id: id}
+
+    const values = {product_id: this.product_id, location_id: this.location_id, id: id, domain:this.GetInventoryLinesDomain(this.inventory['id'])}
     const self = this;
     this.presentLoading('Cargando último inventario ...')
+    
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.inventory', 'load_apk_inventory', values).then((Res: Inventory) => {
-        const length_lines = Res['line_ids'].length
         self.inventory = Res
         self.product_id = Res['product_id'] // this.product_ids[this.product_ids.length-1]// Res['line_ids'][length_lines-1]['product_id']// inventory_product_id']
         self.location_id = Res['location_id'] //this.location_ids[this.location_ids.length-1]// Res['line_ids'][length_lines-1]['location_id']//Res['inventory_location_id']
-        self.ComputeInvType()
+        this.FilterAcl = false;
+        this.Filter0 = false;
+        
+        this.MoveSelected = null
+        this.MoveSelectedId = 0
+        this.Indice = -1
+        // Si tengo un inventario, y producto o ubicación, filtro por esos campos.
+        // Si tengo un inventario y el inventario tiene producto/ubicación estos son de solo lectura
+        // Si tengo un inventario, y NO tengo producto/ubicación. El que no sea de solo lectura es filtro.
+        //
         self.ApplyFilterMoves()
         this.GetSelects()
+        
         self.loading.dismiss();
       })
       .catch((error) => {
@@ -435,23 +621,39 @@ export class InventoryPage implements OnInit {
 
   GenerateNewInventory(){
     console.log("Creo un inventario nuevo")
-    if (this.product_id['id'] === 0 && this.location_id['id'] === 0){
+    if (!this.InventoryLocationId){
       return this.stock.Aviso('Configuración incorrecta', 'Debes definir artículo y/o ubicación')
     }
-    const values = {'name': this.inventory['name'], 'inventory_type': this.inventory_type, 'product_id': this.product_id['id'], 'location_id': this.location_id['id']}
+    let p_name
+    let product_id
+    if (this.InventoryProductId) {
+      p_name = this.InventoryProductId['default_code']
+      product_id =this.InventoryProductId['id']
+    }
+    else {
+      p_name = "Genérico"
+      product_id = 0
+    }
+
+    const name = this.InventoryLocationId['name'] + " -> " + p_name
+    const values = {
+      'name': name, 
+      'product_id': product_id, 
+      'location_id': this.InventoryLocationId['id']
+  }
     console.log(values)
     const self = this;
-    this.presentLoading('Creando nuevo inventario ...')
+    this.presentLoading('Creando nuevo inventario .... ')
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.inventory', 'new_apk_inventory', values).then((Res: Inventory) => {
-        self.inventory = Res
-        self.ApplyFilterMoves()
-        self.ComputeInvType()
         self.loading.dismiss();
+        return self.LoadInventory(Res['id'])
+        
+
       })
       .catch((error) => {
         self.loading.dismiss();
-      self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+        self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
 
       });
     });
@@ -461,23 +663,71 @@ export class InventoryPage implements OnInit {
     
     this.line_ids = []
     console.log ('Aplico filtro sobre ' + this.inventory['line_ids'] + ' con prod:' + this.product_id['id'] + ' y loc: ' + this.location_id['id'] )
-    const p_id = this.product_id['id']
-    const l_id = this.location_id['id']
+    const p_id = this.InventoryProductId && this.InventoryProductId['id'] || 0// this.product_id['id']
+    const l_id = this.InventoryLocationId && this.InventoryLocationId['id'] || 0// this.location_id['id']
+    const parent_path = this.InventoryLocationId && this.InventoryLocationId['parent_path'] || false
+    
     let filter_loc = false
     let filter_prod = false
+    let filter_acl = false
+    let filter_0 = false
+    let indice = 0
     for (const line of this.inventory['line_ids']) {
-      filter_prod =   p_id === 0 || line['product_id']['id'] === p_id
-      filter_loc = l_id === 0 || this.location_id['usage'] !== 'internal' || line['location_id']['id'] === l_id
-      if (filter_prod && filter_loc) {
+      filter_acl = !this.FilterAcl || !line['acl']
+      filter_0 = !this.Filter0 || !(line['product_qty'] == 0)
+      filter_prod =  p_id === 0 || line['product_id']['id'] === p_id 
+      if (parent_path){
+        filter_loc = line['location_id']['parent_path'].startsWith(parent_path)
+      }
+      else {
+        filter_loc = l_id === 0 || line['location_id']['id'] === l_id
+      }
+      if (filter_prod && filter_loc && filter_acl && filter_0) {
+        line['indice'] = indice
+        indice += 1
         this.line_ids.push(line)
       }
     }
     console.log (this.line_ids.length)
   }
   // Inputs
+  async InputLotName(Line, subheader = ''){
+    
+    subheader = subheader || Line['product_id']['name'];
+    const alert = await this.alertController.create({
+    header: "Lote para:",
 
+    subHeader: subheader,
+      inputs: [{name: 'lot_name',
+               value: "",
+               id: 'lot-id',
+               placeholder: 'Nuevo Lote'}],
+      buttons: [{
+          text: 'Cancelar',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+            this.OnSearchFocus(false);
+            console.log('Confirm Cancel');
+          }
+        }, {
+          text: 'Aplicar',
+          handler: (data: string) => {
+            this.OnSearchFocus(false);
+            this.CheckCreateLot(Line, data['lot_name']); 
+            
+          }
+        }],
+  });
+    this.OnSearchFocus(true);
+    await alert.present();
+  }
   async InputQty(Line, subheader = '')
   {
+    if (Line.tracking == 'lot' || Line.tracking == 'serial') {
+      if (!Line['prod_lot_id']['id']){return this.InputLotName(Line)}
+    }
+
     const Qty = Line['product_qty'];
     subheader = subheader || Line['product_id']['name'];
     let Header = ''
@@ -485,7 +735,7 @@ export class InventoryPage implements OnInit {
       Header = 'Lote ' + Line['prod_lot_id']['name'] + ' ' + Qty + ' ' + Line['product_uom_id']['name'] 
     }
     else {
-      Header = 'Cantidad ' + Qty + ' ' + Line['product_uom_id']['name']
+      Header = 'Cantidad ' + Qty
     }
     const alert = await this.alertController.create({
       header: Header,
@@ -502,10 +752,12 @@ export class InventoryPage implements OnInit {
           cssClass: 'secondary',
           handler: () => {
             console.log('Confirm Cancel');
+            this.OnSearchFocus(false);
           }
         }, {
           text: 'Aplicar',
           handler: (data: number) => {
+            this.OnSearchFocus(false);
             const QtyDone = Number(data['product_qty']);
             if (Number(QtyDone) >= 0) {
               this.ChangeQty(Line, 0, QtyDone);
@@ -517,9 +769,80 @@ export class InventoryPage implements OnInit {
           }
         }],
   });
+    this.OnSearchFocus(true);
     await alert.present();
   }
 
+
+  async CreateFilterButtons(){
+    const Buttons = [];
+    Buttons.push({
+      text: this.FilterAcl ? 'Todos' : 'Solo Pendientes',
+      icon: this.FilterAcl ? 'thumbs-up-outline' : 'thumbs-down-outline',
+      handler: () => {
+        this.FilterAcl = !this.FilterAcl
+        this.ApplyFilterMoves()
+        
+    }});
+    Buttons.push({
+      text: this.Filter0 ? 'Vacíos' : 'Todos',
+      icon: this.Filter0 ? 'battery-dead-outline' : 'battery-full-outline',
+      handler: () => {
+        this.Filter0 = !this.Filter0
+        this.ApplyFilterMoves()
+    }});
+
+    
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Filtros',
+      buttons: Buttons
+    });
+    await actionSheet.present();
+
+  }
+
+  async CreateInventoryButtons(Res){
+    const Buttons = [];
+    Buttons.push({
+      text: "Nuevo",
+      handler: () => {
+        this.LoadInventory(0);
+    }});
+  
+        for (const inv of Res){
+          
+
+          Buttons.push({
+            text: inv['name'],
+            handler: () => {
+              this.LoadInventory(inv['id']);
+          }});
+        }
+    
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Inventarios',
+      buttons: Buttons
+    });
+    await actionSheet.present();
+  }
+  async CreateLoadInventory(){
+    const values = {domain: []}
+    const self = this;
+    this.presentLoading('Cargando último inventario ...')
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('stock.inventory', 'load_inventory_list', values).then((Res: Array<{}>) => {
+        self.loading.dismiss();
+        if (!this.stock.IsFalse(Res)){self.CreateInventoryButtons(Res)}
+      })
+      .catch((error) => {
+        self.loading.dismiss();
+      self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+
+      });
+    });
+    return promise;
+
+  }
    // BOTONES DE ACCION
    async presentButtons() {
     const Buttons = [];
@@ -550,11 +873,37 @@ export class InventoryPage implements OnInit {
       }});
     }
     Buttons.push({
-        text: 'Validar Batch',
-        icon: 'checkmark-done-circle-outline',
+      text: 'Resetear Revisados',
+      icon: 'checkmark-done-circle-outline',
+      handler: () => {
+        for (const line of this.line_ids){line.acl = false}
+        this.ApplyFilterMoves()
+        // this.ValidateBatch();
+    }});
+
+    Buttons.push({
+      text: 'Crear línea',
+      icon: 'checkmark-done-circle-outline',
+      handler: () => {
+        this.NewLine();
+        // this.ValidateBatch();
+    }});
+    if (this.inventory && this.inventory.id){
+    Buttons.push({
+        text: 'Validar Inventario',
+        icon: 'add-circle-outline',
         handler: () => {
           // this.ValidateBatch();
       }});
+    }
+    if (!(this.inventory && this.inventory.id) && this.InventoryLocationId){
+      Buttons.push({
+          text: 'Crear nuevo Inventario',
+          icon: 'add-circle-outline',
+          handler: () => {
+            this.GenerateNewInventory();
+        }});
+      }
     Buttons.push({
       text: this.Limit === 0 ? 'Cargar todos' : 'Cargar ' + this.stock.Limit(),
       icon: '',
@@ -586,4 +935,43 @@ export class InventoryPage implements OnInit {
     });
     await actionSheet.present();
   }
+
+  async OpenBarcodeMultiline(Move, DeleteOld = false){
+    this.OnSearchFocus(true);
+    const self = this;
+    const modal = await this.modalController.create({
+      component: BarcodeMultilinePage,
+      cssClass: 'barcode-modal-css',
+      componentProps: {
+                        ProductId: Move['product_id']['id'],
+                        PName: 'Nº de Serie',
+                        LName: Move['product_id']['name'],
+                        L2Name: Move['product_id']['default_code'] + ' en ' + Move['location_id']['name']
+                      },
+    });
+    modal.onDidDismiss().then((detail: OverlayEventDetail) => {
+      this.OnSearchFocus(false);
+      if (detail['data'] == -1){
+        return self.loading.dismiss();
+      }
+      self.scanner.ActiveScanner = false;
+      const values = {
+                      delete: DeleteOld,
+                      id: Move['id'],
+                      serial_names: detail['data']};
+      this.presentLoading('Cargando números de serie ...');
+      this.odooCon.execute('stock.inventory.line', 'load_multi_serials', values).then((data: Array<{}>) => {
+        Move['product_qty'] = data[0]['product_qty']
+        self.loading.dismiss();
+      })
+      .catch((error) => {
+        self.loading.dismiss();
+        self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+      });
+      
+    });
+    await modal.present();
+  }
+  ClickLocation(Id){}
+  
 }

@@ -17,6 +17,7 @@ export class BarcodeMultilinePage implements OnInit {
   @Input() LName;
   @Input() IName;
   @Input() PName;
+  @Input() L2Name;
 
   @ViewChild('EanList') EanList: IonTextarea;
 
@@ -44,7 +45,11 @@ export class BarcodeMultilinePage implements OnInit {
   ngOnInit() {
     // this.EanList.setFocus();
   }
-  goBack() {
+  goBack(cancel) {
+    if (cancel){
+      return this.modalController.dismiss(-1)
+    }
+
     this.myDismiss();
   }
   async myDismiss() {

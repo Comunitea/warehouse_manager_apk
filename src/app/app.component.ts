@@ -17,23 +17,18 @@ import { AudioService } from './services/audio.service';
 export class AppComponent {
   public appPages = [
     {
-      title: 'Entrar',
+      title: 'Login',
       url: '/login',
       icon: 'person'
     },
     {
-      title: 'Inventario',
-      url: '/stock-picking-type-list',
+      title: 'Albaranes',
+      url: '/navegacion-albaranes',
       icon: 'book'
     },
     {
-      title: 'Productos',
-      url: '/product-list',
-      icon: 'shirt'
-    },
-    {
-      title: 'Ubicaciones',
-      url: '/stock-location-list',
+      title: 'Inventario',
+      url: '/inventory',
       icon: 'home'
     },
     {

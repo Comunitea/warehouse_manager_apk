@@ -26,10 +26,10 @@ export class ScannerService {
 
     }
   constructor(public storage: Storage) {
-    this.reset_scan();
+    this.ResetScan();
     console.log('Constructor de scanner')
   }
-  reset_scan(){
+  ResetScan(){
     this.code = '';
     this.IsOrder = false;
     this.timeStamp = 0;
@@ -41,7 +41,7 @@ export class ScannerService {
     this.Shift = false;
     this.whichs = [];
     var self = this;
-    this.TECLAS = ['Enter', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Tab', 'F1', 'F2', 'F3','F4', 'F5']
+    this.TECLAS = ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Tab', 'F1', 'F2', 'F3','F4', 'F5']
     this.storage.get('KeyTime').then((value) => {
       self.KeyTime = value * 1;
     }).catch(() => {self.KeyTime = 400; });
@@ -50,69 +50,99 @@ export class ScannerService {
   on(){
     console.log("Enciendo scanner")
     this.state = true;
-    this.reset_scan();
+    this.ResetScan();
     // this.odootools.presentToast(this.code)
   }
   off(){
     console.log("Apago scanner")
     this.state = false;
-    this.reset_scan();
+    this.ResetScan();
     // this.odootools.presentToast(this.code)
   }
 
   GetIsOrder(event){
 
-    if (this.TECLAS.indexOf(event.code)>-1){return true}
+    if (this.TECLAS.indexOf(event.code)>-1){
+      return true
+    }
     const Which = event.which
     const res = (Which === 16 || Which >= 48 && Which < 112) || (Which >= 123 && Which < 222);
     console.log ('Get is order: ' + res + ' para which' + Which);
     return !res;
   }
+
   key_press(event){
-    console.log("Detectada tecla con wichs " + this.whichs)
+    console.log("PASO 2: (Key time: " + this.KeyTime+ "  Recibo teclas de la pagina: >>" + " Code:< "+ event.code + " >: Which:< " + event.which + " >. Letra: <" +  String.fromCharCode(event.which) +">")
     if (!this.state || event.which === 0 || event.which === null){return; }
     clearTimeout(this.timeout);
     this.timeout = null;
-    this.KeyTime = 5000;
+    //this.KeyTime = 5000;
     let KeyTime = this.KeyTime;
-    this.whichs.push(event.which);
-    const IsOrder = this.GetIsOrder(event);
-    if (IsOrder){
-      KeyTime = 5
+    if (event.which == 13){
+      KeyTime = 100
     }
-    console.log('Recibo (wich)' + event.which + '(code)' + event.code + '  ' + String.fromCharCode(event.which) + '. con Wichs ' + this.whichs + '. Es una order? ' + IsOrder + '. KeyTime ' + this.KeyTime);
+    let IsOrder = false
+    this.whichs.push(event.which);
+    if (this.TECLAS.indexOf(event.code)>-1){
+      IsOrder = true
+      KeyTime = 50
+    }
+
+    
+   
+    console.log('Recibo (wich)' + event.which + '(code)' + event.code + '  ' + String.fromCharCode(event.which) + '. con Wichs ' + this.whichs + '. KeyTime ' + this.KeyTime);
     this.timeout = new Promise ((resolve) => {
       setTimeout(() => {
-        if (IsOrder || this.whichs.length > 4 || this.whichs.length > 3 && this.whichs[this.whichs.length - 1] === 13){
-          const resolvs = this.SanitizeWhichs(this.whichs, IsOrder, event.code);
+        if (IsOrder){
+          this.whichs = [];
+          resolve([event.code])
+        }
+        if (event.which != 13){
+          this.whichs = [];
+          resolve("")
+        }
+        else if (this.whichs.length > 2){
+          if (!IsOrder && event.which != 13){
+            resolve("")
+          }
+          const resolvs = this.SanitizeWhichs(this.whichs, event.code);
           this.whichs = [];
           if (resolvs.length > 0){
             resolve(resolvs);
           }
         }
         else {
-          // this.whichs = [];
+          this.whichs = [];
         }
       }, KeyTime);
     });
+    
+    console.log("Id de timeout: " + this.timeout)
+    const ahora= new Date().getTime()
+    const Send = (this.timeStamp + KeyTime) < ahora
+    
+    if (Send && this && this.timeout){
+      // console.log ("Devuelvo Timeout:" + this.timeStamp + " >> " + KeyTime + " >> " + ahora)
+      this.timeStamp = new Date().getTime();
+      return // this.timeout; 
+    }
     this.timeStamp = new Date().getTime();
-    if (this && this.timeout){return this.timeout; }
     // return this && this.timeout;
   }
+  
 
-  SanitizeWhichs(whichs, IsOrder, event_code){
-    console.log('Entra en Sanitiz whichs con ' + whichs + ' y event_code' + event_code);
-    
-    if (this.TECLAS.indexOf(event_code)>-1){return event_code}
+  SanitizeWhichs(whichs, event){
     let scans = [];
+    
+    console.log('Entra en Sanitiz whichs con ' + whichs + ' y event_code' + event.code);
+    
+    // if (this.TECLAS.indexOf(event.code)>-1){return event.code}
     let code = '';
     let Shift = false;
-    if (whichs[whichs.length - 1] !== 13){
-      whichs.push(13);
+    if (event.which!== 13){
+      // whichs.push(13);
     }
     for (let keyCode of whichs){
-      console.log('Analizo ' + keyCode + ' con Codigo actual ' + code);
-
       if (keyCode >= 96 && keyCode <= 105) {
         // Numpad keys
         keyCode -= 48;
@@ -153,7 +183,6 @@ export class ScannerService {
 
         }
         else if (keyCode  === 13){
-          console.log('FIN CADENA');
           scans.push(code);
           code = '';
         }
@@ -165,7 +194,7 @@ export class ScannerService {
       }
       if (keyCode !== 16){Shift = false; }
     }
-    console.log("Devuelvo " + scans);
+    console.log("Sanitize y Devuelvo " + scans);
     this.whichs = [];
     return scans;
 

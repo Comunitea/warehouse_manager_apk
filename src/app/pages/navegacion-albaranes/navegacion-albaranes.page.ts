@@ -18,21 +18,23 @@ export class NavegacionAlbaranesPage implements OnInit {
               public odooCon: OdooService) { }
 
   ngOnInit() {
+    // this.GetInfo();
+  }
+  ionViewDidEnter(){
     this.GetInfo();
   }
   TabNavegarA(URL){
     this.router.navigateByUrl(URL);
   }
-  NavegarA(Id = false){
-    console.log ('Navegar a ' + Id);
+  NavegarA(id = false){
     let URL = '/listado-albaranes';
-    if (Id){
-      URL = URL + '/' + Id;
+    if (id){
+      URL = URL + '/' + id;
     }
-    console.log ('Navegar a ' + URL);
     this.router.navigateByUrl(URL);
   }
-
+  CreateFilterButtons(){}
+  ToDoToday(){}
   GetInfo(){
     const self = this;
     const Domain = [['app_integrated', '=', true]];

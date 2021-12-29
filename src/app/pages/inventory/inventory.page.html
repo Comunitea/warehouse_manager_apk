@@ -1,12 +1,13 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>{{inventory['id'] == 0 && "Inventario" || inventory['name']}} {{scanner.ActiveScanner}}</ion-title>
+    <ion-title style="font-size: medium">{{inventory['id'] == 0 && "Inventario" || inventory['name']}} 
+    </ion-title>
+    <!--app-scanner-header slot="end"></app-scanner-header-->
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-
-  <ion-grid *ngIf="inventory['id'] >-1">
+  <ion-grid *ngIf="false && inventory['id'] >-1">
     <ion-row >
       <ion-col>
         ART: {{product_id && (product_id['id'] + "-" + product_id['default_code'])}}
@@ -20,69 +21,61 @@
       <ion-col>
         Filter: {{inventory && inventory['filter']}}
       </ion-col>
+      <!--ion-col>
+        Art Inv: {{InventoryProductId}}
+      </ion-col-->
+    </ion-row>
+    <ion-row >
+      <ion-col>
+        ART Seleccion: {{InventoryProductId && InventoryProductId['id']}}
+      </ion-col>    
+      <ion-col>
+        INV Seleccion: {{InventoryLocationId && InventoryLocationId['id']}}
+      </ion-col>
+     
     </ion-row>
   </ion-grid>
+<ion-item  *ngIf="this.MoveSelectedId == 0">
+  <ion-label color="primary" >Ubic.</ion-label>
+  <ionic-selectable item-content *ngIf="ShowLocationSearch"
+            (onOpen)="OnSearchFocus(true)"
+            (onClose)="OnSearchFocus(false)"
+            [canClear]="true"
 
-<ion-grid *ngIf="inventory['id'] > 0">
-  <ion-row >
-    <ion-col>
-      <div>
-        <ion-card size="6">
-          <ion-card-header color="primary">Nombre</ion-card-header>
-          <ion-card-content>
-            {{inventory && inventory['name']}}
-          </ion-card-content>
-        </ion-card>
-      </div>
-    </ion-col>
-    <ion-col size="6">
-      <div>
-        <ion-card >
-          <ion-card-header color="primary">Tipo</ion-card-header>
-          <ion-card-content>
-            <ion-select [(ngModel)]="inventory['inventory_type']">
-              <ion-select-option value="qty">Cantidad</ion-select-option>
-              <ion-select-option value="serial">Nº de Serie</ion-select-option>
-            </ion-select>
-          </ion-card-content>
-        </ion-card>
-      </div>
-    </ion-col>
-  </ion-row>
-  <ion-row>
-    <ion-col>
-      <div>
-        <ion-card size="6">
-          <ion-card-header color="primary" (click)="NavegarA('/navegacion-albaranes')">Artículo</ion-card-header>
-          
-          <ion-card-content>
-            <span *ngIf="!ShowProductSearch">{{product_id['name']}}</span>
-            <ionic-selectable item-content *ngIf="ShowProductSearch"
-                  [(ngModel)]="product_id" itemValueField="id" itemTextField="default_code" [items]="product_ids" [canSearch]="true"
-		              (onChange)="productChange($event)" (onSearch)="SelectSearch($event, 'product_ids')">
-                </ionic-selectable>
-          </ion-card-content>
-        </ion-card>
-      </div>
-    </ion-col>
-    <ion-col size="6">
-      <div>
-        <ion-card >
-          <ion-card-header color="primary" (click)="NavegarA('/inventory')" >Ubicación</ion-card-header>
-          <ion-card-content>
-            <span *ngIf="!ShowLocationSearch">{{location_id['name']}}</span>
-            <ionic-selectable item-content *ngIf="ShowLocationSearch"
-                  [(ngModel)]="location_id" itemValueField="id" itemTextField="display_name" [items]="location_ids" [canSearch]="true"
-		              (onChange)="locationChange($event)" (onSearch)="SelectSearch($event, 'location_ids')">
-                </ionic-selectable>
-          </ion-card-content>
-        </ion-card>
-      </div>
-    </ion-col>
-  </ion-row>
-</ion-grid>
-<!-- NAVEGACION ENTRE MOVIMIENTOS SOLO SI ESTÁ 1 SELECCIONADO -->
-<ion-row *ngIf="this.Selected > -1">
+            [(ngModel)]="InventoryLocationId" itemValueField="id" itemTextField="display_name" [items]="location_ids" [canSearch]="true"
+            (onChange)="locationChange($event)" (onSearch)="SelectSearch($event, 'location_ids')">
+              <ng-template ionicSelectableCloseButtonTemplate>
+                <ion-icon name="close-circle" style="font-size: 12px;"></ion-icon>
+              </ng-template>
+              <ng-template ionicSelectableTitleTemplate>
+                <span style="color: var(--ion-color-primary);"><strong>Ubicaciones</strong></span>
+              </ng-template>
+            </ionic-selectable>
+</ion-item>
+<ion-item  *ngIf="this.MoveSelectedId == 0">
+  <ion-label color="primary" >Art.</ion-label>
+  <ionic-selectable 
+                  item-content *ngIf="ShowProductSearch"
+                  [(ngModel)]="InventoryProductId" itemValueField="id" itemTextField="default_code" 
+                  [items]="product_ids" [canSearch]="true"
+                  (onOpen)="OnSearchFocus(true)"
+                  (onClose)="OnSearchFocus(false)"
+                  [canClear]="true"
+                  (onChange)="productChange($event)" 
+                  (onSearch)="SelectSearch($event, 'product_ids')">
+                  <ng-template ionicSelectableItemTemplate let-product="item" let-isProductSelected="isItemSelected">
+                    <span class="x-small">{{product.default_code}} ({{product.name}})</span>
+                  </ng-template>
+                  <ng-template ionicSelectableTitleTemplate>
+                    <span style="color: var(--ion-color-primary);"><strong>Artículos</strong></span>
+                  </ng-template>
+                  <ng-template ionicSelectableCloseButtonTemplate>
+                    <ion-icon name="close-circle" style="font-size: 24px;"></ion-icon>
+                  </ng-template>
+              </ionic-selectable>
+</ion-item>
+ <!-- NAVEGACION ENTRE MOVIMIENTOS SOLO SI ESTÁ 1 SELECCIONADO -->
+ <ion-row *ngIf="this.MoveSelectedId > 0">
   
   <ion-tab-button class="ion-tab-button-class" tab="primero"  (click)="ToMove(1,0)">
     <ion-icon mode="md" name="play-skip-back-outline"></ion-icon>
@@ -92,18 +85,18 @@
   <ion-tab-button class="ion-tab-button-class"  tab="anterior" (click)="ToMove(0,-1)" class="inner-left-btn">
     <ion-icon name="play-back-outline"></ion-icon>
     <ion-label>Anterior</ion-label>
-    <ion-badge>{{Selected}}</ion-badge>
+    <ion-badge>{{Indice}}</ion-badge>
   </ion-tab-button>
 
-  <ion-tab-button (click)="ToMove(0,0)" class="button-center">
+  <!--ion-tab-button (click)="ToMove(0,0)" class="button-center">
     <ion-icon name="ellipsis-vertical-outline"></ion-icon>
     <ion-label>Buscar</ion-label>
-  </ion-tab-button>
+  </ion-tab-button-->
 
   <ion-tab-button class="ion-tab-button-class"  (click)="ToMove(0,1)" tab="users" class="inner-right-btn">
     <ion-icon name="play-forward-outline"></ion-icon>
     <ion-label>Siguiente</ion-label>
-    <ion-badge>{{inventory['line_ids'].length - Selected}}</ion-badge>
+    <ion-badge>{{line_ids.length - Indice}}</ion-badge>
   </ion-tab-button>
 
   <ion-tab-button class="ion-tab-button-class"  tab="settings" (click)="ToMove(-1,0)">
@@ -112,21 +105,79 @@
   </ion-tab-button>
 
 </ion-row>  
-{{type}}-{{MoveSelectedId}}
+<!--ion-grid>
+  <ion-row >
+    <ion-col size="6">
+      <div>
+        <ion-card >
+          <ion-card-header color="primary" (click)="NavegarA('/inventory')" >Ubicación</ion-card-header>
+          <ion-card-content>
+            <span *ngIf="!ShowLocationSearch">{{location_id['name']}}</span>
+            <ionic-selectable item-content *ngIf="ShowLocationSearch"
+            (onOpen)="OnSearchFocus(true)"
+            (onClose)="OnSearchFocus(false)"
+            [canClear]="true"
+
+            [(ngModel)]="InventoryLocationId" itemValueField="id" itemTextField="display_name" [items]="location_ids" [canSearch]="true"
+            (onChange)="locationChange($event)" (onSearch)="SelectSearch($event, 'location_ids')">
+              <ng-template ionicSelectableCloseButtonTemplate>
+                <ion-icon name="close-circle" style="font-size: 24px;"></ion-icon>
+              </ng-template>
+              <ng-template ionicSelectableTitleTemplate>
+                <span style="color: var(--ion-color-primary);"><strong>Ubicaciones</strong></span>
+              </ng-template>
+            </ionic-selectable>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-col>
+    <ion-col>
+      <div>
+        <ion-card size="6">
+          <ion-card-header color="primary" (click)="NavegarA('/navegacion-albaranes')">Artículo</ion-card-header>
+          
+          <ion-card-content>
+            <span *ngIf="!ShowProductSearch">{{product_id['name']}}</span>
+            <ionic-selectable 
+                  item-content *ngIf="ShowProductSearch"
+                  [(ngModel)]="InventoryProductId" itemValueField="id" itemTextField="default_code" 
+                  [items]="product_ids" [canSearch]="true"
+                  (onOpen)="OnSearchFocus(true)"
+                  (onClose)="OnSearchFocus(false)"
+                  [canClear]="true"
+                  (onChange)="productChange($event)" 
+                  (onSearch)="SelectSearch($event, 'product_ids')">
+                  <ng-template ionicSelectableItemTemplate let-product="item" let-isProductSelected="isItemSelected">
+                    <span class="x-small">{{product.default_code}} ({{product.name}})</span>
+                  </ng-template>
+                  <ng-template ionicSelectableTitleTemplate>
+                    <span style="color: var(--ion-color-primary);"><strong>Artículos</strong></span>
+                  </ng-template>
+                  <ng-template ionicSelectableCloseButtonTemplate>
+                    <ion-icon name="close-circle" style="font-size: 24px;"></ion-icon>
+                  </ng-template>
+              </ionic-selectable>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-col>
+    
+  </ion-row>
+</ion-grid-->
 
 <ion-col size-xs="12" size-sm="12" size-lg="6" >
   <div *ngFor="let LineId of line_ids; let indice=index">
-  <ion-card class="m3px"  *ngIf="MoveSelectedId ===  0 || LineId['id'] === MoveSelectedId">
-    <div *ngIf="getLastMove(LineId['id'])"></div>
+  <ion-card class="m3px"  *ngIf="MoveSelectedId == 0 || LineId['id'] === MoveSelectedId">
+    <div ></div>
     <ion-card-header 
     *ngIf="(indice ===  0 || LineId['product_id']['id'] !== line_ids[indice-1]['product_id']['id'] || LineId['id'] === MoveSelectedId)"
     [ngClass]="(MoveSelectedId == 0 || LineId['id'] == MoveSelectedId) ? 'primary-deactive':'primary-active'"
-    (click)="AlternateSelected(LineId['id'])">
+    (click)="AlternateSelected(LineId['id'], indice)">
       <!--ion-card-header (click)="AlternateSelected(LineId['id'])"-->
       
       <ion-row >
-        <div *ngIf="getLastMove(LineId['id'])"></div>
-        <ion-col class="card" size-xs="10" size-sm="10" size-lg="5">
+        <div ></div>
+        <ion-col class="card" size-xs="11" size-sm="10" size-lg="10">
           {{LineId['product_id']['name']}}
         </ion-col>
         
@@ -135,8 +186,7 @@
           <ion-icon [name]="StateIcons[LineId['state']['value']]" [ngClass]="LineId['state']['value']"></ion-icon->
         </ion-col-->
         
-        <ion-col class="card" size-xs="2" size-sm="2" size-lg="1"> 
-          {{LineId['tracking']}}
+        <ion-col class="card" size-xs="1" size-sm="2" size-lg="2"> 
           <ion-icon name="barcode" *ngIf="LineId['tracking'] === 'virtual'">  </ion-icon>
           <ion-icon name="barcode" *ngIf="LineId['tracking'] === 'serial'">  </ion-icon>
           <ion-icon name="pricetags-outline" *ngIf="LineId['tracking'] === 'lot'">  </ion-icon>
@@ -150,7 +200,7 @@
           <ion-col size="1" (click)="DeleteLine(LineId)">
              <ion-icon name="trash">  </ion-icon>
           </ion-col>
-          <ion-col size="2" (click)="ClickLocation(LineId)" *ngIf="inventory['location_id']['usage'] !== 'internal'">
+          <ion-col size="2" (click)="ClickLocation(LineId)" *ngIf="!InventoryLocationId || InventoryLocationId['usage'] != 'internal'">
             <span>
             {{LineId['location_id']['name']}}
             </span>
@@ -163,12 +213,13 @@
             </span>
           </ion-col>  
             <ion-col *ngIf="LineId['tracking'] !== 'serial'" class="button-qties border-qties p0px" size="1" (click)="ChangeQty(LineId, -1, 0)">
-              -
+              <span *ngIf="LineId['tracking'] !== 'virtual'">-</span>
+              <ion-icon name="trash" *ngIf="LineId['tracking'] === 'virtual'">  </ion-icon>
             </ion-col>
             <ion-col [ngClass]="(LineId['id'] == MoveSelectedId) ? 'primary-deactive':'active'" (click)="InputQty(LineId)">
-              <span *ngIf="LineId['tracking'] === 'none'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} {{LineId['product_uom_id']['name']}} </span>
-              <span *ngIf="LineId['tracking'] === 'virtual'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} {{LineId['product_uom_id']['name']}} </span>
-              <span *ngIf="LineId['tracking'] === 'lot'">{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} {{LineId['product_uom_id']['name']}}</span>
+              <span *ngIf="LineId['tracking'] === 'none'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} </span>
+              <span *ngIf="LineId['tracking'] === 'virtual'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}}  </span>
+              <span *ngIf="LineId['tracking'] === 'lot'">{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} </span>
             <!--span *ngIf="LineId['tracking'] === 'serial' && LineId['qty_done'] === 1" class="not-required">{{LineId['lot_id'] && " [" + LineId['lot_id']['name'] + "]"|| ''}}</span-->
           </ion-col>
             <ion-col *ngIf="LineId['tracking'] !== 'serial'" class="button-qties border-qties p0px" size="1" (click)="ChangeQty(LineId, +1, 0)">
@@ -195,9 +246,9 @@
     <!--ion-badge>{{ParaHoy}}</ion-badge-->
   </ion-tab-button>
   <ion-tab-button *ngIf="inventory['id'] > 0" tab="newinv" (click)="ValidateInventory()" class="inner-left-btn">
-    <ion-icon name="add-circle-outliner"></ion-icon>
+    <ion-icon name="add-circle-outline"></ion-icon>
     <ion-label>Validar</ion-label>
-    <ion-badge>{{lines_count}}</ion-badge>
+    <ion-badge>{{0}}</ion-badge>
   </ion-tab-button>
 
 
@@ -206,14 +257,14 @@
     <ion-label>Acciones</ion-label>
   </ion-tab-button>
 
-  <ion-tab-button (click)="CreateFilterButtons()" tab="users" class="inner-right-btn">
-    <ion-icon name="funnel-outline"></ion-icon>
-    <ion-label>Filtrar</ion-label>
+  <ion-tab-button (click)="CreateLoadInventory()" tab="users" class="inner-right-btn">
+    <ion-icon name="save-outline"></ion-icon>
+    <ion-label>Cargar</ion-label>
   </ion-tab-button>
 
-  <ion-tab-button tab="settings">
-    <ion-icon name="settings"></ion-icon>
-    <ion-label>Settings</ion-label>
+  <ion-tab-button (click)="CreateFilterButtons()" tab="settings">
+    <ion-icon name="funnel-outline"></ion-icon>
+    <ion-label>Filtrar</ion-label>
   </ion-tab-button>
 
 </ion-tab-bar>

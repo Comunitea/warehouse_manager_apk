@@ -80,7 +80,7 @@ const routes: Routes = [
   },
   { path: 'navegacion-albaranes', loadChildren: './pages/navegacion-albaranes/navegacion-albaranes.module#NavegacionAlbaranesPageModule' },
   { path: 'listado-albaranes', loadChildren: './pages/listado-albaranes/listado-albaranes.module#ListadoAlbaranesPageModule' },
-  { path: 'listado-albaranes/:Id', loadChildren: './pages/listado-albaranes/listado-albaranes.module#ListadoAlbaranesPageModule' },
+  { path: 'listado-albaranes/:id', loadChildren: './pages/listado-albaranes/listado-albaranes.module#ListadoAlbaranesPageModule' },
   { path: 'move-list/:BatchId', loadChildren: './pages/move-list/move-list.module#MoveListPageModule' },
   { path: 'inventory', loadChildren: './pages/inventory/inventory.module#InventoryPageModule' },
 

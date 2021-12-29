@@ -9,7 +9,7 @@ import { OdooService } from '../services/odoo.service';
 })
 export class ModalPropertyPage implements OnInit {
 
-  @Input() DataIn: {'Model': string, 'Id': BigInteger};
+  @Input() DataIn: {'Model': string, 'id': BigInteger};
   Lenitems: [0, 1, 2, 3];
   Data: any;
   constructor(
@@ -27,7 +27,7 @@ export class ModalPropertyPage implements OnInit {
   ionViewWillEnter() {
     const self = this;
     // this.Data = this.navParams.get('data');
-    this.odoo.execute(this.DataIn.Model, 'get_modal_info', {id: this.DataIn.Id}).then((data) => {
+    this.odoo.execute(this.DataIn.Model, 'get_modal_info', {id: this.DataIn.id}).then((data) => {
       self.Data = data;
     }).catch((error) => {
     });

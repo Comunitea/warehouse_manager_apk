@@ -35,7 +35,7 @@ export class ListadoAlbaranesPage implements OnInit {
   Picks: Array<{}>;
   Filters: Array<{}>;
   FiltersChecked: {};
-  Id: number;
+  id: number;
 
   @Input() ScannerReading: string;
   @Input() pick: {};
@@ -47,9 +47,25 @@ export class ListadoAlbaranesPage implements OnInit {
 
   //
   Selected: number; //A true si hay alguno seleccionado
+  AllowScanner: Boolean; 
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
+    // clearTimeout(this.TouchTimeout);1
+    // this.AllowTouch = true;
+    
+    if (!this.AllowScanner || this.scanner.ActiveScanner || event.which == 0){return}
+    console.log("PASO 1: Pulsación: >>" + " Code:< "+ event.code + " >: Which:< " + event.which + " >. Letra: <" +  String.fromCharCode(event.which) +">")
+    
+    if (this.stock.GetModelInfo('App', 'ActivePage') === 'MoveList') {
+      this.scanner.key_press(event);
+      this.scanner.timeout.then((val) => {
+        this.onReadingEmitted(val);
+      });
+
+  }
+
+
     console.log('TECLAS RECIBIDAS EN ListadoAlbaranes antes de comprobccion');
     if (!this.scanner.ActiveScanner && this.stock.GetModelInfo('App', 'ActivePage') === 'ListadoAlbaranes' && event.which !== 0) {
       console.log('TECLAS RECIBIDAS EN ListadoAlbaranes');
@@ -87,15 +103,20 @@ export class ListadoAlbaranesPage implements OnInit {
     this.FiltersChecked = {state: {checked: ['assigned', 'in_progress']}};
     this.Offset = 0;
     
-  }
-  ionViewDidEnter(){
 
+  }
+  ionViewWillLeave(){
+    this.AllowScanner = false
+  }
+    
+  ionViewDidEnter(){
+  this.AllowScanner = true
     this.stock.SetModelInfo('App', 'ActivePage', 'ListadoAlbaranes');
     this.Selected = 0;
     this.Search = '';
     console.log ('Entra en listado de albaranes');
-    this.Id = parseInt(this.route.snapshot.paramMap.get('Id'));
-    this.TypeDomain = ['picking_type_id', '=', this.Id];
+    this.id = parseInt(this.route.snapshot.paramMap.get('id'));
+    this.TypeDomain = ['picking_type_id', '=', this.id];
     this.GetInfo();
 
   }
@@ -114,7 +135,7 @@ export class ListadoAlbaranesPage implements OnInit {
   GetInfo(Domain = [], loading: boolean = true){
     const self = this;
     
-    if (this.Id){
+    if (this.id){
       Domain.push(this.TypeDomain);
     }
     // Domain.push(this.StateDomain);
@@ -128,7 +149,7 @@ export class ListadoAlbaranesPage implements OnInit {
     if (this.Offset === 0){this.LimitReached = false;  this.infiniteScroll.disabled = false; }
     const values = {domain: Domain, offset: this.Offset, limit: this.stock.Limit(), model: 'stock.picking.batch'};
     console.log('Conectando a Odoo para recuperar' + values['domain']);
-    if (loading){self.presentLoading('Cargando albaranes del tipo ' + this.Id);}
+    if (loading){self.presentLoading('Cargando albaranes ...');}
     const promise = new Promise( (resolve, reject) => {
         self.odooCon.execute('stock.picking.type', 'get_apk_tree', values).then((Res: Array<{}>) => {
           this.LimitReached = Res['Picks'].length < this.stock.Limit();
@@ -159,7 +180,7 @@ export class ListadoAlbaranesPage implements OnInit {
     return promise;
 
 }
-  OpenForm(Id){}
+  OpenForm(id){}
 
   // LOADING
  
@@ -208,12 +229,12 @@ export class ListadoAlbaranesPage implements OnInit {
   // INFINITI SCROLL
 
   // CLICK ON CARDS/PICKS
-  NavegarA(Id){
-    console.log ('Navegar a ' + Id);
+  NavegarA(id){
+    console.log ('Navegar a ' + id);
     this.stock.audio.play('click');
     let URL = '/move-list';
-    if (Id){
-      URL = URL + '/' + Id;
+    if (id){
+      URL = URL + '/' + id;
     }
 
     this.router.navigateByUrl(URL);
@@ -249,7 +270,7 @@ export class ListadoAlbaranesPage implements OnInit {
           msg += '<hr/>' + pick['name'] + ': Cantidades a 0';
           continue;
         }
-        Ids.push(pick['Id']);
+        Ids.push(pick['id']);
       }
     }
     console.log('Se van a validar ' + Ids);
@@ -274,7 +295,7 @@ export class ListadoAlbaranesPage implements OnInit {
           msg += '<hr/>' + pick['name'] + ': Estado incorrecto';
           continue;
         }
-        Ids.push(pick['Id']);
+        Ids.push(pick['id']);
       }
     }
     console.log('Se van a reservar ' + Ids);
@@ -307,7 +328,7 @@ export class ListadoAlbaranesPage implements OnInit {
           msg += '<hr/>' + pick['name'] + ': Estado incorrecto';
           continue;
         }
-        Ids.push(pick['Id']);
+        Ids.push(pick['id']);
       }
     }
     console.log('Se van a reservar ' + Ids);

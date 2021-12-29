@@ -1,16 +1,18 @@
 <ion-header>
-  <ion-toolbar class="cmnt-front">
-    <button class="cmnt-button" slot="end" ion-button icon-only item-end (click)="goBack()">
-      <ion-icon style="font-size: 2em;" name="arrow-undo-outline" class="cmnt-front"></ion-icon>
-    </button> 
-  <ion-title>{{PName}}</ion-title>
+  <ion-toolbar class="cmnt-front h_header">
+    <button class="cmnt-button" slot="end" ion-button icon-only item-end (click)="goBack(false)">
+      <ion-icon style="font-size: 2em;" name="duplicate-outline" class="cmnt-front"></ion-icon>
+    </button>
+  <ion-title>{{PName}}</ion-title> 
+  <ion-card-subtitle color="white" style="text-align: center">{{LName}}</ion-card-subtitle>
+  <ion-card-subtitle color="white" style="text-align: center">{{L2Name}}</ion-card-subtitle>
   </ion-toolbar> 
   
 </ion-header>
 <ion-content>
 <ion-card-header>
-    <ion-card-subtitle style="text-align: center">{{LName}}</ion-card-subtitle>
-    <ion-card-title></ion-card-title>
+    <!--ion-card-title style="text-align: center">{{L2Name}}</ion-card-title>
+    <ion-card-subtitle style="text-align: center">{{LName}}</ion-card-subtitle-->
   </ion-card-header>
 
   <ion-card-content style="text-align: -webkit-center;">
@@ -18,6 +20,12 @@
     style="background-color: #eeeeee; width: 250px; height: 350px" rows=25 textarea type="text" [(ngModel)]="ean"> </ion-textarea>
   </ion-card-content>
 
-  
-
 </ion-content>
+
+  <ion-footer>
+    <ion-toolbar class="cmnt-front h_footer">
+      <button class="cmnt-button" slot="end" ion-button icon-only item-end  (click)="goBack(true)">
+        <ion-icon style="font-size: 2em;" name="arrow-undo-outline" class="cmnt-front"></ion-icon>
+      </button> 
+  </ion-toolbar> 
+</ion-footer>

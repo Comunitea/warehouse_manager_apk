@@ -8,7 +8,7 @@
   
             <ion-row>
               <ion-col size-xs="6" size-sm="6" size-lg="4" *ngFor="let picking_type of Cards">
-                <ion-card (click)="NavegarA(picking_type['Id'])">
+                <ion-card (click)="NavegarA(picking_type['id'])">
                   <ion-card-header color="primary"> {{picking_type['name']}} </ion-card-header>
                   <ion-card-content>
                     <div class="font-success">
@@ -25,7 +25,7 @@
 </ion-content>
 
   <ion-tab-bar slot="bottom" class="bottom-tab-bar">
-    <ion-tab-button tab="home" (click)="TabNavegarA('/login')">
+    <ion-tab-button tab="home" (click)="TabNavegarA('/navegacion-principal')">
       <ion-icon mode="md" name="home"></ion-icon>
       <ion-label>Home</ion-label>
     </ion-tab-button>
@@ -33,7 +33,7 @@
     <ion-tab-button tab="schedules" (click)="ToDoToday()" class="inner-left-btn">
       <ion-icon name="calendar"></ion-icon>
       <ion-label>Hoy</ion-label>
-      <ion-badge>{{ParaHoy}}</ion-badge>
+      <ion-badge>{{0}}</ion-badge>
     </ion-tab-button>
 
     <!--ion-tab-button (click)="presentButtons()" class="button-center">

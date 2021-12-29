@@ -21,11 +21,11 @@ export class InfoSaleOrderPage implements OnInit {
     this.navCtrl.back();
     }
   ionViewWillEnter() {
-    const Id = this.route.snapshot.paramMap.get('id');
+    const id = this.route.snapshot.paramMap.get('id');
     const Object = this.route.snapshot.paramMap.get('object');
     const self = this;
     // this.Data = this.navParams.get('data');
-    this.odoo.execute(Object, 'get_modal_info', {id: Id}).then((data) => {
+    this.odoo.execute(Object, 'get_modal_info', {id: id}).then((data) => {
       self.SaleOrder = data;
     }).catch((error) => {
     });

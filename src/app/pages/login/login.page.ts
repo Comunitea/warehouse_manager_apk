@@ -6,7 +6,7 @@ import { OdooService } from '../../services/odoo.service';
 import { AlertController } from '@ionic/angular';
 import { Storage } from '@ionic/storage';
 import { AudioService } from '../../services/audio.service';
-import { StockService } from '../../services/stock.service';
+import { StockFunctionsService } from '../../services/stock-functions.service';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +17,7 @@ export class LoginPage implements OnInit {
 
   CONEXION: ConnectionOptions = {username: '',
                                  password: '',
-                                 url: 'http://localhost',
+                                 url: 'https://rumartest.odootea.com',
                                  port: 8069,
                                  db: '',
                                  uid: 0,
@@ -26,9 +26,9 @@ export class LoginPage implements OnInit {
                                  logged_in: false};
   CONEXION_local: ConnectionOptions = { username: 'cmnt_kiko',
                                         password: 'cmnt',
-                                        url: 'http://192.168.0.146',
+                                        url: 'https://rumartest.odootea.com',
                                         port: 8069,
-                                        db: 'prod_17_08',
+                                        db: 'apk',
                                         uid: 0,
                                         context: {},
                                         user: {},
@@ -42,7 +42,7 @@ export class LoginPage implements OnInit {
   constructor(
     private audio: AudioService,
     private odoo: OdooService,
-    public stock: StockService,
+    public stock: StockFunctionsService,
     public router: Router,
     public alertCtrl: AlertController,
     private storage: Storage,
@@ -127,23 +127,31 @@ export class LoginPage implements OnInit {
     }
   }
   NavigateNext(){
+    this.LoadData()
     this.storage.set('KeyTime', this.KeyTime).then(() => {
+
       this.router.navigateByUrl('/navegacion-principal');
     });
   }
   log_in() {
     this.odoo.login(this.CONEXION.username, this.CONEXION.password).then((data)=> {
+      
       this.NavigateNext();
     }).catch((error) => {
       this.presentAlert('Error al hacer login:', error);
     });
   }
 
-
+  LoadData(){
+    //
+    // this.LoadLocation()
+    this.stock.LoadPersistentData(true)
+  }
   ngOnInit() {
 
     this.odoo.isLoggedIn().then((data)=>{
       if (data == true) {
+        
         this.NavigateNext();
       }
     })

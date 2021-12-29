@@ -31,7 +31,7 @@
       </div>
     </ion-col>
   </ion-row>
-  <ion-row>
+  <!--ion-row>
     <ion-col>
       <div>
         <ion-card size="6">
@@ -52,7 +52,7 @@
         </ion-card>
       </div>
     </ion-col>
-  </ion-row>
+  </ion-row-->
 </ion-grid>
  
 </ion-content>
@@ -62,10 +62,10 @@
       <ion-label>Home</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="schedules" (click)="ToDoToday()" class="inner-left-btn">
+    <ion-tab-button tab="schedules" class="inner-left-btn">
       <ion-icon name="calendar"></ion-icon>
       <ion-label>Hoy</ion-label>
-      <ion-badge>{{ParaHoy}}</ion-badge>
+      <ion-badge>{{"0"}}</ion-badge>
     </ion-tab-button>
 
     <!--ion-tab-button (click)="presentButtons()" class="button-center">
@@ -73,9 +73,9 @@
       <ion-label>Acciones</ion-label>
     </ion-tab-button-->
 
-    <ion-tab-button (click)="CreateFilterButtons()" tab="users" class="inner-right-btn">
-      <ion-icon name="funnel-outline"></ion-icon>
-      <ion-label>Filtrar</ion-label>
+    <ion-tab-button tab="users" class="inner-right-btn" (click)="LoadPersistentData()">
+      <ion-icon name="save-outline"></ion-icon>
+      <ion-label>Cargar Maestros</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="settings">

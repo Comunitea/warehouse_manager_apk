@@ -377,7 +377,7 @@ export class StockLocationPage implements OnInit {
   });
     await alert.present();
   }
-  reset_scanner() {
+  ResetScanner() {
     this.LastReading = this.ScannerReading;
     this.ScannerFooter.ScanReader.controls.scan.setValue('');
     // this.scanner.reset_scan();
@@ -559,7 +559,7 @@ export class StockLocationPage implements OnInit {
     }
     return;
     if (val.length < 2){
-      this.reset_scanner();
+      this.ResetScanner();
       return;
     }
     console.log('Me llega a check scanner ' + val);
@@ -580,7 +580,7 @@ export class StockLocationPage implements OnInit {
 
   CheckScanner_TimeOut(val) {
     if (val === ''){
-      this.reset_scanner();
+      this.ResetScanner();
       return;
     }
     // ESCANEO DE ALBARAN. SUPONGO SIEMPRE QUE NO HAY UBICACIONES REQUERIDAS
@@ -603,7 +603,7 @@ export class StockLocationPage implements OnInit {
       this.CheckProduct(val);
     }
 
-    this.reset_scanner();
+    this.ResetScanner();
     return;
   }
 
@@ -775,7 +775,6 @@ export class StockLocationPage implements OnInit {
 
   OpenBarcodeMultiline(ProductId, p_name, l_name){
     this.scanner.ActiveScanner = false;
-    this.stock.SetModelInfo('App', 'ActivePage', '');
     this.openModalBarcodeMulti(ProductId, p_name, l_name);
   }
   async openModalBarcodeMulti(PrId, p_name, l_name){
@@ -791,6 +790,10 @@ export class StockLocationPage implements OnInit {
     });
     modal.onDidDismiss().then((detail: OverlayEventDetail) => {
       this.stock.SetModelInfo('App', 'ActivePage', 'StockLocationPage');
+      this.scanner.ActiveScanner = false;
+      if (detail['data'] == -1){
+        return this.loading.dismiss();
+      }
       if (detail !== null) {
         const values = {inventory_id: this.location_data['inventory_id'],
                         location_id: this.ActiveLocation,
