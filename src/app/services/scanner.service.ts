@@ -78,18 +78,21 @@ export class ScannerService {
     this.timeout = null;
     //this.KeyTime = 5000;
     let KeyTime = this.KeyTime;
+    const ahora= new Date().getTime()
+    const Lapso = ahora -this.timeStamp
     if (event.which == 13){
       KeyTime = 100
     }
     let IsOrder = false
     this.whichs.push(event.which);
     if (this.TECLAS.indexOf(event.code)>-1){
+      
+      if (Lapso < 250){return}
       IsOrder = true
       KeyTime = 50
     }
-
     
-   
+  
     console.log('Recibo (wich)' + event.which + '(code)' + event.code + '  ' + String.fromCharCode(event.which) + '. con Wichs ' + this.whichs + '. KeyTime ' + this.KeyTime);
     this.timeout = new Promise ((resolve) => {
       setTimeout(() => {
@@ -118,15 +121,7 @@ export class ScannerService {
     });
     
     console.log("Id de timeout: " + this.timeout)
-    const ahora= new Date().getTime()
-    const Send = (this.timeStamp + KeyTime) < ahora
-    
-    if (Send && this && this.timeout){
-      // console.log ("Devuelvo Timeout:" + this.timeStamp + " >> " + KeyTime + " >> " + ahora)
-      this.timeStamp = new Date().getTime();
-      return // this.timeout; 
-    }
-    this.timeStamp = new Date().getTime();
+    this.timeStamp = ahora
     // return this && this.timeout;
   }
   

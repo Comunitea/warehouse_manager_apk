@@ -125,9 +125,10 @@ export class ListadoAlbaranesPage implements OnInit {
     this.router.navigateByUrl(URL);
   }
   ToDoToday(){
-    const dt: Date = new Date();
+    
+    let dt = new Date()
     const hoy = this.stock.odoo_date(dt, 'date', {day : 1});
-    const domain =  [['scheduled_date', '<=', hoy]];
+    const domain =  [['scheduled_date', '<', hoy]];
     console.log(dt + ' -->> ' + hoy + ': ->>' + domain);
     this.Offset = 0;
     this.GetInfo(domain);

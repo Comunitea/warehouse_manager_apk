@@ -57,10 +57,15 @@
 </ion-content>
 
   <ion-tab-bar slot="bottom" class="bottom-tab-bar">
-    <ion-tab-button tab="home" (click)="TabNavegarA('/navegacion-principal')">
+    <ion-tab-button tab="home" (click)="TabNavegarA('/navegacion-albaranes')">
       <ion-icon mode="md" name="home"></ion-icon>
       <ion-label>Home</ion-label>
     </ion-tab-button>
+
+    <!--ion-tab-button (click)="presentButtons()" class="button-center">
+      <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+      <ion-label>Acciones</ion-label>
+    </ion-tab-button-->
 
     <ion-tab-button tab="schedules" (click)="ToDoToday()" class="inner-left-btn">
       <ion-icon name="calendar"></ion-icon>
@@ -68,12 +73,8 @@
       <ion-badge>{{1}}</ion-badge>
     </ion-tab-button>
 
-    <ion-tab-button (click)="presentButtons()" class="button-center">
-      <ion-icon name="ellipsis-vertical-outline"></ion-icon>
-      <ion-label>Acciones</ion-label>
-    </ion-tab-button>
 
-    <ion-tab-button (click)="CreateFilterButtons()" tab="users" class="inner-right-btn">
+    <!--ion-tab-button (click)="CreateFilterButtons()" tab="users" class="inner-right-btn">
       <ion-icon name="funnel-outline"></ion-icon>
       <ion-label>Filtrar</ion-label>
     </ion-tab-button>
@@ -81,7 +82,7 @@
     <ion-tab-button tab="settings">
       <ion-icon name="settings"></ion-icon>
       <ion-label>Settings</ion-label>
-    </ion-tab-button>
+    </ion-tab-button-->
 
   </ion-tab-bar>
 

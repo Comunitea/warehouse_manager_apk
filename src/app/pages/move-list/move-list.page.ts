@@ -111,7 +111,7 @@ export class MoveListPage implements OnInit {
 
   onReadingEmitted(val: string) {
     const delay = 75;
-    
+    this.scanner.ActiveScanner = false;
     let index = 0;
     console.log("ANALIZO EN MOVELIST:" + val);
     for (const scan of val){
@@ -501,13 +501,8 @@ export class MoveListPage implements OnInit {
         handler: () => {
           this.ValidateBatch();
       }});
-    Buttons.push({
-      text: this.Limit === 0 ? 'Cargar todos' : 'Cargar ' + this.stock.Limit(),
-      icon: '',
-      handler: () => {
-        this.Limit = this.Limit === 0 ? this.stock.Limit() : 0;
-        this.GetInfo();
-    }});
+    
+
     if (this.Selected > -1){
       Buttons.push({
         text: this.ToDelete ? 'Borrar' : 'Añadir',
@@ -516,6 +511,14 @@ export class MoveListPage implements OnInit {
           this.ToDelete = !this.ToDelete;
       }});
     }
+    
+    Buttons.push({
+      text: this.scanner.ActiveScanner ? 'Teclado' : 'Barcode',
+      icon: this.scanner.ActiveScanner ? 'text-outline' : 'barcode',
+      handler: () => {
+        this.scanner.ActiveScanner = !this.scanner.ActiveScanner;
+    }});
+    
 
     Buttons.push( {
         text: 'Cancelar',
@@ -828,7 +831,7 @@ export class MoveListPage implements OnInit {
             // Si cancelo, reseteo la marca de ubicación. Es decir lo pongo por defecto
             // TO_CHECK o no
             
-            if (true) {
+            if (false) {
               let values = {}
               values[LocationNeed] = this.TypeId[LocationNeed] || Move[LocationNeed]
               this.WriteAsyn('stock.move.line', Move['id'], values);
@@ -843,50 +846,41 @@ export class MoveListPage implements OnInit {
           text: 'Aplicar',
           handler: (data: number) => {
             // Activo el scanner
+            // Saco la ubicación
+            let barcode = data['barcode'] || Move[LocationField]['barcode']
+            let values = {}
             
-            let barcode = data['barcode']
-            if (!barcode){barcode = Move[LocationField]['barcode']}
-            // Si el que leo es el mismo que hay ... CONFIRMO y EScribo en odoo
-            if (Move[LocationField]['barcode'] === barcode){
-              Move[LocationNeed] = false;
-              let values = {}
-              values[LocationNeed] = false              
-              this.WriteAsyn('stock.move.line', Move['id'], values);
-              this.stock.play('click');
-              this.CheckIfWaitingSerials(Move)
-              this.scanner.ActiveScanner = false;
-            }
-            // Si leo una ubicación permitida pero disinta
-            else if (barcode in this.stock.Locations){
-              // Permito cambiar. => Cambio
-              if (AllowChange){
+
+            if (barcode in this.stock.LocBarcodes){
+              // Si el que leo es el mismo que hay ... CONFIRMO y EScribo en odoo
+              if (Move[LocationField]['barcode'] === barcode){
+                Move[LocationNeed] = false;
+                values[LocationNeed] = false        
+              }
+              // Si leo una ubicación permitida pero disinta
+              else if (AllowChange){
+                // Permito cambiar. => Cambio
                 // Reseteo la lectura y cambio la ubicación. Necesita una 2ª lectura para modificarlo
-                const values = {}
+                Move[LocationField]= this.stock.Locations[barcode]
+                Move[LocationField] = this.stock.GetObjectByBarcode(this.stock.Locations, barcode)
                 values[LocationNeed] = this.TypeId[LocationNeed]
-                values[LocationField] = this.stock.Locations[barcode]['id']
+                values[LocationField] = Move[LocationField]['id']
+                
+
+              }
+              if (values){
                 this.WriteAsyn('stock.move.line', Move['id'], values);
-                Move[LocationNeed] = this.TypeId[LocationNeed]
-                // Move[LocationField]= this.stock.Locations[barcode]
-                Move[LocationField] = {'id': this.stock.Locations[barcode]['id'],
-                                       'name': this.stock.Locations[barcode]['name'],
-                                       'barcode': barcode}
                 this.CheckIfWaitingSerials(Move)
                 this.stock.play('click');
-
                 this.scanner.ActiveScanner = false;
-                
-              }
-              // No permito cambiar. No hago nada y tiro error
-              if (!AllowChange){
-                this.stock.play('error');
-                this.scanner.ActiveScanner = false;
+                return
               }
             }
             else {
+              // NO SE ENCUENTRA EL BARCODE EN EL LISTADO
               this.scanner.ActiveScanner = true;
               this.stock.play('error');
-              Move[LocationNeed] = this.TypeId[LocationNeed];
-              this.OpenGetLocation(Move, LocationField);
+              return this.OpenGetLocation(Move, LocationField);
             }
             
           }
@@ -1984,16 +1978,15 @@ export class MoveListPage implements OnInit {
     // Permite crear lotes/series, hay movimiento seleccionado y es de tipo lote yo tracking
     //Entonces creo el lote y lo añado a la lista de disponibles.
     if (this.TypeId['use_create_lots'] && !MoveSelected['need_location_id'] && (MoveSelected['tracking'] != 'none')) {
-      return this.CreateNewMoveLines(MoveSelected, val)
+      return this.AssignNewLot(MoveSelected, val)
     }
     if (MoveSelected['tracking'] != 'none' && !this.TypeId['use_create_lots']){
       this.stock.presentToast("Código " + val + " no válido", "Aviso !!!")  
     }
     this.stock.play('no_ok');
   }
-
-
-  async CreateNewMoveLines(Move, LotName, confirm=false){
+  
+  async AssignNewLot(Move, LotName, confirm=false, create_new_line=false){
     // const values = {'id': Move['id'], 'lot_name': LotName}
     if (!confirm && (Move['tracking'] == 'serial' || Move['tracking'] == 'lot')){
       const alert = await this.alertController.create({
@@ -2012,7 +2005,7 @@ export class MoveListPage implements OnInit {
             text: 'Aceptar',
             handler: ()=> {
               
-              this.CreateNewMoveLines(Move, LotName, true)}
+              this.AssignNewLot(Move, LotName, true)}
           },
         ],
       });
@@ -2022,6 +2015,7 @@ export class MoveListPage implements OnInit {
     this.stock.presentToast("Creando un nuevo lote/serie")
     this.PrevId = Move['id'];
     const values = {
+      'create_new_line': create_new_line,
       'product_id': Move['product_id']['id'], 
       'id': Move['id'],
       'lot_name': LotName}
@@ -2037,6 +2031,7 @@ export class MoveListPage implements OnInit {
             this.UpdateSelectedFromId( ResMove['id'])
           }
           else {
+            Move.qty_done = ResMove['qty_done']
             Move.lot_id = ResMove['lot_id']
             Move['product_uom_qty'] =  ResMove['product_uom_qty']
           }
@@ -2225,7 +2220,7 @@ export class MoveListPage implements OnInit {
     if (!MoveSelected['qty_done']){
       return this.stock.presentToast("No puedes duplicar una línea a 0", "Aviso")
     }
-    return this.CreateNewMoveLines(MoveSelected, '', true)
+    return this.AssignNewLot(MoveSelected, '', true, true)
   }
   allow_touch(){
     this.AllowTouch = true

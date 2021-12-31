@@ -1,7 +1,7 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar *ngIf="this.Selected == -1">
     <ion-title>{{ Batch && Batch['name'] || 'Albarán' }} : {{Moves && Moves.length || ''}}</ion-title>
-    <app-scanner-header slot="end"></app-scanner-header>
+    <!--app-scanner-header slot="end"></app-scanner-header-->
   </ion-toolbar>
   
   
@@ -267,11 +267,11 @@
       <ion-label>Home</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="schedules" (click)="ToDoToday()" class="inner-left-btn">
+    <!--ion-tab-button tab="schedules" (click)="ToDoToday()" class="inner-left-btn">
       <ion-icon name="calendar"></ion-icon>
       <ion-label>Hoy</ion-label>
       <ion-badge>{{0}}</ion-badge>
-    </ion-tab-button>
+    </ion-tab-button-->
 
     <ion-tab-button (click)="presentButtons()" class="button-center">
       <ion-icon name="ellipsis-vertical-outline"></ion-icon>

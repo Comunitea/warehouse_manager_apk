@@ -159,16 +159,23 @@ export class StockFunctionsService {
     return List1;
   }
   odoo_date(dt, format = 'datetime', timedelta = {}){
-    const dia = dt.getDate() + (timedelta['day'] || 0);
-    const mes = dt.getMonth() + 1 + (timedelta['month'] || 0);
-    const ano = dt.getFullYear() + (timedelta['year'] || 0);
-    const hora = dt.getHours() + (timedelta['hora'] || 0);
-    const minuto = dt.getHours() + (timedelta['minuto'] || 0);
-    const today = ano.toString().padStart(4, '0') + '/'
-      + mes.toString().padStart(2, '0') + '/'
-      + dia.toString().padStart(2, '0');
+    if (timedelta){
+      if ('day' in timedelta){dt.setDate(dt.getDate() + timedelta['day'])}
+      if ('month' in timedelta){dt.setMonth(dt.getMonth() + timedelta['month'])}
+      if ('year' in timedelta){dt.setYear(dt.getYear() + timedelta['year'])}
+      if ('hour' in timedelta){dt.setHours(dt.getHours() + timedelta['hour'])}
+      if ('minute' in timedelta){dt.setMinutes(dt.getMinutes() + timedelta['minute'])}
+      }
 
+    const dia = dt.getDate()
+    const mes = dt.getMonth() + 1 // El mes 0 es enero
+    const ano = dt.getFullYear()
+    const hora = dt.getHours()
+    const minuto = dt.getMinutes()
+    
+    const today = ano.toString().padStart(4, '0') + '/'+ mes.toString().padStart(2, '0') + '/'+ dia.toString().padStart(2, '0');
     const now = hora.toString().padStart(2, '0') + ':' + minuto.toString().padStart(2, '0') + ':00';
+
     if (format === 'datetime'){return today + ' ' + now; }
     if (format === 'date'){return today; }
     if (format === 'time'){return now; }
