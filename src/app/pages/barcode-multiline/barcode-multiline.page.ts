@@ -36,6 +36,7 @@ export class BarcodeMultilinePage implements OnInit {
       }, 50);
     }, 150);
   }
+  
   AfterViewInit() {
     setTimeout(() => {
        this.EanList.setFocus();

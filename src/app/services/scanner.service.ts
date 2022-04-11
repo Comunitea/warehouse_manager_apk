@@ -1,4 +1,3 @@
-import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
 import { Injectable, HostListener } from '@angular/core';
 import { Storage } from '@ionic/storage';
 

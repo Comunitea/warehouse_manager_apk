@@ -3,7 +3,7 @@ import { Storage } from '@ionic/storage';
 import { OdooService } from './odoo.service';
 import { AudioService } from './audio.service';
 import { AlertController, ActionSheetController, ModalController , ToastController} from '@ionic/angular';
-import { StaticReflector } from '@angular/compiler';
+
 
 @Injectable({
   providedIn: 'root'
