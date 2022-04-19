@@ -83,6 +83,7 @@ const routes: Routes = [
   { path: 'listado-albaranes/:id', loadChildren: './pages/listado-albaranes/listado-albaranes.module#ListadoAlbaranesPageModule' },
   { path: 'move-list/:BatchId', loadChildren: './pages/move-list/move-list.module#MoveListPageModule' },
   { path: 'inventory', loadChildren: './pages/inventory/inventory.module#InventoryPageModule' },
+  { path: 'settings', loadChildren: './pages/settings/settings.module#SettingsPageModule' },
 
 ];
 

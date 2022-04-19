@@ -8,6 +8,7 @@ import { OdooService } from '../../services/odoo.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
 import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
 import { OverlayEventDetail } from '@ionic/core';
+import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
 
 type Product = {'id': number, 'default_code': string, 'name': string, 'display_name': string} ;
 type Location = {'id': number, 'barcode': string, 'name': string, 'display_name': string, 'usage': string};
@@ -16,8 +17,8 @@ type Lot = {'id': number, 'name': string, 'real_location_id': Location, 'locatio
 type Line = { 'id': number,
               'product_id': Product,
               'location_id': Location,
-              'tracking': string
-              'prod_lot_id': number, 
+              'tracking': string,
+              'prod_lot_id': Lot, 
               'to_delete': boolean,
               'theoretical_qty': number,
               'product_qty': number,
@@ -28,7 +29,6 @@ type Inventory = {'id': number,
                   'name': string, 
                   'product_id': Product,
                   'location_id': Location, 
-                  'inventory_type': string, 
                   'filter': string, 
                   'line_ids': Array<Line>}
 
@@ -56,12 +56,12 @@ export class InventoryPage implements OnInit {
 
   product_id: Product; // id de producto seleccionado
   location_id: Location; // id de producto seleccionado
-  product_ids: Array<Product>
-  location_ids: Array<Location>
+  product_ids: any
+  location_ids: any
  
   line_ids: Array<Line>
   VisibleLines: Array<Line>
-  inventory: Inventory
+  inventory: {}
   type: string; // product, location, none u all
   //
   ShowLocationSearch: boolean;
@@ -74,7 +74,7 @@ export class InventoryPage implements OnInit {
 
   Limit: number;
   WaitingNewLot: boolean;
-
+  
   FilterAcl : boolean; // Si está marcado filtramos por pendientes
   Filter0 : boolean // Si está marcado, filteramos por no existencias
 
@@ -148,17 +148,22 @@ export class InventoryPage implements OnInit {
     // NO HAY UN MOVIMIENTO SELECCIONADO
     
 
-    if (this.MoveSelectedId === 0){
+    if (!this.MoveSelected){
       // Busco un movimiento y lo selecciono. NO hago nada mas
 
-      const MoveSelected = this.inventory['line_ids'].filter(x=> (x['prod_lot_id']['name'] === val || x['product_id']['default_code'] === val) || x['location_id']['barcode'] === val) 
-      if (this.stock.IsFalse(MoveSelected)){
-        //nO HAGO NADA
+      const MoveSelected = this.inventory['line_ids'].filter(x=> (
+        x['prod_lot_id']['name'] === val || 
+        x['product_id']['default_code'] === val) || 
+        x['location_id']['barcode'] === val)
+      
+      if (MoveSelected.length === 0){
         return
       }
+
       if (MoveSelected.length != this.inventory['line_ids'].length){
         this.line_ids = MoveSelected
       }
+
       if (MoveSelected.length === 1){
         this.MoveSelectedId = MoveSelected[0]['id']
         this.MoveSelected = MoveSelected[0]
@@ -170,7 +175,7 @@ export class InventoryPage implements OnInit {
       else {
         // Tengo que saber si he leido un lote, una ubicación o un artículo
         // Es lote?
-        const lot = MoveSelected.filter(x=>x['prod_lot_id']['name'] === val)
+        const lot = this.line_ids.filter(x=>x['prod_lot_id']['name'] === val)
         if (!this.stock.IsFalse(lot)){
           this.InventoryLocationId = null
           this.InventoryProductId = null
@@ -180,14 +185,14 @@ export class InventoryPage implements OnInit {
         }
         else {
           // Si lo que leo es una ubicación, filtro por ubicación
-          const loc = MoveSelected.filter(x=>x['location_id']['barcode'] === val)
+          const loc = this.line_ids.filter(x=>x['location_id']['barcode'] === val)
           if (!this.stock.IsFalse(loc)){
             this.InventoryLocationId = loc[0]['location_id']
             this.InventoryProductId = null
             this.ApplyFilterMoves()
           }
           else {
-            const prod = MoveSelected.filter(x=>x['product_id']['default_code'] === val)
+            const prod = this.line_ids.filter(x=>x['product_id']['default_code'] === val)
             if (!this.stock.IsFalse(prod)){
               this.InventoryLocationId = null
               this.InventoryProductId = prod[0]['product_id']
@@ -204,17 +209,19 @@ export class InventoryPage implements OnInit {
       this.MoveSelected = null
       this.ApplyFilterMoves()
       return
-    }  
-    const LeoProd = this.MoveSelected['product_id']['default_code'] === val
-    const LeoLoc = this.MoveSelected['location_id']['barcode'] === val
+    }
+    if (!this.MoveSelected){return}
+    const LeoProd = this.MoveSelected['product_id']['default_code'] === val || this.MoveSelected['product_id']['barcode'] === val
+    const LeoLoc = this.MoveSelected['location_id']['barcode'] === val || this.MoveSelected['location_id']['name'] === val
     const LeoLot = this.MoveSelected['prod_lot_id'] && this.MoveSelected['prod_lot_id']['name'] === val
     const TrackVirtual = this.MoveSelected['tracking'] === 'virtual' 
     const TrackNone = this.MoveSelected['tracking'] === 'none' 
     const TrackLot =  this.MoveSelected['tracking'] === 'lot' 
     const TrackSerial =  this.MoveSelected['tracking'] === 'serial' 
+    
     // HAY MOV SELECCIONADO, 
     // LEO PRODUCTO Y puedo sumar cantidades
-    if (LeoProd && (TrackNone || (TrackVirtual && this.type ==='qty'))) {
+    if (LeoProd && (TrackNone || TrackVirtual)) {
       this.ChangeQty(this.MoveSelected, +1)
       return
     }
@@ -228,12 +235,14 @@ export class InventoryPage implements OnInit {
       this.ChangeQty(this.MoveSelected, +1)
       return
     }
-    
-    // Espero Lote si, 
+    if (LeoLot && TrackSerial){
+      this.ChangeQty(this.MoveSelected, 0, 1)
+      return
+    }
      
     // Si espero lote
-    if (this.MoveSelectedId != 0 && (TrackLot || TrackSerial)){
-      if (this.MoveSelected['prod_lot_id']['name'] !== val){
+    if (TrackLot || TrackSerial){
+      if (this.MoveSelected['prod_lot_id'] && this.MoveSelected['prod_lot_id']['name'] !== val){
         return this.stock.presentToast("El lote/serie " + val + " no es válido", "Error de lote/serie")
       }
     }
@@ -246,6 +255,8 @@ export class InventoryPage implements OnInit {
     if (this.WaitingNewLot && TrackSerial){
       return this.CreateSerial(this.MoveSelected, val)
     }
+    return
+    // No se para que vale lo siguiente ?????
     const MoveSelected = this.inventory['line_ids'].filter(x=> (x['prod_lot_id']['name'] === val || x['product_id']['default_code'] === val) || x['location_id']['barcode'] === val) 
     if (MoveSelected){
       this.MoveSelectedId = 0
@@ -280,7 +291,9 @@ export class InventoryPage implements OnInit {
     const self = this;
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute(OdooModel, 'create_apk_prod_lot', values).then((Res: {}) => {
-        MoveSelected['prod_lot_id'] = Res
+        // MoveSelected['prod_lot_id'] = Res
+        this.line_ids.filter(x=>x['id'] === MoveSelected['id'])[0]['prod_lot_id'] = Res
+        this.MoveSelected['prod_lot_id'] = Res
         // self.loading.dismiss();
       })
       .catch((error) => {
@@ -298,8 +311,8 @@ export class InventoryPage implements OnInit {
     // this.presentLoading('Actualizando cantidades ...')
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.inventory', 'delete_apk_line', values).then((Res: Line) => {
-        const i = self.inventory.line_ids.indexOf(Move)
-        self.inventory.line_ids.splice(i, 1)
+        const i = self.inventory['line_ids'].indexOf(Move)
+        self.inventory['line_ids'].splice(i, 1)
         self.ApplyFilterMoves()
         // self.loading.dismiss();
       })
@@ -313,7 +326,7 @@ export class InventoryPage implements OnInit {
   }
   async ChangeQty(Move: Line, inc, qty=0){
     
-    if (Move['tracking'] == 'virtual' && qty== 0){
+    if (false && Move['tracking'] == 'virtual' && qty== 0){
       const DeleteOld = inc == -1;
       return this.OpenBarcodeMultiline(Move, DeleteOld)
     }
@@ -351,19 +364,16 @@ export class InventoryPage implements OnInit {
   }
 
   ngOnInit() {
-    this.product_id = {'id': 0, 'default_code': 'Todos', 'display_name': "Todos", 'name': ""};
-    this.location_id = {'id': 0, 'barcode': "Stock", 'name': 'Stock', 'display_name': 'Stock', 'usage': 'view'}
+    if (!this.stock.Persistent){
+      this.stock.LoadPersistentData()
+    }
+    this.product_id = null
+    this.location_id = null
     // this.location_id = {'id': 0, 'barcode': '', 'name': "Stock"}
-    this.product_ids = [this.product_id]
-    this.location_ids = [this.location_id]
+    this.product_ids = []
+    this.location_ids = []
     this.WaitingNewLot = false;
-    this.inventory = {'id': 0, 
-                      'name': "Nombre", 
-                      'filter': 'none',
-                      'product_id': this.product_id, 
-                      'location_id': this.location_id, 
-                      'inventory_type': 'qty' , 
-                      'line_ids': []}
+    this.inventory = null
     this.Selected = -1
     this.LastMove = {}
   }
@@ -412,10 +422,23 @@ export class InventoryPage implements OnInit {
     //  this.InventoryProductId = this.MoveSelected['product_id']
     // }
   }
+  LoadAndOpenMulti(Line){      const self = this
+      const values = {'id': Line['id']}
+      const promise = new Promise( (resolve, reject) => {
+        self.odooCon.execute('stock.inventory.line', 'load_virtual_lot_ids', values).then((Res: {}) => {
 
+          return this.OpenBarcodeMultiline(Line, true, Res['list'])
+          })
+          .catch((error) => {
+            self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+          });
+        });
+        return promise;
+  }
   ClickLot(Line){
     if (Line.tracking=='virtual'){
-      return this.OpenBarcodeMultiline(Line, true)
+
+      return this.LoadAndOpenMulti(Line)
     }
     if (Line.tracking == 'lot' || Line.tracking == 'serial') {
       if (!Line['prod_lot_id']['id']){
@@ -480,33 +503,54 @@ export class InventoryPage implements OnInit {
 
   }
   SelectSearch(event: { component: IonicSelectableComponent, value: any}, field='product_ids'){
-    const SearchStr = event.component._searchText
-    if (SearchStr.length >2){
-      this.GetSearchs(SearchStr, field)
-    }
-  }
-  GetSearchs(search='', field='', id=0){
-    let values = {}
-    values = {'search': search, 'id': id} 
-    if (!this.stock.IsFalse(this.inventory)){
-      values['inventory_id'] = this.inventory.id; //, 'inventory_id': this['inventory'] && this['inventory']['id']}
-    }
-    const self = this;
     
-    const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.inventory', 'get_apk_' +field, values).then((Res: Array<{}>) => {
-        self[field] = Res
-        self.ComputeInvType()
-        self.stock.presentToast('OK', 'Carga completa de ' + Res.length, 10);
-      })
-      .catch((error) => {
-      self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
-      });
-    });
-    return promise;
+    const SearchStr = event.component._searchText.toUpperCase()
+    if (SearchStr.length < 2){
+      event.component.endSearch();
+      return
+    }
+    return this.GetSearchs(SearchStr, field)
+  }
+
+  GetSearchs(search='', field='', id=0){
+    if (this.inventory && field === 'product_ids' && this.inventory['filter'] === 'product' && this.inventory['product_id']){
+      this.product_ids = this.stock.Products.filter(x=> x['id'] === this.inventory['product_id']['id'])
+      this.InventoryProductId = this.product_ids[0]
+    }
+    else if (this.inventory && field === 'location_ids'){
+      if (search){
+        this.location_ids = this.stock.Locations.filter(x => (
+          (x['parent_path'].indexOf(this.inventory['location_id']['parent_path']) > -1) && 
+          (x['barcode'] + x['name']).toUpperCase().indexOf(search) > -1))
+          .slice(0,10)
+      }
+      
+      if (!search){
+        if (!this.InventoryLocationId){
+          this.location_ids = this.stock.Locations.filter(x => (
+            (x['parent_path'].indexOf(this.inventory['location_id']['parent_path']) > -1)))
+            .slice(0,10)
+            this.InventoryLocationId = this.inventory['location_id']
+          }
+        else {
+
+        }
+
+      }
+    }
+    
+    else if (!this.inventory && field === 'location_ids'){
+        this.location_ids = this.stock.Locations.filter(x => ((x['usage'] === 'internal') && 
+          (x['barcode'] + x['name']).toUpperCase().indexOf(search) > -1)).slice(0,10)
+    }
+    else if (field == 'product_ids'){
+        this.product_ids = this.stock.Products.filter(x=> (x['barcode'] + x['default_code']).toUpperCase().indexOf(search) > -1).slice(0,10)
+    }
+    this.ComputeInvType()
+    return;
   }
   
-  GetSelects(){
+  async GetSelects(){
     this.GetSearchs('', 'location_ids')
     this.GetSearchs('', 'product_ids')
     return
@@ -521,8 +565,8 @@ export class InventoryPage implements OnInit {
     this.ApplyFilterMoves()
     // OPciones 
     // Si el tipo de albarán tiene producto, es distinto, entonces no puedo cambiarlo
-    if (this.inventory.filter === 'product'){
-      this.product_id = this.inventory.product_id
+    if (this.inventory['filter'] === 'product'){
+      this.product_id = this.inventory['product_id']
       return
     }
     
@@ -570,7 +614,7 @@ export class InventoryPage implements OnInit {
       return this.stock.presentToast("No hay ningún inventario cargado")
     }
     const values = {'id': this.inventory['id']}
-    const InvName = this.inventory.name
+    const InvName = this.inventory['name']
     const self = this
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.inventory', 'action_validate_apk', values).then((Res: Inventory) => {
@@ -584,9 +628,21 @@ export class InventoryPage implements OnInit {
     });
     return this.LoadInventory (0);
   }
+  Unload(){
+    this.inventory = null
+    this.product_id = null
+    this.location_id = null
+    this.line_ids = null
+    this.FilterAcl = false;
+    this.Filter0 = false;
+    this.MoveSelected = null
+    this.MoveSelectedId = 0
+    this.Indice = -1
+
+  }
   LoadInventory(id=0){
 
-    const values = {product_id: this.product_id, location_id: this.location_id, id: id, domain:this.GetInventoryLinesDomain(this.inventory['id'])}
+    const values = {product_id: this.product_id, location_id: this.location_id, id: id, domain:this.GetInventoryLinesDomain(this.inventory && this.inventory['id'] || 0)}
     const self = this;
     this.presentLoading('Cargando último inventario ...')
     
@@ -888,15 +944,23 @@ export class InventoryPage implements OnInit {
         this.NewLine();
         // this.ValidateBatch();
     }});
-    if (this.inventory && this.inventory.id){
+    if (this.inventory && this.inventory['id']){
     Buttons.push({
         text: 'Validar Inventario',
         icon: 'add-circle-outline',
         handler: () => {
           // this.ValidateBatch();
       }});
+    
+      Buttons.push({
+        text: 'Descargar Inventario',
+        icon: 'close-circle-outline',
+        handler: () => {
+          this.Unload();
+      }});
+
     }
-    if (!(this.inventory && this.inventory.id) && this.InventoryLocationId){
+    if (!(this.inventory && this.inventory['id']) && this.InventoryLocationId){
       Buttons.push({
           text: 'Crear nuevo Inventario',
           icon: 'add-circle-outline',
@@ -936,17 +1000,18 @@ export class InventoryPage implements OnInit {
     await actionSheet.present();
   }
 
-  async OpenBarcodeMultiline(Move, DeleteOld = false){
+  async OpenBarcodeMultiline(Move, DeleteOld = false, ean = []){
     this.OnSearchFocus(true);
     const self = this;
     const modal = await this.modalController.create({
       component: BarcodeMultilinePage,
       cssClass: 'barcode-modal-css',
-      componentProps: {
+      componentProps: { ean: ean.join('\n') + '\n',
                         ProductId: Move['product_id']['id'],
                         PName: 'Nº de Serie',
                         LName: Move['product_id']['name'],
-                        L2Name: Move['product_id']['default_code'] + ' en ' + Move['location_id']['name']
+                        L2Name: Move['product_id']['default_code'] + ' en ' + Move['location_id']['name'],
+
                       },
     });
     modal.onDidDismiss().then((detail: OverlayEventDetail) => {

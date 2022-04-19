@@ -32,6 +32,11 @@ export class AppComponent {
       icon: 'home'
     },
     {
+      title: 'opciones',
+      url: '/settings',
+      icon: 'log-out'
+    },
+    {
       title: 'Salir',
       url: '/logout',
       icon: 'log-out'

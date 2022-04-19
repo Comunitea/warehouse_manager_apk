@@ -20,7 +20,7 @@ export class NavegacionPrincipalPage implements OnInit {
   TabNavegarA(URL){
     this.router.navigateByUrl(URL);
   }
-  LoadPersistentData(){
-    this.stock.LoadPersistentData()
+  LoadPersistentData(bool=false){
+    this.stock.LoadPersistentData(bool)
   }
 }

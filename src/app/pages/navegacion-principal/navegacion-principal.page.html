@@ -1,9 +1,12 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>Menú Principal</ion-title>
+  <ion-toolbar class="cmnt-front">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+
+    <ion-title>Menu princicpal</ion-title>
   </ion-toolbar>
 </ion-header>
-
 <ion-content>
 
 <ion-grid>
@@ -73,7 +76,7 @@
       <ion-label>Acciones</ion-label>
     </ion-tab-button-->
 
-    <ion-tab-button tab="users" class="inner-right-btn" (click)="LoadPersistentData()">
+    <ion-tab-button tab="users" class="inner-right-btn" (click)="LoadPersistentData(true)">
       <ion-icon name="save-outline"></ion-icon>
       <ion-label>Cargar Maestros</ion-label>
     </ion-tab-button>

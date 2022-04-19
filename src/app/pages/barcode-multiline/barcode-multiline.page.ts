@@ -18,10 +18,11 @@ export class BarcodeMultilinePage implements OnInit {
   @Input() IName;
   @Input() PName;
   @Input() L2Name;
+  @Input() ean:string;
 
   @ViewChild('EanList') EanList: IonTextarea;
 
-  ean: string;
+  
   rows: number;
 
   constructor(public odoo: OdooService, private modalController: ModalController,private keyboard: Keyboard) {
@@ -30,21 +31,18 @@ export class BarcodeMultilinePage implements OnInit {
 
   ionViewWillEnter() {
     setTimeout(() => {
+      this.CalcRows()
+      this.EanList.getInputElement().then(id => id.selectionStart = id.selectionEnd = 100000)
       this.EanList.setFocus();
       setTimeout(() => {
         this.keyboard.hide();
       }, 50);
-    }, 150);
+      }, 150);
   }
   
-  AfterViewInit() {
-    setTimeout(() => {
-       this.EanList.setFocus();
-       this.keyboard.hide();
-    }, 150);
-  }
   ngOnInit() {
     // this.EanList.setFocus();
+    
   }
   goBack(cancel) {
     if (cancel){
@@ -58,5 +56,6 @@ export class BarcodeMultilinePage implements OnInit {
   }
   CalcRows(){
     const ElId = document.getElementById('eans');
+    this.rows = ElId.value.split('').filter(c => c === '\n').length;
   }
 }

@@ -3,9 +3,9 @@
     <button class="cmnt-button" slot="end" ion-button icon-only item-end (click)="goBack(false)">
       <ion-icon style="font-size: 2em;" name="duplicate-outline" class="cmnt-front"></ion-icon>
     </button>
-  <ion-title>{{PName}}</ion-title> 
-  <ion-card-subtitle color="white" style="text-align: center">{{LName}}</ion-card-subtitle>
-  <ion-card-subtitle color="white" style="text-align: center">{{L2Name}}</ion-card-subtitle>
+  <ion-title>{{L2Name}}</ion-title> 
+  <!--ion-card-subtitle color="white" style="text-align: center">{{LName}}</ion-card-subtitle-->
+  <ion-card-subtitle color="white" style="text-align: center">{{PName}} {{': '}} {{rows}}</ion-card-subtitle>
   </ion-toolbar> 
   
 </ion-header>
@@ -16,8 +16,13 @@
   </ion-card-header>
 
   <ion-card-content style="text-align: -webkit-center;">
-  <ion-textarea #EanList id="eans" (ionChange) = 'CalcRows()' autofocus='true'
-    style="background-color: #eeeeee; width: 250px; height: 350px" rows=25 textarea type="text" [(ngModel)]="ean"> </ion-textarea>
+    
+      <ion-textarea #EanList id="eans" 
+          (ionChange) = 'CalcRows()' autofocus
+          style="background-color: #eeeeee; width: 250px; height: 350px" 
+          rows=25 textarea type="text" [(ngModel)]="ean">
+      </ion-textarea>
+  
   </ion-card-content>
 
 </ion-content>

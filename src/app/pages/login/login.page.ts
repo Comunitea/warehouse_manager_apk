@@ -127,7 +127,7 @@ export class LoginPage implements OnInit {
     }
   }
   NavigateNext(){
-    this.LoadData()
+    
     this.storage.set('KeyTime', this.KeyTime).then(() => {
 
       this.router.navigateByUrl('/navegacion-principal');
@@ -135,7 +135,7 @@ export class LoginPage implements OnInit {
   }
   log_in() {
     this.odoo.login(this.CONEXION.username, this.CONEXION.password).then((data)=> {
-      
+      // this.LoadData()
       this.NavigateNext();
     }).catch((error) => {
       this.presentAlert('Error al hacer login:', error);
@@ -145,13 +145,13 @@ export class LoginPage implements OnInit {
   LoadData(){
     //
     // this.LoadLocation()
-    this.stock.LoadPersistentData(true)
+    this.stock.LoadPersistentData()
   }
   ngOnInit() {
-
+    return
     this.odoo.isLoggedIn().then((data)=>{
       if (data == true) {
-        
+        console.log("Navego directo")
         this.NavigateNext();
       }
     })

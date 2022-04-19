@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-menu-button class="cmnt-front"></ion-menu-button>
     </ion-buttons>
-    <app-scanner-header  class="cmnt-back" slot="end">Movimiento</app-scanner-header>
+    <app-scanner-header  class="cmnt-back" slot="end"></app-scanner-header>
     <ion-title  class="cmnt-button" *ngIf="data" style="padding-inline-end: 2px; padding-inline-start: 2px;">
       {{data['picking_id'].name}}
     </ion-title>
@@ -29,9 +29,6 @@
           <ion-badge (click)="GetRelativeMoveInfo(data['id'], +1)" style="margin-right: 0px"> Siguiente </ion-badge> 
         </ion-col>
       </ion-row>
-   
-
-
       <ion-card-title class="ion-text-center">{{data['product_id'].name}}</ion-card-title>
       <ion-card-title class="ion-text-right"> 
       </ion-card-title>

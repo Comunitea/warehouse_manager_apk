@@ -1,14 +1,14 @@
 <ion-header>
-  <ion-toolbar *ngIf="this.Selected == -1">
-    <ion-title>{{ Batch && Batch['name'] || 'Albarán' }} : {{Moves && Moves.length || ''}}</ion-title>
-    <!--app-scanner-header slot="end"></app-scanner-header-->
+  <ion-toolbar class="cmnt-front">
+    <ion-buttons slot="start">
+      <ion-menu-button class="cmnt-front"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="cmnt-button">{{ Batch && Batch['name'] || 'Albarán' }} : {{Moves && Moves.length || ''}}</ion-title>
+    <app-scanner-header slot="end"></app-scanner-header>
   </ion-toolbar>
-  
-  
-
 </ion-header>
 <ion-content>
-     <ion-card *ngIf="TypeId && false">
+     <ion-card *ngIf="TypeId && true">
       <ion-card-header> {{TypeId['name']}} : {{TypeId['warehouse_id']['name']}}</ion-card-header>
       <ion-card-content style="padding: 0px; font-size: 9px">
         <ion-row>
@@ -25,8 +25,7 @@
       </ion-card-content>
     </ion-card>
   <!-- NAVEGACION ENTRE MOVIMIENTOS SOLO SI ESTÁ 1 SELECCIONADO -->
-  <ion-row *ngIf="this.Selected > -1">
-  
+  <ion-row *ngIf="this.SelectedMove">
       <ion-tab-button class="ion-tab-button-class" tab="primero"  (click)="ToMove(1,0)">
         <ion-icon mode="md" name="play-skip-back-outline"></ion-icon>
         <ion-label>Primero</ion-label>
@@ -53,7 +52,6 @@
         <ion-icon name="play-skip-forward-outline"></ion-icon>
         <ion-label>Ultimo</ion-label>
       </ion-tab-button>
-
   </ion-row>  
 
   <ion-row>
@@ -64,61 +62,51 @@
         <ion-card-header [ngClass]="(Selected == -1 || Move['indice'] == Selected) ? 'primary-deactive':'primary-active'">
           <ion-row>
             <ion-col class="card" size="10" (click)="AlternateSelected(Move['indice'])">
-              {{Move['name']}} 
+              {{Move['name']}} {{Move['tracking']}}
             </ion-col>
             
             <ion-col class="card" size="1">
               <ion-icon [name]="StateIcons[Move['state']['value']]" [ngClass]="Move['state']['value']"></ion-icon>
             </ion-col>
-            
             <ion-col class="card" size="1">
               <ion-icon name="barcode" (click)="OpenVirtualBarcodeMultiline(Move)" *ngIf="Move['tracking'] === 'virtual'">  </ion-icon>
               <ion-icon name="pricetags-outline" *ngIf="Move['tracking'] === 'lot'">  </ion-icon>
+              <ion-icon name="barcode" *ngIf="Move['tracking'] === 'serial'">  </ion-icon>
               <ion-icon name="server-outline" *ngIf="Move['tracking'] === 'none'">  </ion-icon>
             </ion-col>
-            <!--ion-col class="card" size="8" *ngIf="Move['tracking'] === 'lot'">
-            </ion-col>
-            
-            <ion-col class="card" size="4" *ngIf="Move['tracking'] === 'lot'" (click)="ChangeLot(indice)">
-              LOTE: {{Move['lot_id']['name']}}
-            </ion-col>
-            <ion-col class="card" size="12" >
-              <p style="font-size: smaller"> {{Move['id']}} > {{Move['indice']}} > {{Move['tracking']}} > {{Move['removal_priority']}} >> {{Move['picking_id']['name']}}</p>
-            </ion-col-->
-            <!--ion-col class="card" size-xs="1" size-sm="1"  (click)="SetAsActive(indice)">
-              <ion-icon name="checkmark-done-circle-outline"  *ngIf="Move['selected']">  </ion-icon>
-              <ion-icon name="ellipse-outline"                *ngIf="!Move['selected']">  </ion-icon>
-            </ion-col-->
           </ion-row>
         </ion-card-header>
 
 
         <ion-card-content style="padding: 0px" [ngSwitch]="Move['tracking']" [ngClass]="Move['indice'] === Selected ? 'secondary-active': ''">
-
+        <!--NOOOOOOO HAY SELECCION -->
           <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] != Selected">
-              <ion-col size="3" (click)="OpenGetLocation(Move, 'location_id')" [ngClass]="Move['need_location_id'] ? 'required': 'not-required'">
+              <ion-col size="3" [ngClass]="Move['need_location_id'] ? 'required': 'not-required'">
                 <span>
                   {{Move['location_id']['name']}}
                 </span>
               </ion-col>
-              <ion-col size="3" (click)="OpenGetLocation(Move, 'location_dest_id')" [ngClass]="Move['need_location_dest_id'] ? 'required': 'not-required'">
+              <ion-col size="3" [ngClass]="Move['need_location_dest_id'] ? 'required': 'not-required'">
                 <span>
                   {{Move['location_dest_id']['name']}}
                 </span>
               </ion-col>
               <ion-col (click)="InputQty(Move)" size="6">
-                 <span [ngClass]="Move['qty_done'] < Move['product_uom_qty'] ? 'required': 'not-required'" >{{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}} </span>
-                 <span *ngIf="Move['tracking'] === 'serial' || Move['tracking'] === 'lot'" [ngClass]="Move['need_confirm_lot_id'] ? 'required': 'not-required'">{{Move['lot_id'] && " [" + Move['lot_id']['name'] + "]"|| ''}}</span>
-                 <span *ngIf="Move['tracking'] === 'virtual' && Move['qty_done'] === 1" class="not-required">{{Move['lot_id'] && " [" + Move['lot_id']['name'] + "]"|| ''}}</span>
+                  <span [ngClass]="Move['qty_done'] < Move['product_uom_qty'] ? 'required': 'not-required'" >{{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}} </span>
+                  <span *ngIf="Move['tracking'] === 'serial' || Move['tracking'] === 'lot'" [ngClass]="Move['need_confirm_lot_id'] ? 'required': 'not-required'">{{Move['lot_id'] && " [" + Move['lot_id']['name'] + "]"|| ''}}</span>
+                  <span *ngIf="Move['tracking'] === 'virtual' && Move['qty_done'] === 1" class="not-required">{{Move['lot_id'] && " [" + Move['lot_id']['name'] + "]"|| ''}}</span>
               </ion-col>
           </ion-row>
+        <!--HAY SELECCION -->
           <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected">
             <ion-col  size="6" (click)="OpenGetLocation(Move, 'location_id')" [ngClass]="Move['need_location_id'] ? 'required': 'not-required'">
               <span>
                 {{Move['location_id']['name']}}
               </span>
             </ion-col>
-            <ion-col  size="6" (click)="OpenGetLocation(Move, 'location_dest_id')" [ngClass]="Move['need_location_dest_id'] ? 'required': 'not-required'">
+            <ion-col  size="6" 
+              (click)="OpenGetLocation(Move, 'location_dest_id')" 
+              [ngClass]="Move['need_location_dest_id'] ? 'required': 'not-required'">
               <span>
                 {{Move['location_dest_id']['name']}}
               </span>
@@ -161,35 +149,23 @@
             <ion-row class="card ion-text-center p0px" *ngIf="Move['ChangeQty'] && Move['indice'] === Selected" >
               <ion-col size=3></ion-col>
               <ion-col size=6>
-                <ion-label *ngIf="WaitingSerials == 1" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Serie ...</ion-label>
-                <ion-input *ngIf="WaitingSerials == 2" class="button-qties border-qties" placeholder='Nº Serie' autocapitalize clearOnEdit type='text'
+                <ion-label *ngIf="WaitingSerials" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Serie ...</ion-label>
+                <ion-input *ngIf="!WaitingSerials" class="button-qties border-qties" placeholder='Nº Serie' autocapitalize clearOnEdit type='text'
                   #NewAddSerialI
                   (ionFocus)='IonFocus(indice, true)'
                   (ionBlur)='IonFocus(indice, false)'
                   (ionChange)='AddNewSerialEvent($event, indice)'
                   debounce=50 
                   (keyup.enter)="onEnter($event, indice)" 
-                  >
+                  >Add New
                 </ion-input>
               </ion-col>
               <ion-col size=3></ion-col>
             </ion-row>
-            <div *ngIf="Move['indice'] === Selected" >
-              <!--ion-row class="card ion-text-center p0px" >
-                  <ion-col  size="6" class="button-qties p0px" *ngFor="let Lot of Move['lot_ids']">
-                  {{ Lot['name']}}
-                  </ion-col>
-              </ion-row-->
-              <!--ion-row class="card ion-text-center p0px" >
-                <ion-col class="p0px" size= 6 *ngFor="let Lot of AvailableLotsForMove">
-                  <ion-button class="button-lot p0px" (click)="ScannedSerial(Move, Lot)">{{Lot['name']}}
-                    {{Lot['product_qty'] > 0 ? ': ' +  Lot['product_qty'] + ' Ud.': ''}} 
-                  </ion-button>
-                </ion-col>
-              </ion-row-->
-            </div>
-
-        </ng-template>
+            <ion-row *ngIf="SelectedMove" class="ion-text-center">
+              <ion-col size=3 class="ion-text-center button-qties border-qties" (click) = "AddVirtualSerial(Move, serial, true)" *ngFor="let serial of Move['serials']">{{serial}}</ion-col>
+            </ion-row>
+       </ng-template>
         
         <ng-template [ngSwitchCase]="'lot'" >
             <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected">
@@ -211,7 +187,8 @@
               
               <ion-col  class="p0px" size="6" (click)="InputQty(Move)" size="6">
               
-                <h2>LOT: {{Move['lot_id'] && Move['lot_id']['name'] || 'Sin Lote'}} </h2>
+                <h2 *ngIf="!TypeId['use_create_lots']">LOT: {{Move['lot_id'] && Move['lot_id']['name'] || 'Sin Lote'}} </h2>
+                <h2 *ngIf="TypeId['use_create_lots']">LOT: {{Move['lot_name'] || 'Sin Lote'}} </h2>
                 <strong>{{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}} </strong>
                 
               </ion-col>
@@ -220,9 +197,9 @@
 
 
         </ng-template>
-        <div class="product_img" *ngIf="Move['indice'] === Selected && stock.ImageProducts[Move['product_id']['barcode']]">
+        <!--div class="product_img" *ngIf="Move['indice'] === Selected && stock.ImageProducts[Move['product_id']['barcode']]">
           <ion-img src="data:image/jpeg;base64,{{ stock.ImageProducts[Move['product_id']['barcode']] }}"></ion-img>
-        </div>  
+        </div-->  
 
           <!--ion-row *ngIf="Move['tracking'] != 'none' && Move['indice'] == Selected" class="card ion-text-center">
             <ion-col size="3">

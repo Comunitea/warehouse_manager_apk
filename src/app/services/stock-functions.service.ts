@@ -14,6 +14,7 @@ export class StockFunctionsService {
   loading: any;
   // CTES PARA EL FUNCIOANMIENTO DE LA APK
   LIMIT: 200;
+  Persistent: boolean = false;
   Locations: Array<{}>;
   Products: Array<{}>;
   PickingTypeIds: Array<{}>;
@@ -94,7 +95,7 @@ export class StockFunctionsService {
   OrderArrayOfDict(OrderedArray, WriteIndex = true, field = [], asc = []){
     console.log ('Ordenando ' + OrderedArray.length + ' items según los campos: ' + field);
     let iters = 0;
-    const d = new Date();
+
     OrderedArray.sort((a, b) =>  {
       iters += 1;
       const k = 0;
@@ -110,8 +111,7 @@ export class StockFunctionsService {
         OrderedArray[k]['indice'] = indice;
         indice += 1; }
     }
-    const d1 = new Date();
-    // console.log ('Time: ' + (d1 - d));
+    
     return OrderedArray;
   }
   IsEmpty(List1){
@@ -221,12 +221,13 @@ export class StockFunctionsService {
     return promise;
   }
   LoadPersistentData(refresh=false){
+    this.Persistent = true
     this.presentToast("Recargando Maestros", "ESTADO")
     if (refresh){
       console.log("Reseteo 0")
       this.storage.set('Locations', false)
       this.storage.set('Products', false)
-      this.storage.set('ImageProducts', false)
+      //this.storage.set('ImageProducts', false)
       this.storage.set('PickingTypeIds',false)
 
     }
@@ -237,7 +238,8 @@ export class StockFunctionsService {
       } 
       else {
         console.log("RECARGANDO IMAGENES")
-        this.GetAppImageProducts()}
+        // this.GetAppImageProducts()
+      }
     }).catch(() => {
       //   
     });
@@ -298,6 +300,7 @@ export class StockFunctionsService {
         self.ApplyLocBusquedas()
         self.presentToast("Cargadas Ubicaciones", "Proceso de carga")
         self.storage.set('Locations', Res).then ((data)=>{})
+        resolve(true)
       })
       .catch((error) => {
         //
@@ -316,9 +319,11 @@ export class StockFunctionsService {
         self.ImageProducts = Res;
         self.storage.set('ImageProducts', Res).then ((data)=>{})
         self.presentToast("Cargados Imagenes Articulos", "Proceso de carga")
+        resolve(true)
       })
       .catch((error) => {
         self.Aviso('Error al cargar articulos', error)
+
     });
     });
     return promise;
@@ -335,6 +340,7 @@ export class StockFunctionsService {
         self.ApplyProdBusquedas()
         self.storage.set('Products', Res).then ((data)=>{})
         self.presentToast("Cargados Articulos", "Proceso de carga")
+        resolve(true)
       })
       .catch((error) => {
         self.Aviso('Error al cargar articulos', error)
@@ -342,6 +348,43 @@ export class StockFunctionsService {
     });
     return promise;
   }
+  CheckProducts(ids, error_msg = ''){
+    
+    if (ids.length >0){
+      const id_id =  ids.pop()
+      const id = id_id['id']
+      const values = {domain : [['id', '=',id]]}
+      const promise = new Promise( (resolve, reject) => {
+        this.odooCon.execute('product.product', 'ProductData', values).then((Res: Array<{}>) => {
+          //console.log(Res[0]['id'] + ': ' + Res[0]['wh'])
+          this.CheckProducts(ids, error_msg)
+        }).catch((error) => {
+          error_msg += ', ' + id
+          console.log(id + ': Error en el nombre')
+          this.CheckProducts(ids)
+      });
+    })
+    }
+    else {this.Aviso('Error en:', error_msg)}
+  }
+  GetAppProducts2(){
+    const self = this;
+    let values = {};
+    let domain = [['default_code', '!=', false], ['type', '=', 'product']]
+    values = {domain: domain, 'Timeout': 30000, mode:'test'};
+    console.log('Conectando a Odoo para recuperar las productos');
+    const promise = new Promise( (resolve, reject) => {
+      self.odooCon.execute('product.product', 'ProductData', values).then((Res: Array<{}>) => {
+        return this.CheckProducts(Res)  
+        
+      })
+      .catch((error) => {
+        self.Aviso('Error al cargar articulos', error)
+    });
+    });
+    return promise;
+  }
+
   GetIndexBarcode(Objects){
     let Barcodes = {}
     for (var Indice in Objects){
@@ -401,13 +444,14 @@ export class StockFunctionsService {
   GetAppPickingTypeIds(){
     const self = this;
     let values = {};
-    values = {domain: [['usage', '=', 'product']]};
+    values = {domain: [['app_integrated', '=', 'true']]};
     console.log('Conectando a Odoo para recuperar las tipos');
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.picking.type', 'TypeData', values).then((Res: Array<{}>) => {
         self.PickingTypeIds = Res;
         self.presentToast("Cargados Tipos de Albaranes", "Proceso de carga")
         self.storage.set('PickingTypeIds', Res).then ((data)=>{})
+        resolve(true)
       })
       .catch((error) => {
         //

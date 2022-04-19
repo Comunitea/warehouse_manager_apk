@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title style="font-size: medium">{{inventory['id'] == 0 && "Inventario" || inventory['name']}} 
+    <ion-title style="font-size: medium">{{!inventory && "Inventario" || inventory && inventory['name']}} 
     </ion-title>
     <!--app-scanner-header slot="end"></app-scanner-header-->
   </ion-toolbar>
@@ -41,17 +41,18 @@
             (onOpen)="OnSearchFocus(true)"
             (onClose)="OnSearchFocus(false)"
             [canClear]="true"
-
-            [(ngModel)]="InventoryLocationId" itemValueField="id" itemTextField="display_name" [items]="location_ids" [canSearch]="true"
+            [(ngModel)]="InventoryLocationId" itemValueField="id" itemTextField="name" [items]="location_ids" [canSearch]="true"
             (onChange)="locationChange($event)" (onSearch)="SelectSearch($event, 'location_ids')">
               <ng-template ionicSelectableCloseButtonTemplate>
-                <ion-icon name="close-circle" style="font-size: 12px;"></ion-icon>
+                <ion-icon name="close-circle" style="font-size: 24px;"></ion-icon>
               </ng-template>
               <ng-template ionicSelectableTitleTemplate>
                 <span style="color: var(--ion-color-primary);"><strong>Ubicaciones</strong></span>
               </ng-template>
             </ionic-selectable>
-</ion-item>
+
+          </ion-item>
+        
 <ion-item  *ngIf="this.MoveSelectedId == 0">
   <ion-label color="primary" >Art.</ion-label>
   <ionic-selectable 
@@ -64,7 +65,7 @@
                   (onChange)="productChange($event)" 
                   (onSearch)="SelectSearch($event, 'product_ids')">
                   <ng-template ionicSelectableItemTemplate let-product="item" let-isProductSelected="isItemSelected">
-                    <span class="x-small">{{product.default_code}} ({{product.name}})</span>
+                    <span class="x-small">{{product['wh']}}</span>
                   </ng-template>
                   <ng-template ionicSelectableTitleTemplate>
                     <span style="color: var(--ion-color-primary);"><strong>Artículos</strong></span>
@@ -200,7 +201,7 @@
           <ion-col size="1" (click)="DeleteLine(LineId)">
              <ion-icon name="trash">  </ion-icon>
           </ion-col>
-          <ion-col size="2" (click)="ClickLocation(LineId)" *ngIf="!InventoryLocationId || InventoryLocationId['usage'] != 'internal'">
+          <ion-col size="2" (click)="ClickLocation(LineId)" >
             <span>
             {{LineId['location_id']['name']}}
             </span>
@@ -210,11 +211,11 @@
             <span>
               <span *ngIf="LineId['tracking'] === 'lot'"> {{LineId['prod_lot_id'] && LineId['prod_lot_id']['name'] || 'Sin Lote'}} </span>
               <span *ngIf="LineId['tracking'] === 'serial' && LineId['qty_done'] === 1" class="not-required">{{LineId['lot_id'] && LineId['lot_id']['name'] || ''}}</span>
+              <ion-icon name="barcode" *ngIf="LineId['tracking'] === 'virtual'">  </ion-icon>
             </span>
           </ion-col>  
             <ion-col *ngIf="LineId['tracking'] !== 'serial'" class="button-qties border-qties p0px" size="1" (click)="ChangeQty(LineId, -1, 0)">
-              <span *ngIf="LineId['tracking'] !== 'virtual'">-</span>
-              <ion-icon name="trash" *ngIf="LineId['tracking'] === 'virtual'">  </ion-icon>
+              <span>-</span>
             </ion-col>
             <ion-col [ngClass]="(LineId['id'] == MoveSelectedId) ? 'primary-deactive':'active'" (click)="InputQty(LineId)">
               <span *ngIf="LineId['tracking'] === 'none'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} </span>
@@ -240,12 +241,12 @@
     <ion-label>Home</ion-label>
   </ion-tab-button>
 
-  <ion-tab-button *ngIf="inventory['id'] == 0" tab="newinv" (click)="GenerateNewInventory()" class="inner-left-btn">
+  <ion-tab-button *ngIf="!inventory || inventory['id'] == 0" tab="newinv" (click)="GenerateNewInventory()" class="inner-left-btn">
     <ion-icon name="add-circle-outline"></ion-icon>
     <ion-label>Nuevo</ion-label>
     <!--ion-badge>{{ParaHoy}}</ion-badge-->
   </ion-tab-button>
-  <ion-tab-button *ngIf="inventory['id'] > 0" tab="newinv" (click)="ValidateInventory()" class="inner-left-btn">
+  <ion-tab-button *ngIf="inventory && inventory['id'] > 0" tab="newinv" (click)="ValidateInventory()" class="inner-left-btn">
     <ion-icon name="add-circle-outline"></ion-icon>
     <ion-label>Validar</ion-label>
     <ion-badge>{{0}}</ion-badge>
