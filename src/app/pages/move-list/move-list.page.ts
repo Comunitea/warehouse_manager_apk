@@ -1053,7 +1053,7 @@ export class MoveListPage implements OnInit {
     //REVISAR
     // this.scanner.ActiveScanner = false;
     if (!action){
-      this.WaitingSerials = 1;
+      this.WaitingSerials = true;
     }
   }
   AddNewSerialEvent(event, indice){

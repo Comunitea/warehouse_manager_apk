@@ -32,7 +32,7 @@ export class AppComponent {
       icon: 'home'
     },
     {
-      title: 'opciones',
+      title: 'Opciones',
       url: '/settings',
       icon: 'log-out'
     },
@@ -42,7 +42,7 @@ export class AppComponent {
       icon: 'log-out'
     },
     {
-      title: '02.00.10',
+      title: '03.00.00',
       url: '',
       icon: 'bug-outline'
     }

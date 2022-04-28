@@ -30,10 +30,14 @@ export class BarcodeMultilinePage implements OnInit {
    }
 
   ionViewWillEnter() {
+    console.log("Valor inciial: " + this.ean + ", "+ this.ean.length)
     setTimeout(() => {
       this.CalcRows()
-      this.EanList.getInputElement().then(id => id.selectionStart = id.selectionEnd = 100000)
+      if (this.ean.length>1){
+        this.EanList.getInputElement().then(id => id.selectionStart = id.selectionEnd = this.ean.length)
+      }
       this.EanList.setFocus();
+      console.log("Valor final: " + this.ean + ", "+ this.ean.length)
       setTimeout(() => {
         this.keyboard.hide();
       }, 50);
@@ -56,6 +60,6 @@ export class BarcodeMultilinePage implements OnInit {
   }
   CalcRows(){
     const ElId = document.getElementById('eans');
-    this.rows = ElId.value.split('').filter(c => c === '\n').length;
+    this.rows = this.ean.split('').filter(c => c === '\n').length;
   }
 }

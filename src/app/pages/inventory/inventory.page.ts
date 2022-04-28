@@ -8,7 +8,7 @@ import { OdooService } from '../../services/odoo.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
 import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
 import { OverlayEventDetail } from '@ionic/core';
-import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
+
 
 type Product = {'id': number, 'default_code': string, 'name': string, 'display_name': string} ;
 type Location = {'id': number, 'barcode': string, 'name': string, 'display_name': string, 'usage': string};
@@ -270,7 +270,10 @@ export class InventoryPage implements OnInit {
   CheckCreateLot(MoveSelected, Lotname){
 
     const MoveLot = MoveSelected['prod_lot_id']
-    if (this.stock.IsFalse(MoveLot)){
+    if (!this.MoveSelected && MoveSelected){
+      this.MoveSelected = this.line_ids.filter(x=> x['id'] === MoveSelected['id'])[0]
+    }
+    if (!MoveLot || this.stock.IsFalse(MoveLot)){
       return this.CreateLot(MoveSelected, Lotname)
     }
     if (MoveLot['name'] == Lotname){
@@ -290,7 +293,7 @@ export class InventoryPage implements OnInit {
       lot_name: LotName, model:OdooModel}
     const self = this;
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute(OdooModel, 'create_apk_prod_lot', values).then((Res: {}) => {
+      self.odooCon.execute(OdooModel, 'create_apk_prod_lot', values).then((Res: Lot) => {
         // MoveSelected['prod_lot_id'] = Res
         this.line_ids.filter(x=>x['id'] === MoveSelected['id'])[0]['prod_lot_id'] = Res
         this.MoveSelected['prod_lot_id'] = Res
@@ -458,11 +461,8 @@ export class InventoryPage implements OnInit {
   locationChange(event: { component: IonicSelectableComponent, value: any}) {
 
     // Si cambio la ubicación.
-
     // Tengo que buscar un inventario con esta ubicación
-
-    
-    if (this.inventory['id'] == 0) {
+    if (this.inventory && this.inventory['id'] == 0) {
       this.generateName()
     }
     this.ApplyFilterMoves()
@@ -557,7 +557,7 @@ export class InventoryPage implements OnInit {
   }
 
   productChange(event: {component: IonicSelectableComponent, value: any}) {
-
+    if (!this.inventory){return}
     if (this.inventory['id'] == 0) {
       this.generateName()
     }
@@ -619,14 +619,14 @@ export class InventoryPage implements OnInit {
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.inventory', 'action_validate_apk', values).then((Res: Inventory) => {
         self.stock.presentToast("Se ha validado el inventario: " + InvName)
-        
+        return self.Unload()
       })
       .catch((error) => {
         self.stock.presentToast("Se ha excedido el tiempo de espera");
         // self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
+        return self.LoadInventory (0);
       });
     });
-    return this.LoadInventory (0);
   }
   Unload(){
     this.inventory = null
@@ -638,6 +638,8 @@ export class InventoryPage implements OnInit {
     this.MoveSelected = null
     this.MoveSelectedId = 0
     this.Indice = -1
+    this.InventoryLocationId = null
+    this.InventoryProductId = null
 
   }
   LoadInventory(id=0){
@@ -647,13 +649,19 @@ export class InventoryPage implements OnInit {
     this.presentLoading('Cargando último inventario ...')
     
     const promise = new Promise( (resolve, reject) => {
-      self.odooCon.execute('stock.inventory', 'load_apk_inventory', values).then((Res: Inventory) => {
-        self.inventory = Res
-        self.product_id = Res['product_id'] // this.product_ids[this.product_ids.length-1]// Res['line_ids'][length_lines-1]['product_id']// inventory_product_id']
-        self.location_id = Res['location_id'] //this.location_ids[this.location_ids.length-1]// Res['line_ids'][length_lines-1]['location_id']//Res['inventory_location_id']
-        this.FilterAcl = false;
-        this.Filter0 = false;
-        
+      self.odooCon.execute('stock.inventory', 'load_apk_inventory', values).then((Res: {}) => {
+        if (Res){
+          self.inventory = Res
+          self.product_id = Res['product_id'] // this.product_ids[this.product_ids.length-1]// Res['line_ids'][length_lines-1]['product_id']// inventory_product_id']
+          self.location_id = Res['location_id'] //this.location_ids[this.location_ids.length-1]// Res['line_ids'][length_lines-1]['location_id']//Res['inventory_location_id']
+          this.FilterAcl = false;
+          this.Filter0 = false;
+          self.ApplyFilterMoves()
+        }
+        else {
+          
+          this.ComputeInvType()
+        }
         this.MoveSelected = null
         this.MoveSelectedId = 0
         this.Indice = -1
@@ -661,15 +669,11 @@ export class InventoryPage implements OnInit {
         // Si tengo un inventario y el inventario tiene producto/ubicación estos son de solo lectura
         // Si tengo un inventario, y NO tengo producto/ubicación. El que no sea de solo lectura es filtro.
         //
-        self.ApplyFilterMoves()
+        
+        
         this.GetSelects()
         
         self.loading.dismiss();
-      })
-      .catch((error) => {
-        self.loading.dismiss();
-      self.stock.Aviso(error.title, error.msg && error.msg.error_msg);
-
       });
     });
     return promise;
@@ -716,9 +720,9 @@ export class InventoryPage implements OnInit {
     return promise;
   }
   ApplyFilterMoves(){
-    
+    if (!(this.inventory && this.inventory['line_ids'])){return}
     this.line_ids = []
-    console.log ('Aplico filtro sobre ' + this.inventory['line_ids'] + ' con prod:' + this.product_id['id'] + ' y loc: ' + this.location_id['id'] )
+    // console.log ('Aplico filtro sobre ' + this.inventory['line_ids'] + ' con prod:' + this.product_id['id'] + ' y loc: ' + this.location_id['id'] )
     const p_id = this.InventoryProductId && this.InventoryProductId['id'] || 0// this.product_id['id']
     const l_id = this.InventoryLocationId && this.InventoryLocationId['id'] || 0// this.location_id['id']
     const parent_path = this.InventoryLocationId && this.InventoryLocationId['parent_path'] || false

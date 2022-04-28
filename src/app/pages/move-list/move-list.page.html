@@ -173,8 +173,8 @@
                 SERIALS
               </ion-col-->
               <ion-col size=6>
-                <ion-label *ngIf="WaitingSerials == 1" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Lote ...</ion-label>
-                <ion-input *ngIf="WaitingSerials == 2" class="button-qties border-qties p0px" placeholder='Nº Lote' autofocus autocapitalize clearOnEdit type='text'
+                <ion-label *ngIf="WaitingSerials" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Lote ...</ion-label>
+                <ion-input *ngIf="!WaitingSerials" class="button-qties border-qties p0px" placeholder='Nº Lote' autofocus autocapitalize clearOnEdit type='text'
                   #NewAddLotI
                   (ionFocus)='IonFocus(indice, true)'
                   (ionBlur)='IonFocus(indice, false)'

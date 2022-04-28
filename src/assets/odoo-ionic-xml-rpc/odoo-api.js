@@ -253,10 +253,10 @@ function OdooApi (host, db) {
                 context: odoo_api.context,
                 allow_none:true,
                 success: function(response, status, jqXHR) {
-                    if (response[0]) {
+                    if (status="success") {
                         resolve(response[0]);
                     } else {
-                        reject(odoo_api.set_error(error && error['code']))
+                        reject(odoo_api.set_error("Error " + response))
                     }
                 },
                 error: function(jqXHR, status, error) {
