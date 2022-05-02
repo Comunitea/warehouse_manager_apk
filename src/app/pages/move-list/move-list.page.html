@@ -8,7 +8,7 @@
   </ion-toolbar>
 </ion-header>
 <ion-content>
-     <ion-card *ngIf="TypeId && true">
+     <ion-card *ngIf="false && TypeId">
       <ion-card-header> {{TypeId['name']}} : {{TypeId['warehouse_id']['name']}}</ion-card-header>
       <ion-card-content style="padding: 0px; font-size: 9px">
         <ion-row>
@@ -25,7 +25,7 @@
       </ion-card-content>
     </ion-card>
   <!-- NAVEGACION ENTRE MOVIMIENTOS SOLO SI ESTÁ 1 SELECCIONADO -->
-  <ion-row *ngIf="this.SelectedMove">
+  <ion-row *ngIf="this.SelectedMove && this.Moves.length > 1">
       <ion-tab-button class="ion-tab-button-class" tab="primero"  (click)="ToMove(1,0)">
         <ion-icon mode="md" name="play-skip-back-outline"></ion-icon>
         <ion-label>Primero</ion-label>
@@ -62,7 +62,7 @@
         <ion-card-header [ngClass]="(Selected == -1 || Move['indice'] == Selected) ? 'primary-deactive':'primary-active'">
           <ion-row>
             <ion-col class="card" size="10" (click)="AlternateSelected(Move['indice'])">
-              {{Move['name']}} {{Move['tracking']}}
+              {{Move['name']}}
             </ion-col>
             
             <ion-col class="card" size="1">
@@ -187,8 +187,7 @@
               
               <ion-col  class="p0px" size="6" (click)="InputQty(Move)" size="6">
               
-                <h2 *ngIf="!TypeId['use_create_lots']">LOT: {{Move['lot_id'] && Move['lot_id']['name'] || 'Sin Lote'}} </h2>
-                <h2 *ngIf="TypeId['use_create_lots']">LOT: {{Move['lot_name'] || 'Sin Lote'}} </h2>
+                <h2 >LOT: {{Move['lot_id'] && Move['lot_id']['name'] || Move['lot_name'] || 'Sin Lote'}} </h2>
                 <strong>{{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}} </strong>
                 
               </ion-col>

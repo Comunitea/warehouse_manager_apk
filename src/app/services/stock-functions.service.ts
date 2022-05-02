@@ -181,8 +181,7 @@ export class StockFunctionsService {
     if (format === 'time'){return now; }
   }
   play(file){
-    console.log('Play ' + file);
-    return this.audio.play(file);
+    this.audio.play(file);
   }
 
   // AVISOS

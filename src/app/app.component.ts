@@ -42,7 +42,7 @@ export class AppComponent {
       icon: 'log-out'
     },
     {
-      title: '03.00.00',
+      title: '03.00.01',
       url: '',
       icon: 'bug-outline'
     }
