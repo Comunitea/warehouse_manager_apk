@@ -520,24 +520,24 @@ export class MoveFormPage implements OnInit {
     this.Ready = true;
   }
 
-  async presentLoading(Message = "Trabajando ...") {
+  async presentLoading(Message = "Trabajando ...", duration=3500) {
     this.audio.play('click');
     this.Ready = false;
     this.loading = await this.loadingController.create({
       message: Message,
       translucent: true,
+      keyboardClose: true,
+      backdropDismiss: true,
+      duration: duration,
       cssClass: 'custom-class custom-loading'
     });
-    setTimeout(() => {
-      this.loading.dismiss();
-    }, 5000);
     await this.loading.present();
   }
 
   RemoveMoveLineId(SmlId) {
     console.log('RemoveMoveLineId: ' + SmlId)
     if (this.data['state'].value === 'done') {return; }
-    this.presentLoading();
+    this.presentLoading("RemoveMoveLineId");
     const values = {move_id: this.data['id'],
                     sml_ids: SmlId,
                   filter_move_lines: this.Filter};

@@ -8,6 +8,7 @@ import { ModalController, AlertController, IonInfiniteScroll, ActionSheetControl
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
 import { OverlayEventDetail } from '@ionic/core';
 import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
+import { DEFAULT_INTERPOLATION_CONFIG } from '@angular/compiler';
 
 
 
@@ -193,7 +194,14 @@ export class MoveListPage implements OnInit {
   }
 
   TabNavegarA(URL){
-    this.router.navigateByUrl(URL);
+    if (this.SelectedMove){
+      this.SelectedMove = null
+      this.Selected = -1
+
+    }
+    else {
+      this.router.navigateByUrl(URL);
+    }
   }
   SetSelected(indice){
     if (!this.Moves){
@@ -201,7 +209,7 @@ export class MoveListPage implements OnInit {
     }
     if (this.Moves.length == 1){
       this.Selected = 0
-      this.SelectedMove = this.Moves[indice]
+      this.SelectedMove = this.Moves[0]
       return
     }
     // Selecciona Deselleciona un movimiento
@@ -295,15 +303,14 @@ export class MoveListPage implements OnInit {
     });
   }
 
-  async presentLoading(Message= 'Cargando...') {
+  async presentLoading(Message= 'Cargando...', duration=3500) {
     this.loading = await this.loadingController.create({
       message: Message,
-      translucent: true,
+      translucent: true, 
+      backdropDismiss: true,
+      duration: duration,
       cssClass: 'custom-class custom-loading'
     });
-    setTimeout(() => {
-      this.loading.dismiss();
-    }, 5000);
     await this.loading.present();
   }
 
@@ -357,6 +364,7 @@ export class MoveListPage implements OnInit {
       });
   }
   Reserve(){
+    this.stock.Aviso("Aviso", "Función no habilitada");
     //  TO_DO DEBERIA DE RESERVAR EL MOVIMIENTO
     // Quito todos los moves de move_id
     // Hago action_assign en el servidor
@@ -395,6 +403,7 @@ export class MoveListPage implements OnInit {
   }
 
   UnReserve(){
+    this.stock.Aviso("Aviso", "Función no habilitada");
     // TO_DO
     if (this.Selected === -1){return; }
     const self = this;
@@ -425,11 +434,10 @@ export class MoveListPage implements OnInit {
 
   }
   ValidateBatch(){
-    this.presentLoading("Validando Movimientos ...")
+    // this.presentLoading("Validando Movimientos ...")
     let qty = 0.0
     for (const move of this.AllMoves){
       if (move['need_location_id'] || move['need_location_dest_id'] || move['need_confirm_lot_id']){
-        this.loading.dismiss()
         this.stock.play("error")
         this.presentToast ("Movimientos incompletos", "Condiciones de validación:")
         return
@@ -437,13 +445,19 @@ export class MoveListPage implements OnInit {
       qty += move['qty_done']
     }
     if (qty == 0.0){
-      this.loading.dismiss()
       this.stock.play("error")
       this.presentToast ("No se ha hecho ninguna cantidad", "Condiciones de validación:")
       return
     }
-    this.loading.dismiss()
-    this.stock.ButtonValidateApk(this.BatchId);
+    this.presentLoading("Validando Movimientos ...")
+    this.stock.ButtonValidateApk(this.BatchId)
+      .then((res: boolean) => {
+        this.loading.dismiss()
+        //this.router.navigateByUrl('/listado-albaranes/' + this.TypeId['id']);
+      })
+      .catch((error) =>{
+        this.loading.dismiss()
+      })
     this.router.navigateByUrl('/listado-albaranes/' + this.TypeId['id']);
   }
   // ToMove
@@ -499,13 +513,14 @@ export class MoveListPage implements OnInit {
           this.AddNewSml();
       }});
     }
+    if (this.Selected == -1 || this['Moves'].length == 1){
     Buttons.push({
         text: 'Validar Batch',
         icon: 'checkmark-done-circle-outline',
         handler: () => {
           this.ValidateBatch();
       }});
-    
+    }
 
     if (this.Selected > -1){
       Buttons.push({
@@ -735,11 +750,12 @@ export class MoveListPage implements OnInit {
       Move['need_location_id'] = this.TypeId['need_location_id'];
       Move['need_location_dest_id'] = this.TypeId['need_location_dest_id'];
       Move['need_loc_before_qty'] = this.TypeId['need_loc_before_qty'];
-      Move['lot_name'] = false
-      Move['lot_ids_string'] = false
+      Move['lot_name'] = ''
+      Move['lot_ids_string'] = ''
       Move['lot_id'] = false;
       Move['qty_done'] = 0;
       Move['lot_ids'] = []
+      Move['serials'] = []
     }
     
     this.stock.ResetMoves(values)
@@ -824,17 +840,13 @@ export class MoveListPage implements OnInit {
   }
   // UBICACIONES
   async OpenGetLocation(Move, LocationField){
-    this.scanner.ActiveScanner = true;
+    
     const LocationStr = LocationField === 'location_id' ? 'Origen' : 'Destino';
     const LocationNeed = 'need_' + LocationField;
     const AllowChange = 'allow_change_' + LocationField;
     //Si no lo necesito no permito cambiarlo, por lo que lo cambio a necesitarlo
-    if (!this.TypeId[AllowChange]){
-      return
-    }
-    if (!Move[LocationNeed]){
-      return Move[LocationNeed] = true
-    }
+    Move[LocationNeed] = !Move[LocationNeed]
+    if (!this.TypeId[LocationNeed]){return;}
     // Para cambiarlo tengo que "necesitarlo", por lo que debería forazarlo antes
 
     // Si no puedo cambiar y NO necesita ubicación >> NO hago nada
@@ -842,14 +854,14 @@ export class MoveListPage implements OnInit {
       return;
     }
     console.log('Preguntamos por la ubicación ' + LocationStr + '. Campo ' + LocationField);
-
+    this.scanner.ActiveScanner = true;
     const alert = await this.alertController.create({
       subHeader: 'para ' + Move['product_id']['name'] ,
       header: 'Confirma ' + LocationStr,
       inputs: [{name: 'barcode',
                type: 'text',
                id: 'LocationBarcodeId',
-               placeholder: Move[LocationField]['barcode']}],
+               placeholder: Move[LocationField]['barcode'] || Move[LocationField]['name']}],
       buttons: [{
           text: 'Cancelar',
           role: 'cancel',
@@ -857,13 +869,6 @@ export class MoveListPage implements OnInit {
           handler: () => {
             // Si cancelo, reseteo la marca de ubicación. Es decir lo pongo por defecto
             // TO_CHECK o no
-            
-            if (false) {
-              let values = {}
-              values[LocationNeed] = this.TypeId[LocationNeed] || Move[LocationNeed]
-              this.WriteAsyn('stock.move.line', Move['id'], values);
-              Move[LocationNeed] = this.TypeId[LocationNeed]
-            }
             console.log('Confirm Cancel');
             this.scanner.ActiveScanner = false;
           }
@@ -904,7 +909,7 @@ export class MoveListPage implements OnInit {
               // NO SE ENCUENTRA EL BARCODE EN EL LISTADO
               this.scanner.ActiveScanner = true;
               this.stock.play('error');
-              return this.OpenGetLocation(Move, LocationField);
+              return;
             }
             
           }
@@ -1151,7 +1156,7 @@ export class MoveListPage implements OnInit {
       this.presentToast('No hay lote asignado', 'Error de formulario');
       return;
     }
-    this.scanner.ActiveScanner = false;
+    this.scanner.ActiveScanner = true;
     let Qty = ''
     if (Move['qty_done'] > 0){
       Qty = Move['qty_done']
@@ -1205,7 +1210,12 @@ export class MoveListPage implements OnInit {
     return this.UpdateQties(this.Moves[Index], IncQty, Qty)
   }
   CheckIfNext(Move){
-    if (Move['qty_done'] >= Move['product_uom_qty'] && !Move['need_location_dest_id'] && !Move['need_location_id'] && this.TypeId['next_move_on_qty_done']){
+    if (this.TypeId['next_move_on_qty_done'] && 
+      Move['qty_done'] >= Move['product_uom_qty'] && 
+      !Move['need_location_dest_id'] && 
+      !Move['need_location_id'] 
+      
+      ){
       return this.ToMove(0,1);
     }
   }
@@ -1248,7 +1258,6 @@ export class MoveListPage implements OnInit {
     }
     // Si llego aquí y he modificado la QtyDOne:
     if (write) {
-
       this.stock.play('ok');
       // Si llego aquí permito cambiar cantidad
       Move['qty_done'] = QtyDone;
@@ -1386,12 +1395,12 @@ export class MoveListPage implements OnInit {
       else {
         //Eliminar
         if (move_lot_id > 0) {
-          Move['lot_ids'].pop(Serial);
-          Move['qty_done'] = Move['lot_ids'].length;
-          this.stock.play('ok')
-          const values =  {qty_done: Move['qty_done'], lot_ids: [[3, Serial['id']]] };
-          this.WriteAsyn('stock.move.line', Move['id'], values) ;
-          this.CheckIfNext(Move)
+            Move['lot_ids'].pop(Serial);
+            Move['qty_done'] = Move['lot_ids'].length;
+            this.stock.play('ok')
+            const values =  {qty_done: Move['qty_done'], lot_ids: [[3, Serial['id']]] };
+            this.WriteAsyn('stock.move.line', Move['id'], values) ;
+            this.CheckIfNext(Move)
           return
         }
         else {
@@ -1403,7 +1412,7 @@ export class MoveListPage implements OnInit {
       // Si es un lote, primero tengo que mirar si está puesto
       let move_lot_id = Move['lot_id']
       if (!move_lot_id['id']){
-        Move['lot_id'] =lot_id
+        Move['lot_id'] = lot_id
         Move['qty_done'] = 1;
         const values = {qty_done: 1, lot_id: Serial['id']}
         this.stock.play('ok')
@@ -1411,8 +1420,6 @@ export class MoveListPage implements OnInit {
       }
       else if (move_lot_id['id'] !== Serial['id']){
         //Cambio el número de serie
-
-        
         Move['lot_id'] = lot_id
         Move['qty_done'] = 0;
         const values = {qty_done: 0, lot_id: Serial['id']}
@@ -1425,6 +1432,7 @@ export class MoveListPage implements OnInit {
         const values = {qty_done: QtyDone}
         this.stock.play('ok')
         this.WriteAsyn('stock.move.line', Move['id'], values) ;
+        
       }
       this.CheckIfNext(Move)
       return
@@ -1590,13 +1598,14 @@ export class MoveListPage implements OnInit {
     if (Move['lot_id']['id'] === Lot['id']){
       if ((Move['qty_done'] + 1) <= Move['product_uom_qty'] || this.TypeId['allow_overprocess']){
         this.stock.play('ok')
-        const QtyDone = Move['qty_done'] + 1;
-        Move['qty_done'] = QtyDone;
+        
+        Move['qty_done'] = Move['qty_done'] + 1;;
         // this.presentToast ('Cant: ' + QtyDone, Move['name'], 27);
-        this.WriteAsyn('stock.move.line', Move['id'], {qty_done: QtyDone}) ;
+        this.WriteAsyn('stock.move.line', Move['id'], {qty_done: Move['qty_done'] + 1}) ;
         if (Move['qty_done'] === Move['product_uom_qty'] && this.TypeId['need_location_dest_id']){
           // return this.OpenGetBoxId(Move);
         }
+        
         return;
       }
       else {
@@ -1730,18 +1739,25 @@ export class MoveListPage implements OnInit {
           this.stock.play("error")
           return this.presentToast('No puedes cambiar origen con cantidad hecha', "Error de formulario:")
           }
+        
         this.SelectedMove['location_id'] = locs[0]
         this.stock.play("ok")
+        this.WriteAsyn('stock.move.line', this.SelectedMove['id'], {'location_id': locs[0]['id']}) ;
         return this.presentToast('Nuevo origen: ' + locs[0]['name'] , "Cambio:")
         }
         //SI LEO UBICACIÓN Y NECESITO DESTINO ESTABLEZCO DESINO
         if (this.TypeId['allow_change_location_dest_id'] && this.SelectedMove['need_location_dest_id']){
           this.SelectedMove['location_dest_id'] = locs[0]
           this.stock.play("ok")
+          this.WriteAsyn('stock.move.line', this.SelectedMove['id'], {'location_dest_id': locs[0]['id']}) ;
           return this.presentToast('Nuevo destino: ' + locs[0]['name'], "Cambio:")
         }
     }
-
+    if (LocationRead){
+      
+      this.stock.play("error")
+      return this.presentToast('No esperaba una ubicación', "Error de formulario:")
+    }
     // Es un lote
     if (!this.SelectedMove['need_location_id']){
       if (this.SelectedMove['tracking'] == 'virtual') {
@@ -1750,6 +1766,9 @@ export class MoveListPage implements OnInit {
       if (this.SelectedMove['tracking'] == 'lot') {
         if (this.SelectedMove['lot_id']['name'] == val || this.SelectedMove['lot_name'] == val){
           this.stock.play("ok")
+          if (this.SelectedMove['need_confirm_lot_id']){
+            return this.SelectedMove['need_confirm_lot_id'] = false
+          }
           return this.UpdateQties(this.SelectedMove, 1, 0)
         }
         else {
@@ -1783,7 +1802,6 @@ export class MoveListPage implements OnInit {
     this.odooCon.execute('stock.move.line', 'add_set_lot', values).then((Res:{}) => {
       Res['move']['indice'] = Move['indice']
       this.SelectedMove = this.Moves[this.Selected] = Res['move']
-
       this.loading.dismiss();
       this.stock.play('ok');
     })
@@ -1800,6 +1818,13 @@ export class MoveListPage implements OnInit {
     if (this.SelectedMove['tracking'] != 'virtual'){
       return this.stock.Aviso("Error", "Tracking incorrecto")
     }
+    if (!ToDelete && this.TypeId['allow_overprocess'] == false && (Move['qty_done'] + 1) > Move['product_uom_qty']){
+      this.presentToast("No puedes procesar más cantidad de la pedida", "Error de usuario")
+      this.stock.play('error');
+      return;
+    }
+    
+
     if (!ToDelete && Move['serials'].indexOf(LotName) > -1){
       this.stock.play('error');
       return this.presentToast(LotName + " ya está en el movimiento", "Error de lectura:")
@@ -1810,10 +1835,11 @@ export class MoveListPage implements OnInit {
       'create_new_line': false,
       'product_id': Move['product_id']['id'], 
       'id': Move['id'],
-      'lot_name': LotName}
-    this.presentLoading('Actualizando ..' + LotName);
+      'lot_name': [LotName]}
+    //this.presentLoading('Actualizando ..' + LotName);
+    this.presentToast("Actualizando ...", LotName, 750)
     this.odooCon.execute('stock.move.line', 'add_virtual_serial', values).then((Res:{}) => {
-      this.loading.dismiss();
+      //this.loading.dismiss();
       if (Res['move']){
         Res['move']['indice'] = Move['indice']
         this.SelectedMove = this.Moves[this.Selected] = Res['move']
@@ -1827,7 +1853,7 @@ export class MoveListPage implements OnInit {
       })
       .catch((error) => {
         this.stock.play('error');
-        this.loading.dismiss();
+        //this.loading.dismiss();
         this.stock.Aviso(error.title, error.msg && error.msg.error_msg);
       });
     return;

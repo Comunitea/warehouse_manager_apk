@@ -188,15 +188,17 @@ export class StockLocationListPage implements OnInit {
     this.infiniteScroll.disabled = !this.infiniteScroll.disabled;
   }
 
-  async presentLoading() {
+  async presentLoading(Message= '...', duration=3500) {
+    // this.loading.getTop().then(v => v ? this.loading && this.loading.dismiss() : null);
     this.loading = await this.loadingController.create({
-      message: 'Validando...',
+      message: Message,
+      duration: duration,
+      keyboardClose: true,
+      backdropDismiss: true,
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
-    setTimeout(() => {
-      this.loading.dismiss();
-    }, 5000);
+
     await this.loading.present();
   }
 

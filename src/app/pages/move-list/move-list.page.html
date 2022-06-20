@@ -163,7 +163,7 @@
               <ion-col size=3></ion-col>
             </ion-row>
             <ion-row *ngIf="SelectedMove" class="ion-text-center">
-              <ion-col size=3 class="ion-text-center button-qties border-qties" (click) = "AddVirtualSerial(Move, serial, true)" *ngFor="let serial of Move['serials']">{{serial}}</ion-col>
+              <ion-col size=4 class="ion-text-center button-qties border-qties" (click) = "AddVirtualSerial(Move, serial, true)" *ngFor="let serial of Move['serials']">{{serial}}</ion-col>
             </ion-row>
        </ng-template>
         
@@ -173,8 +173,9 @@
                 SERIALS
               </ion-col-->
               <ion-col size=6>
-                <ion-label *ngIf="WaitingSerials" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Lote ...</ion-label>
-                <ion-input *ngIf="!WaitingSerials" class="button-qties border-qties p0px" placeholder='Nº Lote' autofocus autocapitalize clearOnEdit type='text'
+                <h2 *ngIf="Move['lot_id'] || Move['lot_name']" [ngClass]="Move['need_confirm_lot_id'] ? 'required': 'not-required'" >LOT: {{Move['lot_id'] && Move['lot_id']['name'] || Move['lot_name'] || 'Sin Lote'}} </h2>
+                <ion-label *ngIf="!Move['lot_id'] && !Move['lot_name'] && WaitingSerials" class="button-qties" (click)='AlternateWaitingSerials()'>Esperando Nº Lote ...</ion-label>
+                <ion-input *ngIf="!Move['lot_id'] && !Move['lot_name'] && !WaitingSerials" class="button-qties border-qties p0px" placeholder='Nº Lote' autofocus autocapitalize clearOnEdit type='text'
                   #NewAddLotI
                   (ionFocus)='IonFocus(indice, true)'
                   (ionBlur)='IonFocus(indice, false)'
@@ -187,7 +188,7 @@
               
               <ion-col  class="p0px" size="6" (click)="InputQty(Move)" size="6">
               
-                <h2 >LOT: {{Move['lot_id'] && Move['lot_id']['name'] || Move['lot_name'] || 'Sin Lote'}} </h2>
+                
                 <strong>{{Move['qty_done']}} / {{Move['product_uom_qty']}} {{Move['uom_id']['name']}} </strong>
                 
               </ion-col>

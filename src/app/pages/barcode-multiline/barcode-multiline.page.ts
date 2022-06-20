@@ -48,11 +48,13 @@ export class BarcodeMultilinePage implements OnInit {
     // this.EanList.setFocus();
     
   }
+  deleteall(){
+    this.ean = ''
+  }
   goBack(cancel) {
     if (cancel){
       return this.modalController.dismiss(-1)
     }
-
     this.myDismiss();
   }
   async myDismiss() {

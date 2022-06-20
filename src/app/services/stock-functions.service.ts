@@ -195,7 +195,7 @@ export class StockFunctionsService {
   }
   ButtonValidateApk(Ids, Model='stock.picking.batch'){
     // Valida los albaranes que vengan en el ID
-
+    
     const self = this;
     const values = {id: Ids}; 
     const promise = new Promise( (resolve, reject) => {
@@ -291,7 +291,7 @@ export class StockFunctionsService {
   GetAppLocations(){
     const self = this;
     let values = {};
-    values = {domain: [['barcode', '!=', false]]};
+    values = {timeout: 30000, domain: [['barcode', '!=', false]]};
     console.log('Conectando a Odoo para recuperar las ubicaciones');
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('stock.location', 'LocationData', values).then((Res: Array<{}>) => {
@@ -311,7 +311,7 @@ export class StockFunctionsService {
     const self = this;
     let values = {};
     let domain = [['default_code', '!=', false], ['type', '=', 'product']]
-    values = {domain: domain, 'Timeout': 30000};
+    values = {domain: domain, Timeout: 30000};
     console.log('Conectando a Odoo para recuperar las imagenes');
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('product.product', 'ImageData', values).then((Res: {}) => {
@@ -327,19 +327,31 @@ export class StockFunctionsService {
     });
     return promise;
   }
-  GetAppProducts(){
+  GetAppProducts(offset = 0, limit= 100000){
+    if (offset == 0) {this.Products = []}
     const self = this;
     let values = {};
     let domain = [['default_code', '!=', false], ['type', '=', 'product']]
-    values = {domain: domain, 'Timeout': 30000};
+    values = {domain: domain, Timeout: 30000, offset: offset, limit:limit};
+    const new_offset = offset + limit
+    
     console.log('Conectando a Odoo para recuperar las productos');
     const promise = new Promise( (resolve, reject) => {
       self.odooCon.execute('product.product', 'ProductData', values).then((Res: Array<{}>) => {
-        self.Products = Res;
-        self.ApplyProdBusquedas()
-        self.storage.set('Products', Res).then ((data)=>{})
-        self.presentToast("Cargados Articulos", "Proceso de carga")
-        resolve(true)
+        self.presentToast("Cargados Articulos de " + offset + " a " + new_offset, "Proceso de carga", 250)
+        
+        for (const product of Res){
+          self.Products.push(product)
+        }
+        if (Res.length < limit){
+          self.ApplyProdBusquedas()
+          self.storage.set('Products', Res).then ((data)=>{})
+          resolve(true)
+
+        }
+        else {
+          return self.GetAppProducts(new_offset)
+        }
       })
       .catch((error) => {
         self.Aviso('Error al cargar articulos', error)

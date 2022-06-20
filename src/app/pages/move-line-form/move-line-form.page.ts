@@ -149,7 +149,9 @@ export class MoveLineFormPage implements OnInit {
       if (LinesData && LinesData['err'] === false) {
         console.log('Reloading');
         this.loading.dismiss();
-        this.location.back();
+        
+        
+
       } else if (LinesData['err'] !== false) {
         this.loading.dismiss();
         this.presentAlert('Error al validar el albarán:', LinesData['err']);
@@ -161,15 +163,16 @@ export class MoveLineFormPage implements OnInit {
     });
   }
 
-  async presentLoading() {
+  async presentLoading(message='Validando ...', duration=3500) {
     this.loading = await this.loadingController.create({
-      message: 'Validando...',
+      message: message,
+      keyboardClose: true,  
+      backdropDismiss: true,
+      duration: duration,
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
-    setTimeout(() => {
-      this.loading.dismiss();
-    }, 5000);
+  
     await this.loading.present();
   }
 

@@ -84,6 +84,7 @@ const routes: Routes = [
   { path: 'move-list/:BatchId', loadChildren: './pages/move-list/move-list.module#MoveListPageModule' },
   { path: 'inventory', loadChildren: './pages/inventory/inventory.module#InventoryPageModule' },
   { path: 'settings', loadChildren: './pages/settings/settings.module#SettingsPageModule' },
+  { path: 'serial-inventory', loadChildren: './pages/serial-inventory/serial-inventory.module#SerialInventoryPageModule' },
 
 ];
 

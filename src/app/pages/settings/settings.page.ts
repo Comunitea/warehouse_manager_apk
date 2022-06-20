@@ -37,17 +37,18 @@ export class SettingsPage implements OnInit {
     
   }
   
-
-  async presentLoading(Message= 'Cargando...') {
+  async presentLoading(Message= '...', duration=3500) {
+    // this.loading.getTop().then(v => v ? this.loading && this.loading.dismiss() : null);
     this.loading = await this.loadingController.create({
       message: Message,
+      duration: duration,
+      keyboardClose: true,
+      backdropDismiss: true,
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });
-    setTimeout(() => {
-      this.loading.dismiss();
-    }, 5000);
+
     await this.loading.present();
   }
- 
+  
 }

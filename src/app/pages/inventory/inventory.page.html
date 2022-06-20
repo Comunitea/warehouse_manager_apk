@@ -69,7 +69,7 @@
                   (onChange)="productChange($event)" 
                   (onSearch)="SelectSearch($event, 'product_ids')">
                   <ng-template ionicSelectableItemTemplate let-product="item" let-isProductSelected="isItemSelected">
-                    <span class="x-small">{{product['wh']}}</span>
+                    <span class="x-small">{{product['name']}}</span>
                   </ng-template>
                   <ng-template ionicSelectableTitleTemplate>
                     <span style="color: var(--ion-color-primary);"><strong>Artículos</strong></span>
@@ -222,8 +222,8 @@
               <span>-</span>
             </ion-col>
             <ion-col [ngClass]="(LineId['id'] == MoveSelectedId) ? 'primary-deactive':'active'" (click)="InputQty(LineId)">
-              <span *ngIf="LineId['tracking'] === 'none'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} </span>
-              <span *ngIf="LineId['tracking'] === 'virtual'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}}  </span>
+              <span *ngIf="LineId['tracking'] === 'none' || LineId['tracking'] === 'virtual'"  >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} </span>
+              <!--span *ngIf="LineId['tracking'] === 'virtual'" >{{LineId['theoretical_qty']}} / {{LineId['product_qty']}}  </span-->
               <span *ngIf="LineId['tracking'] === 'lot'">{{LineId['theoretical_qty']}} / {{LineId['product_qty']}} </span>
             <!--span *ngIf="LineId['tracking'] === 'serial' && LineId['qty_done'] === 1" class="not-required">{{LineId['lot_id'] && " [" + LineId['lot_id']['name'] + "]"|| ''}}</span-->
           </ion-col>

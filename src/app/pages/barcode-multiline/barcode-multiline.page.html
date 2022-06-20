@@ -29,6 +29,9 @@
 
   <ion-footer>
     <ion-toolbar class="cmnt-front h_footer">
+      <button class="cmnt-button" slot="end" ion-button icon-only item-end  (click)="deleteall()">
+        <ion-icon style="font-size: 2em;" name="trash" class="cmnt-front"></ion-icon>
+      </button> 
       <button class="cmnt-button" slot="end" ion-button icon-only item-end  (click)="goBack(true)">
         <ion-icon style="font-size: 2em;" name="arrow-undo-outline" class="cmnt-front"></ion-icon>
       </button> 

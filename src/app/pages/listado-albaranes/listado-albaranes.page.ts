@@ -120,7 +120,10 @@ export class ListadoAlbaranesPage implements OnInit {
     this.GetInfo();
 
   }
-
+  Refresh(){
+    this.Offset = 0;
+    this.GetInfo();
+  }
   TabNavegarA(URL){
     this.router.navigateByUrl(URL);
   }
@@ -185,13 +188,13 @@ export class ListadoAlbaranesPage implements OnInit {
 
   // LOADING
  
-  async presentLoading(Message= 'Validando...') {
+  async presentLoading(Message= 'Validando...', duration=3500) {
     // this.loading.getTop().then(v => v ? this.loading && this.loading.dismiss() : null);
     this.loading = await this.loadingController.create({
       message: Message,
-      duration: 5000,
       keyboardClose: true,
       backdropDismiss: true,
+      duration: duration,
       translucent: true,
       cssClass: 'custom-class custom-loading'
     });

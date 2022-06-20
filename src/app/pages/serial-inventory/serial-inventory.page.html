@@ -1,0 +1,133 @@
+<ion-header>
+  <ion-toolbar class="cmnt-front">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+
+    <ion-title style="font-size: medium">{{!inventory && "Nº de Serie" || inventory && inventory['name']}} </ion-title>
+    <app-scanner-header slot="end"></app-scanner-header>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+<ion-item *ngIf="!inventory" >
+  <ion-label color="primary" >Ubic.</ion-label>
+  <ionic-selectable item-content
+            (onOpen)="OnSearchFocus(true)"
+            (onClose)="OnSearchFocus(false)"
+            (onClear)="OnClear('location_ids')"
+            [canClear]="true"
+            [(ngModel)]="InventoryLocationId" itemValueField="id" itemTextField="name" [items]="location_ids" [canSearch]="true"
+            (onChange)="locationChange($event)" (onSearch)="SelectSearch($event, 'location_ids')">
+              <ng-template ionicSelectableCloseButtonTemplate>
+                <ion-icon name="close-circle" style="font-size: 24px;"></ion-icon>
+              </ng-template>
+              <ng-template ionicSelectableTitleTemplate>
+                <span style="color: var(--ion-color-primary);"><strong>Ubicaciones</strong></span>
+              </ng-template>
+            </ionic-selectable>
+
+          </ion-item>
+        
+<ion-item  *ngIf="!inventory">
+  <ion-label color="primary" >Art.</ion-label>
+  <ionic-selectable 
+                  item-content 
+                  [(ngModel)]="InventoryProductId" itemValueField="id" itemTextField="default_code" 
+                  [items]="product_ids" [canSearch]="true"
+                  (onOpen)="OnSearchFocus(true)"
+                  (onClose)="OnSearchFocus(false)"
+                  (onClear)="OnClear('product_ids')"
+                  [canClear]="true"
+                  (onChange)="productChange($event)" 
+                  (onSearch)="SelectSearch($event, 'product_ids')">
+                  <ng-template ionicSelectableItemTemplate let-product="item" let-isProductSelected="isItemSelected">
+                    <span class="x-small">{{product['name']}}</span>
+                  </ng-template>
+                  <ng-template ionicSelectableTitleTemplate>
+                    <span style="color: var(--ion-color-primary);"><strong>Artículos</strong></span>
+                  </ng-template>
+                  <ng-template ionicSelectableCloseButtonTemplate>
+                    <ion-icon name="close-circle" style="font-size: 24px;"></ion-icon>
+                  </ng-template>
+              </ionic-selectable>
+</ion-item>
+<ion-card *ngIf="inventory">
+  <ion-card-header>
+    
+    <ion-card-title >
+      <ion-item lines="none" class="product-link">
+      <ion-label>
+        {{product_id && product_id['default_code']}}
+      </ion-label>
+      <ion-label slot="end">
+        {{location_id && location_id['name']}}
+        
+      </ion-label>
+    </ion-item>
+    </ion-card-title>
+    <ion-card-title class="product-link">
+      
+    </ion-card-title>
+    
+    <ion-card-subtitle>{{product_id && product_id['name']}}</ion-card-subtitle>
+  </ion-card-header>
+  
+<ion-item class="product-link" lines="none">
+  <ion-label >Actualizar Cantidad</ion-label>
+  <ion-toggle (ionChange)="OnChangeUpdateQty()" [(ngModel)]="inventory['update_quant_qty']" slot="end"></ion-toggle>
+</ion-item>
+<ion-item  lines="none">
+  <ion-col class="ion-text-left product-link">Listado:</ion-col>
+</ion-item>
+  
+</ion-card>
+
+
+<div *ngIf="inventory">
+  
+<ion-item *ngFor="let serial of inventory['serial_ids']; let indice=index">
+  <ion-col size-xs="12" size-sm="12" size-lg="6"
+  (click)="ClickSerial(serial)" class="ion-text-center"
+  [ngClass]="serial['to_delete'] ? 'waiting': 'confirmed'"
+  >
+    {{serial['name']}} 
+  </ion-col>
+</ion-item>
+</div>
+</ion-content>
+<ion-tab-bar slot="bottom" class="bottom-tab-bar">
+  <ion-tab-button tab="home" (click)="TabNavegarA('/navegacion-principal')">
+    <ion-icon mode="md" name="home"></ion-icon>
+    <ion-label>Home</ion-label>
+  </ion-tab-button>
+
+  <ion-tab-button *ngIf="!inventory" tab="newinv" (click)="GenerateNewSerialInventory()" class="inner-left-btn">
+    <ion-icon name="add-circle-outline"></ion-icon>
+    <ion-label>Nuevo</ion-label>
+    <!--ion-badge>{{ParaHoy}}</ion-badge-->
+  </ion-tab-button>
+  <ion-tab-button *ngIf="inventory" tab="newinv" (click)="Validate()" class="inner-left-btn">
+    <ion-icon name="add-circle-outline"></ion-icon>
+    <ion-label>Validar</ion-label>
+    <!--ion-badge>{{0}}</ion-badge-->
+  </ion-tab-button>
+
+
+  <ion-tab-button (click)="presentButtons()" class="button-center">
+    <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+    <ion-label>Acciones</ion-label>
+  </ion-tab-button>
+
+  <ion-tab-button (click)="CreateLoadInventory()" tab="users" class="inner-right-btn">
+    <ion-icon name="save-outline"></ion-icon>
+    <ion-label>Cargar</ion-label>
+  </ion-tab-button>
+
+  <ion-tab-button (click)="CreateFilterButtons()" tab="settings">
+    <ion-icon name="funnel-outline"></ion-icon>
+    <ion-label>Filtrar</ion-label>
+  </ion-tab-button>
+
+</ion-tab-bar>

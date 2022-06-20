@@ -103,13 +103,13 @@ export class InventoryPage implements OnInit {
     private modalController: ModalController,
     public stock: StockFunctionsService,) { }
   
-    async presentLoading(Message= '...') {
+    async presentLoading(Message= '...', duration=5000) {
       // this.loading.getTop().then(v => v ? this.loading && this.loading.dismiss() : null);
       this.loading = await this.loadingController.create({
         message: Message,
-        duration: 5000,
         keyboardClose: true,
         backdropDismiss: true,
+        duration: duration,
         translucent: true,
         cssClass: 'custom-class custom-loading'
       });
@@ -417,7 +417,6 @@ export class InventoryPage implements OnInit {
       this.MoveSelected = this.line_ids.filter(x=> x['id'] === this.MoveSelectedId)[0]
       this.MoveSelected.acl = true
     }
-
     this.Indice = indice
       //
     this.WaitingNewLot = this.MoveSelected && (this.MoveSelected['tracking'] == 'virtual' || this.MoveSelected['tracking'] == 'lot' || this.MoveSelected['tracking'] == 'serial')
@@ -425,9 +424,11 @@ export class InventoryPage implements OnInit {
     //  this.InventoryProductId = this.MoveSelected['product_id']
     // }
   }
-  LoadAndOpenMulti(Line){      const self = this
-      const values = {'id': Line['id']}
-      const promise = new Promise( (resolve, reject) => {
+  LoadAndOpenMulti(Line){      
+    return true
+    const self = this
+    const values = {'id': Line['id']}
+    const promise = new Promise( (resolve, reject) => {
         self.odooCon.execute('stock.inventory.line', 'load_virtual_lot_ids', values).then((Res: {}) => {
 
           return this.OpenBarcodeMultiline(Line, true, Res['list'])
@@ -440,7 +441,7 @@ export class InventoryPage implements OnInit {
   }
   ClickLot(Line){
     if (Line.tracking=='virtual'){
-
+     return this.stock.presentToast("Los números de serie se ajustan en su propio inventario")
       return this.LoadAndOpenMulti(Line)
     }
     if (Line.tracking == 'lot' || Line.tracking == 'serial') {
@@ -455,16 +456,12 @@ export class InventoryPage implements OnInit {
       return this.AlternateSelected(Line['id'], this.Indice)
     }
   }
-  generateName(){
-    this.inventory['name'] = this.product_id['default_code'] + ' - ' + this.location_id.name
-  }
+  
   locationChange(event: { component: IonicSelectableComponent, value: any}) {
 
     // Si cambio la ubicación.
     // Tengo que buscar un inventario con esta ubicación
-    if (this.inventory && this.inventory['id'] == 0) {
-      this.generateName()
-    }
+   
     this.ApplyFilterMoves()
   }
   
@@ -533,7 +530,7 @@ export class InventoryPage implements OnInit {
             this.InventoryLocationId = this.inventory['location_id']
           }
         else {
-
+          
         }
 
       }
@@ -544,7 +541,7 @@ export class InventoryPage implements OnInit {
           (x['barcode'] + x['name']).toUpperCase().indexOf(search) > -1)).slice(0,10)
     }
     else if (field == 'product_ids'){
-        this.product_ids = this.stock.Products.filter(x=> (x['barcode'] + x['default_code']).toUpperCase().indexOf(search) > -1).slice(0,10)
+        this.product_ids = this.stock.Products.filter(x=> (x['barcode'] + x['name']).toUpperCase().indexOf(search) > -1).slice(0,10)
     }
     this.ComputeInvType()
     return;
@@ -557,12 +554,13 @@ export class InventoryPage implements OnInit {
   }
 
   productChange(event: {component: IonicSelectableComponent, value: any}) {
-    if (!this.inventory){return}
-    if (this.inventory['id'] == 0) {
-      this.generateName()
+
+    this.ApplyFilterMoves()
+    return
+    if (!this.inventory){
+      return
     }
     // this.InventoryProductId = this.
-    this.ApplyFilterMoves()
     // OPciones 
     // Si el tipo de albarán tiene producto, es distinto, entonces no puedo cambiarlo
     if (this.inventory['filter'] === 'product'){
@@ -581,14 +579,7 @@ export class InventoryPage implements OnInit {
     this.scanner.ActiveScanner = val ;    
   }
   ComputeInvType(){
-    const location_id = this.inventory && this.inventory['location_id']['id'] || 0
-    const product_id = this.inventory && this.inventory['product_id']['id'] || 0
-    if (product_id != 0 && this.stock.IsFalse(this.inventory)) {
-      this.ShowProductSearch = false  
-    }
-    else {
-      this.ShowProductSearch = true
-    }
+    this.ShowProductSearch = true
     this.ShowLocationSearch = true
   }
   GetInventoryLinesDomain(id = 0, ProductId = 0, LocationId = 0){
@@ -610,7 +601,7 @@ export class InventoryPage implements OnInit {
       ['location_id', '=', LocationId]]
   }
   ValidateInventory(){
-    if (this.stock.IsFalse(this.inventory)){
+    if (!this.inventory){
       return this.stock.presentToast("No hay ningún inventario cargado")
     }
     const values = {'id': this.inventory['id']}
@@ -644,7 +635,11 @@ export class InventoryPage implements OnInit {
   }
   LoadInventory(id=0){
 
-    const values = {product_id: this.product_id, location_id: this.location_id, id: id, domain:this.GetInventoryLinesDomain(this.inventory && this.inventory['id'] || 0)}
+    const values = {
+      product_id: this.product_id, 
+      location_id: this.location_id, 
+      id: id, 
+      domain:this.GetInventoryLinesDomain(this.inventory && this.inventory['id'] || 0)}
     const self = this;
     this.presentLoading('Cargando último inventario ...')
     
@@ -720,7 +715,7 @@ export class InventoryPage implements OnInit {
     return promise;
   }
   ApplyFilterMoves(){
-    if (!(this.inventory && this.inventory['line_ids'])){return}
+    if (!this.inventory || !this.inventory['line_ids']) {return}
     this.line_ids = []
     // console.log ('Aplico filtro sobre ' + this.inventory['line_ids'] + ' con prod:' + this.product_id['id'] + ' y loc: ' + this.location_id['id'] )
     const p_id = this.InventoryProductId && this.InventoryProductId['id'] || 0// this.product_id['id']
@@ -948,7 +943,7 @@ export class InventoryPage implements OnInit {
         this.NewLine();
         // this.ValidateBatch();
     }});
-    if (this.inventory && this.inventory['id']){
+    if (this.inventory){
     Buttons.push({
         text: 'Validar Inventario',
         icon: 'add-circle-outline',
@@ -964,7 +959,7 @@ export class InventoryPage implements OnInit {
       }});
 
     }
-    if (!(this.inventory && this.inventory['id']) && this.InventoryLocationId){
+    if (!(this.inventory) && this.InventoryLocationId){
       Buttons.push({
           text: 'Crear nuevo Inventario',
           icon: 'add-circle-outline',

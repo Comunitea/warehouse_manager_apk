@@ -32,6 +32,11 @@ export class AppComponent {
       icon: 'home'
     },
     {
+      title: 'Nº de Serie',
+      url: '/serial-inventory',
+      icon: 'barcode'
+    },
+    {
       title: 'Opciones',
       url: '/settings',
       icon: 'log-out'
@@ -42,7 +47,7 @@ export class AppComponent {
       icon: 'log-out'
     },
     {
-      title: '03.00.01',
+      title: '03.00.02',
       url: '',
       icon: 'bug-outline'
     }
