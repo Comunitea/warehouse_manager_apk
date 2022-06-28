@@ -15,20 +15,20 @@ import { StockFunctionsService } from '../../services/stock-functions.service';
 })
 export class LoginPage implements OnInit {
 
-  CONEXION: ConnectionOptions = {username: '',
-                                 password: '',
-                                 url: 'https://rumartest.odootea.com',
+  CONEXION: ConnectionOptions = {username: 'usuario',
+                                 password: 'pass',
+                                 url: 'https://rumar.odootea.com',
                                  port: 8069,
-                                 db: '',
+                                 db: 'odoo_rumar',
                                  uid: 0,
                                  context: {},
                                  user: {},
                                  logged_in: false};
-  CONEXION_local: ConnectionOptions = { username: 'cmnt_kiko',
-                                        password: 'cmnt',
-                                        url: 'https://rumartest.odootea.com',
+  CONEXION_local: ConnectionOptions = { username: 'usuario',
+                                        password: 'pass',
+                                        url: 'https://rumar.odootea.com',
                                         port: 8069,
-                                        db: 'apk',
+                                        db: 'odoo_rumar',
                                         uid: 0,
                                         context: {},
                                         user: {},

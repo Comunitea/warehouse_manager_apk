@@ -6,8 +6,7 @@ import { ScannerService } from '../../services/scanner.service';
 import { StockFunctionsService } from '../../services/stock-functions.service';
 import { OdooService } from '../../services/odoo.service';
 import { ScannerFooterComponent } from '../../components/scanner/scanner-footer/scanner-footer.component';
-import { BarcodeMultilinePage } from '../barcode-multiline/barcode-multiline.page';
-import { OverlayEventDetail } from '@ionic/core';
+
 
 
 type Product = {'id': number, 'default_code': string, 'name': string, 'display_name': string} ;
@@ -76,7 +75,6 @@ export class SerialInventoryPage implements OnInit {
     public loadingController: LoadingController,
     public alertController: AlertController,
     public actionSheetCtrl: ActionSheetController,
-    private modalController: ModalController,
     public stock: StockFunctionsService,) { }
   
     async presentLoading(Message= '...', duration=3500) {
@@ -93,7 +91,10 @@ export class SerialInventoryPage implements OnInit {
       await this.loading.present();
     }
 
-    
+  TabNavegarA(URL){
+      this.router.navigateByUrl(URL);
+    }
+  
   onReadingEmitted(val: string) {
     const delay = 200;
     let index = 0;
