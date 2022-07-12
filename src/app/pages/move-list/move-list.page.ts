@@ -204,9 +204,11 @@ export class MoveListPage implements OnInit {
     }
   }
   SetSelected(indice){
+    
     if (!this.Moves){
       return
-    }
+    } 
+    if (this.SelectedMove){this.SelectedMove['need_confirm_product_id'] = this.TypeId['need_confirm_product_id']}
     if (this.Moves.length == 1){
       this.Selected = 0
       this.SelectedMove = this.Moves[0]
@@ -222,6 +224,7 @@ export class MoveListPage implements OnInit {
     else {
       this.SelectedMove = null
     }
+    if (this.SelectedMove){this.SelectedMove['need_confirm_product_id'] = this.TypeId['need_confirm_product_id']}
   }
 
   ApplyGetInfo(Res, values){
@@ -295,6 +298,7 @@ export class MoveListPage implements OnInit {
   }
   AlternateWaitingSerials(){
     this.WaitingSerials = !this.WaitingSerials
+    
   }
   ScrollToId(ElemId){
     document.getElementById(ElemId).scrollIntoView({
@@ -928,6 +932,7 @@ export class MoveListPage implements OnInit {
 
   AlternateSelected(indice){
     this.SetSelected (this.Selected === indice ? -1 : indice);
+    
   }
   
   // Rellenar INFO LOTS AND SERIALS
@@ -1295,6 +1300,10 @@ export class MoveListPage implements OnInit {
 
     // ESCANEO PRODUCTO
     if (this.SelectedMove['product_id']['barcode'] == val || this.SelectedMove['product_id']['default_code'] == val){
+      if (this.SelectedMove['need_confirm_product_id']){
+        return this.SelectedMove['need_confirm_product_id'] = false
+      }
+      
       // Leo el producto del movimiento seleccionado
       //Si necesito ller origen, ya no
       if (this.SelectedMove['need_location_id']){
@@ -1318,7 +1327,9 @@ export class MoveListPage implements OnInit {
       }
       // EN CASO DE VIRTUAL O SERIAL NO HAGO NADA
     }
-
+    if (this.SelectedMove['need_confirm_product_id']){
+      return this.presentToast("Lee primero el articulo", "Aviso ..", 150)
+    }
     // ESCANEO ORIGEN
     if (this.SelectedMove['location_id']['barcode'] == val || this.SelectedMove['location_id']['name'] == val){
       if (this.SelectedMove['need_location_id']){

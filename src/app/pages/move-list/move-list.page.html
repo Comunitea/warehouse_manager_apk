@@ -61,7 +61,7 @@
       <ion-card class="m3px" [id]="Move['id']" >
         <ion-card-header [ngClass]="(Selected == -1 || Move['indice'] == Selected) ? 'primary-deactive':'primary-active'">
           <ion-row>
-            <ion-col class="card" size="10" (click)="AlternateSelected(Move['indice'])">
+            <ion-col class="card" size="10" (click)="AlternateSelected(Move['indice'])" [ngClass]="Move['need_confirm_product_id'] ? 'waiting': 'no_need_product'">
               {{Move['name']}}
             </ion-col>
             
@@ -114,7 +114,7 @@
           </ion-row>
 
           
-          <ng-template [ngSwitchCase]="'none'">
+        <ng-template [ngSwitchCase]="'none'" *ngIf="!Move['need_confirm_product_id']" >
               <ion-row class="card ion-text-center p0px" *ngIf="Move['ChangeQty'] && Move['indice'] === Selected">
                 <ion-col class="button-qties border-qties p0px" size="3" (click)="OpenQtiesIndex(indice, -1, 0)">
                   - 1
@@ -134,7 +134,7 @@
         </ng-template>
 
 
-        <ng-template [ngSwitchCase]="'virtual'">
+        <ng-template [ngSwitchCase]="'virtual'" *ngIf="!Move['need_confirm_product_id']">
           
             <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected">
                 <!--ion-col  size="4">
@@ -167,7 +167,7 @@
             </ion-row>
        </ng-template>
         
-        <ng-template [ngSwitchCase]="'lot'" >
+        <ng-template [ngSwitchCase]="'lot'" *ngIf="!Move['need_confirm_product_id']" >
             <ion-row class="card ion-text-center p0px" *ngIf="Move['indice'] === Selected">
               <!--ion-col  size="4">
                 SERIALS
